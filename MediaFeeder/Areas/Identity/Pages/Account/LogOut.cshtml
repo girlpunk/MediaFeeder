@@ -1,7 +1,8 @@
 @page
+@using MediaFeeder.Models.db
 @using Microsoft.AspNetCore.Identity
 @attribute [IgnoreAntiforgeryToken]
-@inject SignInManager<IdentityUser> _signInManager
+@inject SignInManager<AuthUser> _signInManager
 
 @functions {
 
@@ -14,5 +15,4 @@
 
         return Redirect("~/");
     }
-
 }

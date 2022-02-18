@@ -1,9 +1,236 @@
 @page "/"
+@page "/folder/{FolderId:int}"
+@page "/subscription/{SubscriptionId:int}"
+@using MediaFeeder.Data
+@using MediaFeeder.Models.db
+@using Microsoft.EntityFrameworkCore
+@using Humanizer
+@using MediaFeeder.Models
+@inject NavigationManager _navigationManager
+@inject IDbContextFactory<MediaFeederDataContext> _dbFactory
+@implements IDisposable
 
-<PageTitle>Index</PageTitle>
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudItem xs="12" sm="2">
+            <MudTextField Style="width: 100%;" Label="Search" @bind-Value="@Search"/>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudSelect @bind-Value="@Sort" Label="Sort">
+                <MudSelectItem Value="SortOrder.Oldest">Oldest</MudSelectItem>
+                <MudSelectItem Value="SortOrder.Newest">Newest</MudSelectItem>
+                <MudSelectItem Value="SortOrder.Playlist">Playlist</MudSelectItem>
+                <MudSelectItem Value="SortOrder.ReversePlaylist">Reverse Playlist</MudSelectItem>
+                <MudSelectItem Value="SortOrder.Popularity">Popularity</MudSelectItem>
+                <MudSelectItem Value="SortOrder.TopRated">Top Rated</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="5" sm="2">
+            <MudSelect @bind-Value="@ShowWatched" Label="Show Only">
+                <MudSelectItem Value="ShowOnlyWatched.Watched">Watched</MudSelectItem>
+                <MudSelectItem Value="ShowOnlyWatched.NotWatched">Not Watched</MudSelectItem>
+                <MudSelectItem Value="ShowOnlyWatched.All">(All)</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="5" sm="2">
+            <MudSelect @bind-Value="@ShowDownloaded" Label="Show Only">
+                <MudSelectItem Value="ShowOnlyDownloaded.Downloaded">Downloaded</MudSelectItem>
+                <MudSelectItem Value="ShowOnlyDownloaded.NotDownloaded">Not Downloaded</MudSelectItem>
+                <MudSelectItem Value="ShowOnlyDownloaded.All">(All)</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="2" sm="2">
+            <MudSelect @bind-Value="@ResultsPerPage" Label="Results Per Page">
+                <MudSelectItem Value="25">25</MudSelectItem>
+                <MudSelectItem Value="50">50</MudSelectItem>
+                <MudSelectItem Value="100">100</MudSelectItem>
+                <MudSelectItem Value="200">200</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="2">
+            <MudIconButton Icon="@Icons.Filled.PlayArrow" Title="Watch All" />
+            <MudIconButton Icon="@Icons.Filled.Shuffle" Title="Shuffle 1 Hour"/>
+            <MudIconButton Icon="@Icons.Filled.RemoveRedEye" Title="Mark All as Watched" />
+            <MudText Typo="Typo.caption">@_totalDuration</MudText>
+        </MudItem>
+    </MudGrid>
 
-<h1>Hello, world!</h1>
+    <MudGrid>
+        @foreach (var video in _videos)
+        {
+            var imageStyle = video.Watched
+                ? "opacity: 0.4;"
+                : "";
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard>
+                    <MudCardMedia Style="@imageStyle" Image="@("https://ytsm.home.foxocube.xyz/media/" + video.Thumb)"/>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">@video.Name</MudText>
+                        <MudText Typo="Typo.body2">
+                            @if (video.Views > 0)
+                            {
+                                <span>@video.Views.ToMetric() views &#x2022;&nbsp;</span>
+                            }
+                            @video.PublishDate.Humanize()
+                            @if (video.Duration > 0)
+                            {
+                                <span>&nbsp;&#x2022; @video.DurationSpan.Humanize()</span>
+                            }
+                        </MudText>
+                        <MudText Typo="Typo.body1">@video.Description.Truncate(120)</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Link="@("/video/"+video.Id)">Watch Now</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary">Mark Watched</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary">Download</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
 
-Welcome to your new app.
+    @*
+    <div class="card-wrapper d-flex align-items-stretch video" data-video-id="{{ video.id }}" style="width: 18rem;">
+                <div class="card mx-auto">
+                    <a href="{% url 'video' video.id %}" target="_blank">
+                        <div>
+                            <img class="card-img-top {% if video.watched %}muted{% endif %}" src="{% thumbnail video.thumb 410x230 %}" alt="Thumbnail">
+                            <div class="video-badges">
+                                {% if video.new and not video.watched %}
+                                    <div class="video-badge video-badge-new">New</div>
+                                {% endif %}
+                                {% if video.watched %}
+                                    <div class="video-badge video-badge-watched">Watched</div>
+                                {% endif %}
+                                {% if video.downloaded_path %}
+                                    <div class="video-badge video-badge-downloaded">Downloaded</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    <div class="card-body">
+                        <div class="dropdown show">
+                            <a class="card-more float-right text-muted"
+                               href="#" role="button" id="dropdownMenuLink"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="typcn typcn-cog"></span>
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                {% if video.watched %}
+                                    <a class="dropdown-item ajax-link" href="#" data-post-url="{% url 'ajax_action_mark_video_unwatched' video.id %}">
+                                        Mark not watched
+                                    </a>
+                                {% else %}
+                                    <a class="dropdown-item ajax-link" href="#" data-url="{% url 'ajax_action_mark_video_watched' video.id %}" onclick="video_markwatched(this)">
+                                        Mark watched
+                                    </a>
+                                {% endif %}
 
-<SurveyPrompt Title="How is Blazor working for you?"/>
+                                {% if video.downloaded_path %}
+                                    <a class="dropdown-item ajax-link" href="#" data-post-url="{% url 'ajax_action_delete_video_files' video.id %}">
+                                        Delete downloaded
+                                    </a>
+                                {% else %}
+                                    <a class="dropdown-item ajax-link" href="#" data-post-url="{% url 'ajax_action_download_video_files' video.id %}" >
+                                        Download
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>*@
+        }
+    </MudGrid>
+</MudContainer>
+
+@code
+{
+    private List<YtManagerAppVideo> _videos = new List<YtManagerAppVideo>();
+
+    [Parameter]
+    public int? FolderId { get; set; }
+
+    [Parameter]
+    public int? SubscriptionId { get; set; }
+
+    private MediaFeederDataContext _context;
+
+    private string? Search { get; set; }
+    private SortOrder Sort { get; set; } = SortOrder.Oldest;
+    private ShowOnlyWatched ShowWatched { get; set; } = ShowOnlyWatched.NotWatched;
+    private ShowOnlyDownloaded ShowDownloaded { get; set; } = ShowOnlyDownloaded.All;
+    private int ResultsPerPage { get; set; } = 50;
+    private int PageNumber { get; set; } = 1;
+    private string _totalDuration = "";
+
+    private IQueryable<YtManagerAppVideo> SelectedVideos
+    {
+        get
+        {
+            if (FolderId != null)
+            {
+                return _context.YtManagerAppVideos.Where(v => v.Subscription.ParentFolderId == FolderId);
+            }
+
+            if (SubscriptionId != null)
+            {
+                return _context.YtManagerAppVideos.Where(v => v.SubscriptionId == SubscriptionId);
+            }
+
+            return _context.YtManagerAppVideos;
+        }
+    }
+
+    private IOrderedQueryable<YtManagerAppVideo> FilteredVideos
+    {
+        get
+        {
+            var result = SelectedVideos;
+
+            result = ShowWatched switch
+            {
+                ShowOnlyWatched.Watched => result.Where(static v => v.Watched == true),
+                ShowOnlyWatched.NotWatched => result.Where(static v => v.Watched == false),
+                _ => result
+                };
+
+            result = ShowDownloaded switch
+            {
+                ShowOnlyDownloaded.Downloaded => result.Where(static v => v.DownloadedPath != null),
+                ShowOnlyDownloaded.NotDownloaded => result.Where(static v => v.DownloadedPath == null),
+                _ => result
+                };
+
+            if (!string.IsNullOrWhiteSpace(Search))
+            {
+                result = result.Where(v => v.Name.Contains(Search) || v.Description.Contains(Search));
+            }
+
+            return Sort switch
+            {
+                SortOrder.Newest => result.OrderByDescending(static v => v.PublishDate),
+                SortOrder.Oldest => result.OrderBy(static v => v.PublishDate),
+                SortOrder.Playlist => result.OrderByDescending(static v => v.PlaylistIndex),
+                SortOrder.ReversePlaylist => result.OrderBy(static v => v.PlaylistIndex),
+                SortOrder.Popularity => result.OrderByDescending(static v => v.Views),
+                SortOrder.TopRated => result.OrderByDescending(static v => v.Rating),
+                _ => result.OrderBy(static v => v.Id)
+            };
+        }
+    }
+
+    private IQueryable<YtManagerAppVideo> PagedVideos => FilteredVideos.Skip(ResultsPerPage * (PageNumber - 1)).Take(ResultsPerPage);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _context = await _dbFactory.CreateDbContextAsync();
+
+        _videos = await PagedVideos.ToListAsync();
+        _totalDuration = (await FilteredVideos.SumAsync(static v => v.Duration)).Seconds().Humanize();
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
+    }
+}

@@ -1,40 +1,67 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">MediaFeeder</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿@using MediaFeeder.Data
+@using MediaFeeder.Data.Identity
+@using MediaFeeder.Models.db
+@using Microsoft.AspNetCore.Http
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Identity
+@using System.Linq
+@inject IDbContextFactory<MediaFeederDataContext> _dbFactory
+@inject UserManager<AuthUser> _userManager
+@inject IHttpContextAccessor _httpContextAccessor
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="oi oi-plus" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="fetchdata">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
-            </NavLink>
-        </div>
-    </nav>
-</div>
+<MudNavMenu>
+    <MudText Typo="Typo.h6" Class="px-4">MediaFeeder</MudText>
+    <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Secondary Text</MudText>
+    <MudDivider Class="my-2"/>
+    @if (_folders != null)
+    {
+        <SubscriptionList Folder="@_folders" />
+    }
+    else
+    {
+        <span>null</span>
+    }
+</MudNavMenu>
 
 @code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    protected override async Task OnInitializedAsync()
     {
-        collapseNavMenu = !collapseNavMenu;
+        _busy = true;
+
+        try
+        {
+            _context = await _dbFactory.CreateDbContextAsync();
+
+            if (_context?.YtManagerAppSubscriptionFolders != null && _httpContextAccessor.HttpContext.User != null)
+            {
+                var folders = await _context.YtManagerAppSubscriptionFolders
+                    .Where(folder => folder.ParentId == null && folder.UserId == int.Parse(_userManager.GetUserId(_httpContextAccessor.HttpContext.User)))
+                    .Include(static f => f.YtManagerAppSubscriptions)
+                    .Include(static f => f.InverseParent)
+                    .OrderBy(f => f.Name)
+                    .ToListAsync();
+
+                _folders = new YtManagerAppSubscriptionFolder
+                {
+                    YtManagerAppSubscriptions = new List<YtManagerAppSubscription>(),
+                    InverseParent = folders
+                };
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
     }
 
+    private MediaFeederDataContext? _context;
+    private bool _busy = false;
+    private YtManagerAppSubscriptionFolder? _folders = null;
+
+    public void Dispose()
+    {
+        _context?.Dispose();
+    }
 }

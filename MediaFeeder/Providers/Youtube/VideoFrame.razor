@@ -1,0 +1,86 @@
+@inject IJSRuntime _jsRuntime
+@using System.Text.Json
+@implements IDisposable
+
+<div id="ytplayer" style="width: 100%; height: 80vh;"/>
+
+@code {
+    [Parameter]
+    public string VideoId { get; set; }
+
+    // private IJSObjectReference? _youtubeLibraryModule;
+    private IJSObjectReference? _youtubeCustomModule;
+    private DotNetObjectReference<VideoFrame>? _videoFrameRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // _youtubeLibraryModule = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "//www.youtube.com/iframe_api?origin=https%3A%2F%2Flocalhost");
+            _youtubeCustomModule = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "/youtube.js");
+            
+            _videoFrameRef ??= DotNetObjectReference.Create(this);
+            await _youtubeCustomModule.InvokeVoidAsync("initPlayer", _videoFrameRef, VideoId);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if(_youtubeCustomModule != null)
+        {
+            
+        }
+    }
+    
+    
+
+    [JSInvokable]
+    public Task onPlayerReady(JsonElement eventData) {
+        Console.WriteLine("Player Ready: ");
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task onPlaybackQualityChange(JsonElement eventData) {
+        Console.WriteLine("Quality change: ");
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task onPlaybackRateChange(object eventData) {
+        Console.WriteLine("Playback rate change: ");
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task onError(object eventData) {
+        Console.WriteLine("Playback Error: ");
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task onApiChange(object eventData) {
+        Console.WriteLine("API Change: ");
+
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task onPlayerStateChange(JsonElement eventData) {
+        Console.WriteLine("State change: ");
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        _videoFrameRef?.Dispose();
+        // _youtubeLibraryModule?.DisposeAsync();
+        _youtubeCustomModule?.DisposeAsync();
+    }
+
+}

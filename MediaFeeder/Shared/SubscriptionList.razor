@@ -1,0 +1,108 @@
+@using MediaFeeder.Models.db
+@using MediaFeeder.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Web
+@inject IDbContextFactory<MediaFeederDataContext> _dbFactory
+
+@foreach (var folder in _folders)
+{
+    <MudBadge Content="@_counts.GetValueOrDefault(folder.Id, 0)" Color="Color.Primary" Overlap="true" Class="mx-6 my-2">
+        <MudAvatar>@folder.Name[0..1]</MudAvatar>
+    </MudBadge>
+    @folder.Name
+    <SubscriptionList Folder="@folder" CountChanged="@(new Action<int>(e => UpdateCount(e, folder.Id)))"/>
+    <MudDivider Class="my-2"/>
+}
+
+@foreach (var (key, value) in _subscriptions)
+{
+    <div style="display: flex; align-items: center;">
+        <MudBadge Content="@value" Color="Color.Primary" Overlap="true" Class="mx-5 my-1">
+            <MudAvatar Image="@($"https://ytsm.home.foxocube.xyz/media/{key.Thumb}")" Size="Size.Small">@key.Name[0]</MudAvatar>
+        </MudBadge>
+        @key.Name
+    </div>
+}
+
+@code {
+    [Parameter]
+    public YtManagerAppSubscriptionFolder? Folder { get; set; }
+
+    [Parameter]
+    public EventCallback<int> CountChanged { get; set; }
+
+    private MediaFeederDataContext? _context;
+    private bool _busy = false;
+    private ICollection<YtManagerAppSubscriptionFolder> _folders;
+    private IEnumerable<KeyValuePair<YtManagerAppSubscription, int>> _subscriptions = new List<KeyValuePair<YtManagerAppSubscription, int>>();
+    private Dictionary<int, int> _counts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+
+        try
+        {
+            _context = await _dbFactory.CreateDbContextAsync();
+
+            _folders = Folder.InverseParent;
+
+            if (Folder.Id != 0)
+            {
+    // _subscriptions = (await Context.Entry(Folder)
+    //     .Collection(b => b.YtManagerAppSubscriptions)
+    //     .Query()
+    //     .Select(sub =>
+    //         new {Subscription = sub,
+    //             Count = Context
+    //                 .Entry(sub)
+    //                 .Collection(s => s.YtManagerAppVideos)
+    //                 .Query()
+    //                 .Count(vid => !vid.Watched)
+    //         })
+    //     .ToListAsync())
+    //     .Select(pair => (Subscription: pair.Subscription, Count: pair.Count));
+
+                var subIDs = await _context
+                    .Entry(_context.YtManagerAppSubscriptionFolders.Single(f => f.Id == Folder.Id))
+                    .Collection(static sub => sub.YtManagerAppSubscriptions)
+                    .Query()
+                    .AsQueryable()
+                    .Select(static sub => sub.Id)
+                    .ToListAsync();
+
+                var counts = await _context.YtManagerAppVideos
+                    .Where(vid => subIDs.Contains(vid.SubscriptionId) && !vid.Watched)
+                    .GroupBy(static vid => vid.SubscriptionId)
+                    .Select(static group => new { group.Key, count = group.Count() })
+                    .ToListAsync();
+
+                _subscriptions = Folder.YtManagerAppSubscriptions
+                    .Select(sub => new KeyValuePair<YtManagerAppSubscription, int>(
+                        sub,
+                        counts.SingleOrDefault(c => c.Key == sub.Id)?.count ?? 0
+                    )).OrderBy(f => f.Key.Name);
+            }
+
+            _counts[0] = _subscriptions.Sum(static c => c.Value);
+            await CountChanged.InvokeAsync(_counts.Sum(static c => c.Value));
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    public void Dispose()
+    {
+        // _context?.Dispose();
+    }
+
+    private void UpdateCount(int changeEventArgs, int folderId)
+    {
+        _counts[folderId] = changeEventArgs;
+        CountChanged.InvokeAsync(_counts.Sum(static c => c.Value));
+    }
+}

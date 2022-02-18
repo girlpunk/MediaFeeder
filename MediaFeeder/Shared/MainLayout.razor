@@ -1,20 +1,67 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager _navigationManager
 
-<PageTitle>MediaFeeder</PageTitle>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
+<PageTitle>@Title - MediaFeeder</PageTitle>
 
-    <main>
-        <div class="top-row px-4 auth">
+<CascadingValue Value="this">
+    <MudLayout>
+        <MudAppBar Elevation="1">
+            <MudText Typo="Typo.h5" Class="ml-3">@Title</MudText>
+            <MudSpacer />
             <LoginDisplay/>
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
+        </MudAppBar>
+        <MudDrawer Open="@ShowSidebar" ClipMode="DrawerClipMode.Always" Elevation="2">
+            <AuthorizeView>
+                <Authorized>
+                    <NavMenu/>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="Identity/Account/Login">Log in</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudDrawer>
+        <MudMainContent>
             @Body
-        </article>
-    </main>
-</div>
+        </MudMainContent>
+    </MudLayout>
+</CascadingValue>
+
+@code{
+
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var user = (await AuthStat).User;
+        if(!user.Identity.IsAuthenticated)
+        {
+            _navigationManager.NavigateTo($"/Identity/Account/Login?returnUrl={Uri.EscapeDataString(_navigationManager.ToBaseRelativePath(_navigationManager.Uri))}");
+        }
+    }
+
+    private string _title = "MediaFeeder";
+
+    public string Title
+    {
+        get => _title;
+        set {
+            _title = value;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool _showSidebar = true;
+
+    public bool ShowSidebar
+    {
+        get => _showSidebar;
+        set
+        {
+            _showSidebar = value;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+}
