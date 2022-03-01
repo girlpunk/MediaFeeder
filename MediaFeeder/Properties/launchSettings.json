@@ -15,7 +15,7 @@
       "applicationUrl": "https://localhost:7143;http://localhost:5013",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "MEDIAFEEDER_ConnectionStrings:DefaultConnection": "Host=helix;Database=ytsm;Username=ytsm;Password=verysecurepassword;port=5432"
+        "MEDIAFEEDER_ConnectionStrings:DefaultConnection": "Host=localhost;Database=ytsm;Username=ytsm;Password=verysecurepassword;port=5432"
       }
     },
     "IIS Express": {
