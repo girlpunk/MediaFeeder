@@ -38,7 +38,9 @@ namespace MediaFeeder.Controllers
                     Name = group.First().Subscription.ParentFolder.Name,
                     Tracked = group.Count(),
                     UnwatchedCount = group.Count(video => !video.Watched),
-                    UnwatchedDuration = group.Sum(video => video.Duration)
+                    UnwatchedDuration = group
+                        .Where(video => !video.Watched)
+                        .Sum(video => video.Duration)
                 })
                 .ToDictionaryAsync(group => group.Key, group => group);
 
