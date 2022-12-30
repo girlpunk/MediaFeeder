@@ -8,6 +8,7 @@ using MediaFeeder.Models;
 using MediaFeeder.Models.db;
 using MediaFeeder.Providers.Youtube;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -41,20 +42,24 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddOpenIdConnect(options =>
-    {
-        options.MetadataAddress =
-            "https://authentik.home.foxocube.xyz/application/o/mediafeeder-dev/.well-known/openid-configuration";
-        options.ClientId = "f4d8ca51f4a5bd6e5ccb620d5ce12fe42ad466ad";
-        options.ClientSecret = "e236b78c8a5d28fb3c4bbe2750cb1da103436d53d212a9744db35815db92b9b28396caa6a41d6ef9104e47ecd1907382f49301b7bf503abb314f7fd4a7cbcbbb";
-        options.ResponseType = "code";
-        options.SaveTokens = true;
-        options.Scope.Add("profile");
-        options.Scope.Add("email");
-        options.UsePkce = true;
-        options.CallbackPath = new PathString("/signin-oidc");
-        options.Authority = "https://authentik.home.foxocube.xyz/";
-    });
+    .AddOpenIdConnect(
+        OpenIdConnectDefaults.AuthenticationScheme,
+        "Authentik",
+        options =>
+        {
+            options.MetadataAddress =
+                "https://authentik.home.foxocube.xyz/application/o/mediafeeder-dev/.well-known/openid-configuration";
+            options.ClientId = "f4d8ca51f4a5bd6e5ccb620d5ce12fe42ad466ad";
+            options.ClientSecret = "e236b78c8a5d28fb3c4bbe2750cb1da103436d53d212a9744db35815db92b9b28396caa6a41d6ef9104e47ecd1907382f49301b7bf503abb314f7fd4a7cbcbbb";
+            options.ResponseType = "code";
+            options.SaveTokens = true;
+            options.Scope.Add("profile");
+            options.Scope.Add("email");
+            options.UsePkce = true;
+            options.CallbackPath = new PathString("/signin-oidc");
+            options.Authority = "https://authentik.home.foxocube.xyz/";
+        }
+    );
 
 builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
 
