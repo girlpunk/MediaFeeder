@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>aspnet-MediaFeeder-7D819315-1683-4814-89B5-49AA67E96200</UserSecretsId>
