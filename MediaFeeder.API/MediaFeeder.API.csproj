@@ -72,7 +72,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\aspire.ServiceDefaults\MediaFeeder.DTOs.csproj" />
+    <ProjectReference Include="..\MediaFeeder.DTOs\MediaFeeder.DTOs.csproj" />
   </ItemGroup>
 
 </Project>
