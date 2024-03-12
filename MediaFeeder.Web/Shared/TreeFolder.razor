@@ -1,0 +1,18 @@
+﻿@using MediaFeeder.DTOs.DTOs
+
+@if (Folder != null)
+{
+    <FluentNavGroup Title="@($"{Folder.Name} - {Unwatched}")" Href="@("/Folder/{Folder.Id}")" Expanded="true">
+        @foreach (var subfolder in Folder.ChildFolders)
+        {
+            <TreeFolder Id="subfolder" Parent="this"/>
+        }
+        @foreach (var subscription in _subscriptions)
+        {
+            <FluentNavLink Href="@($"/Subscription/{subscription.Id}")">
+                <img src="@subscription.Thumb" style="max-height: 20px;"/>
+                @subscription.Name - @subscription.Unwatched
+            </FluentNavLink>
+        }
+    </FluentNavGroup>
+}

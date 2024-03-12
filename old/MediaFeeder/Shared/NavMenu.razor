@@ -1,0 +1,59 @@
+﻿@using MediaFeeder.Data
+@using MediaFeeder.Data.Identity
+@using MediaFeeder.Models.db
+@using Microsoft.AspNetCore.Http
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Identity
+@using System.Linq
+@inject MediaFeederDataContext _context
+@inject UserManager<AuthUser> _userManager
+@inject IHttpContextAccessor _httpContextAccessor
+
+<MudNavMenu>
+    <MudText Typo="Typo.h6" Class="px-4">MediaFeeder</MudText>
+    <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Secondary Text</MudText>
+    <MudDivider Class="my-2"/>
+    @if (_folders != null)
+    {
+        <SubscriptionList Folder="@_folders" />
+    }
+    else
+    {
+        <span>null</span>
+    }
+</MudNavMenu>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+
+        try
+        {
+            if (_context?.YtManagerAppSubscriptionFolders != null && _httpContextAccessor.HttpContext.User != null)
+            {
+                var folders = await _context.YtManagerAppSubscriptionFolders
+                    .Where(folder => folder.ParentId == null && folder.UserId == int.Parse(_userManager.GetUserId(_httpContextAccessor.HttpContext.User)))
+                    .Include(static f => f.YtManagerAppSubscriptions)
+                    .Include(static f => f.InverseParent)
+                    .OrderBy(f => f.Name)
+                    .ToListAsync();
+
+                _folders = new YtManagerAppSubscriptionFolder
+                {
+                    YtManagerAppSubscriptions = new List<YtManagerAppSubscription>(),
+                    InverseParent = folders
+                };
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private bool _busy = false;
+    private YtManagerAppSubscriptionFolder? _folders = null;
+}

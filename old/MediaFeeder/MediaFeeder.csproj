@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>aspnet-MediaFeeder-7D819315-1683-4814-89B5-49AA67E96200</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Update="app.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AutoMapper" Version="13.0.1" />
+        <PackageReference Include="FluentValidation" Version="11.9.0" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+        <PackageReference Include="Hangfire.AspNetCore" Version="1.8.4" />
+        <PackageReference Include="Hangfire.Core" Version="1.8.4" />
+        <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.0" />
+        <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+        <PackageReference Include="LazyCache" Version="2.4.0" />
+        <PackageReference Include="LazyCache.AspNetCore" Version="2.4.0" />
+        <PackageReference Include="MediatR" Version="12.1.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="8.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.2">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
+        <PackageReference Include="WorkflowCore" Version="3.9.0" />
+        <PackageReference Include="WorkflowCore.Persistence.EntityFramework" Version="3.9.0" />
+        <PackageReference Include="WorkflowCore.Persistence.PostgreSQL" Version="3.9.0" />
+        <PackageReference Include="WorkflowCore.Users" Version="3.9.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Data\Migrations" />
+      <Folder Include="MediaFeeder\Data\Migrations" />
+      <Folder Include="Filters\" />
+      <Folder Include="Behaviours\" />
+      <Folder Include="Hubs\" />
+      <Folder Include="Pages\Shared\" />
+      <Folder Include="Services\" />
+    </ItemGroup>
+
+</Project>
