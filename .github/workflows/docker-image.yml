@@ -13,6 +13,13 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  Megalinter:
+    runs-on: ubunti-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: MegaLinter
+        uses: oxsecurity/megalinter@v7.10.0
   API:
     runs-on: ubuntu-latest
     permissions:
