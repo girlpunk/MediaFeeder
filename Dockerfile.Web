@@ -13,7 +13,5 @@ RUN dotnet build "MediaFeeder.Web.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "MediaFeeder.Web.csproj" -c Release -o /app/publish
 
-FROM base AS final
-WORKDIR /app
+FROM lipanski/docker-static-website:latest as final
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "MediaFeeder.Web.dll"]
