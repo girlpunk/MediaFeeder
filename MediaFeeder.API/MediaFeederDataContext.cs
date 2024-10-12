@@ -41,6 +41,8 @@ namespace MediaFeeder.API
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            optionsBuilder = optionsBuilder.UseLazyLoadingProxies();
+
             if (!optionsBuilder.IsConfigured)
             {
                 optionsBuilder

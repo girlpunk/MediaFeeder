@@ -3,6 +3,7 @@ using MediaFeeder.API.Models.db;
 using MediaFeeder.API.Models.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
@@ -56,7 +57,10 @@ builder.Services.AddHealthChecks()
 
 builder.Services.AddProblemDetails();
 
-builder.Services.AddDbContext<MediaFeederDataContext>();
+builder.Services.AddDbContext<MediaFeederDataContext>(options => {
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseNpgsql(connectionString);
+});
 
 builder.Services.AddIdentityCore<AuthUser>()
     .AddUserManager<UserManager>()
