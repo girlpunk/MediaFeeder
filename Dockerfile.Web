@@ -10,9 +10,11 @@ RUN dotnet restore "MediaFeeder.Web/MediaFeeder.Web.csproj" -a $TARGETARCH
 RUN dotnet publish -a $TARGETARCH "MediaFeeder.Web/MediaFeeder.Web.csproj" --no-restore -o /app
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
-EXPOSE 8080
-WORKDIR /app
-COPY --link --from=build /app .
+FROM nginx:alpine AS final
+WORKDIR /usr/share/nginx/html
+
+# Copy from Environment(build/publish)
+COPY --from=build app/publish/wwwroot .
+
+EXPOSE 80
 USER $APP_UID
-ENTRYPOINT ["dotnet", "MediaFeeder.Web.dll"]
