@@ -14,7 +14,7 @@ FROM nginx:alpine AS final
 WORKDIR /usr/share/nginx/html
 
 # Copy from Environment(build/publish)
-COPY --from=build /app/publish/wwwroot .
+COPY --from=build /app .
 
 EXPOSE 80
 USER $APP_UID
