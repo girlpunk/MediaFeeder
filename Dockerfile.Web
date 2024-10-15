@@ -2,6 +2,8 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG TARGETARCH
 WORKDIR /source
 
+RUN dotnet workload install wasm-tools
+
 # Copy project file and restore as distinct layers
 COPY --link . .
 RUN dotnet restore "MediaFeeder.Web/MediaFeeder.Web.csproj" -a $TARGETARCH
