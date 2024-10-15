@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 
 namespace MediaFeeder.Web.Pages;
 
@@ -14,6 +15,15 @@ public partial class Home
         await base.OnParametersSetAsync();
 
         if (Folders == null && ApiClient != null)
-            Folders = await ApiClient.Get();
+        {
+            try
+            {
+                Folders = await ApiClient.Get();
+            }
+            catch (AccessTokenNotAvailableException exception)
+            {
+                exception.Redirect();
+            }
+        }
     }
 }
