@@ -7,7 +7,7 @@ COPY --link . .
 RUN dotnet restore "MediaFeeder.Web/MediaFeeder.Web.csproj" -a $TARGETARCH
 
 # Copy source code and publish app
-RUN dotnet publish -a $TARGETARCH "MediaFeeder.Web/MediaFeeder.Web.csproj" --no-restore -o /app
+RUN dotnet publish -a $TARGETARCH "MediaFeeder.Web/MediaFeeder.Web.csproj" --no-restore -o /app -c Debug
 
 # Runtime stage
 FROM nginx:alpine AS final
