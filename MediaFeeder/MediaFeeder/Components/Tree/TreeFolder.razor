@@ -1,0 +1,42 @@
+﻿@using MediaFeeder.Data.db
+
+<FluentNavGroup
+    Href="@("/folder/"+Folder.Id)"
+    >
+    <TitleTemplate>
+        <FluentCounterBadge Count="@Unwatched" VerticalPosition="25" HorizontalPosition="100">
+            @Folder.Name
+        </FluentCounterBadge>
+    </TitleTemplate>
+    <ChildContent>
+        @foreach (var subfolder in Folder.InverseParent)
+        {
+            <TreeFolder Folder="subfolder" Parent="@this" />
+        }
+        @if(Folder != null)
+            @foreach (var subscription in Folder.YtManagerAppSubscriptions)
+        {
+            <TreeSubscription Subscription="@subscription" Parent="this"/>
+        }
+    </ChildContent>
+</FluentNavGroup>
+
+
+@code {
+    private int Unwatched { get; set; } = 0;
+
+    internal int AddUnwatched(int add)
+    {
+        Unwatched += add;
+        Parent?.AddUnwatched(add);
+        StateHasChanged();
+
+        return Unwatched;
+    }
+
+    [Parameter]
+    public YtManagerAppSubscriptionFolder? Folder { get; set; }
+    
+    [Parameter]
+    public TreeFolder? Parent { get; set; }
+}

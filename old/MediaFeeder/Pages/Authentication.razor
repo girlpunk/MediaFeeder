@@ -1,9 +1,0 @@
-@attribute [AllowAnonymous]
-@page "/authentication/{action}"
-
-<AuthenticatorView Action="@Action" />
-
-@code {
-    [Parameter]
-    public string Action { get; set; }
-}

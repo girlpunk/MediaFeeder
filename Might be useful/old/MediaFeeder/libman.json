@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "@astrouxds/astro-web-components@7.15.1",
+      "destination": "wwwroot/lib/astrouxds/astro-web-components/"
+    },
+    {
+      "provider": "unpkg",
+      "library": "jquery@3.7.0",
+      "destination": "wwwroot/lib/jquery/"
+    }
+  ]
+}

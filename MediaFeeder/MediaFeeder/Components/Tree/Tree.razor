@@ -1,0 +1,76 @@
+﻿@using MediaFeeder.Data
+@using MediaFeeder.Data.db
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+
+<FluentStack Orientation="Orientation.Vertical">
+    <FluentStack Orientation="Orientation.Horizontal">
+    <FluentButton IconEnd="@(new Icons.Regular.Size16.Add())"
+                  Title="Add Subscription"/>
+    <FluentButton IconEnd="@(new Icons.Regular.Size16.FolderAdd())"
+                  Title="Add Folder"/>
+    <FluentButton IconEnd="@(new Icons.Regular.Size16.ArrowImport())"
+                  Title="Import Subscriptions"/>
+    <FluentSpacer/>
+    <FluentButton IconEnd="@(new Icons.Regular.Size16.Edit())"
+                  Title="Edit"/>
+    <FluentButton IconEnd="@(new Icons.Regular.Size16.Delete())"
+                  Title="Delete"/>
+    </FluentStack>
+
+    @if (Folders != null)
+    {
+        <CascadingValue Value="UnwatchedCache" Name="@nameof(UnwatchedCache)">
+            <FluentNavMenu Expanded="true" Width="250" Title="Subscriptions">
+                @foreach (var folder in Folders)
+                {
+                    <TreeFolder Folder="@folder"/>
+                }
+            </FluentNavMenu>
+        </CascadingValue>
+    }
+    else
+    {
+        <span>Loading...</span>
+        <FluentSkeleton Style="margin-top: 10px" Height="10px;"></FluentSkeleton>
+        <FluentSkeleton Style="margin-top: 10px" Height="10px;"></FluentSkeleton>
+        <FluentSkeleton Style="margin-top: 10px" Height="10px;"></FluentSkeleton>
+    }
+</FluentStack>
+
+@code {
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UnwatchedCache == null && ContextFactory != null)
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            UnwatchedCache = context.YtManagerAppVideos.Where(v => !v.Watched)
+                .GroupBy(v => v.SubscriptionId)
+                .Select(g => new { Id = g.Key, Count = g.Count()})
+                .ToDictionary(g => g.Id, g => g.Count);
+            
+            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = await UserManager.GetUserAsync(auth.User);
+        
+            Folders = context.YtManagerAppSubscriptionFolders.Where(f => f.User == user)
+                .Include(f => f.InverseParent)
+                .Include(f => f.YtManagerAppSubscriptions)
+                .ToList();
+        }
+        
+        await base.OnParametersSetAsync();
+    }
+    
+    [Inject]
+    public IDbContextFactory<MediaFeederDataContext>? ContextFactory { get; set; }
+   
+    public Dictionary<int, int>? UnwatchedCache { get; set; }
+    
+    [Inject]
+    public required AuthenticationStateProvider  AuthenticationStateProvider  { get; init; }
+    
+    [Inject]
+    public required UserManager<AuthUser> UserManager { get; set; }
+
+    private List<YtManagerAppSubscriptionFolder>? Folders { get; set; }
+}

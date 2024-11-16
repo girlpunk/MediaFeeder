@@ -1,0 +1,31 @@
+﻿@page "/auth"
+
+@using MediaFeeder.Data
+@using MediaFeeder.Data.db
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using MediaFeeder.Components.Tree
+
+@attribute [Authorize]
+@attribute [StreamRendering]
+
+<PageTitle>Auth</PageTitle>
+
+<h1>You are authenticated</h1>
+
+<AuthorizeView>
+    Hello @context.User.Identity?.Name!
+    
+   
+    Folders:
+    <Tree/>
+</AuthorizeView>
+
+@code
+{
+    [Inject] public required MediaFeederDataContext Context { get; init; }
+    
+    
+    
+    
+}
