@@ -1,179 +1,134 @@
 ﻿@page "/"
 @page "/folder/{folderId:int}"
 @page "/subscription/{subscriptionId:int}"
+@using Humanizer
 @using MediaFeeder.Components.Layout
-@using MediaFeeder.Data
-@using MediaFeeder.Data.db
 @using MediaFeeder.Filters
-@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+
 @layout ListLayout
+@attribute [Authorize]
 
-<PageTitle>Home</PageTitle>
+<PageTitle>@Title</PageTitle>
 
-<FluentStack Orientation="Orientation.Horizontal">
-<FluentSearch @ref=searchTest
-              @bind-Value="@searchValue"
-              Placeholder="Search for State" />
-@* @bind-Value:after=HandleSearchInput *@
+<GridRow Gutter="8">
+    <GridCol Class="gutter-row" Span="5">
+        <Search Placeholder="Search" Size="@InputSize.Large" EnterButton="@("Search")" @bind-Value="@SearchValue"
+                OnSearch="OnParametersSetAsync"/>
+    </GridCol>
 
-<FluentSelect TOption="SortOrders"
-              Label="Sort"
-              Items="@([
-                         SortOrders.Newest,
-                         SortOrders.Oldest,
-                         SortOrders.PlaylistOrder,
-                         SortOrders.ReversePlaylistOrder,
-                         SortOrders.Popularity,
-                         SortOrders.TopRated
-                     ])"
-              Placeholder="Make a selection..."
-              OptionValue="@(p => p.ToString())"
-              OptionText="@(p => p.ToString())"
-              @bind-SelectedOption="@SortOrder" />
+    <GridCol Class="gutter-row" Span="3">
+        <label>Sort</label>
+        <Select TItem="SortOrders"
+                TItemValue="SortOrders"
+                DataSource="@(
+                            [
+                                SortOrders.Newest,
+                                SortOrders.Oldest,
+                                SortOrders.PlaylistOrder,
+                                SortOrders.ReversePlaylistOrder,
+                                SortOrders.Popularity,
+                                SortOrders.TopRated
+                            ])"
+                @bind-Value="@SortOrder"
+                ItemLabel="c => c.Humanize()"
+                DefaultActiveFirstOption
+                Placeholder="Make a selection..."
+                OnSelectedItemChanged="OnParametersSetAsync">
+        </Select>
+    </GridCol>
 
-<FluentSelect TOption="bool?"
-              Label="Show Only"
-              Items="@([true, false, null])"
-              Placeholder="Make a selection..."
-              OptionValue="@(p => p.ToString())"
-              OptionText="@(p => p ?? true ? "Watched" : "Not Watched")"
-              @bind-SelectedOption="@ShowWatched" />
+    <GridCol Class="gutter-row" Span="3">
+        <div>Show Only</div>
+        <Select
+            TItem="bool?"
+            TItemValue="bool?"
+            DefaultValue="null"
+            @bind-Value="@ShowWatched"
+            OnSelectedItemChanged="OnParametersSetAsync">
+            <SelectOptions>
+                <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
+                <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Watched"/>
+                <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Watched"/>
+            </SelectOptions>
+        </Select>
+    </GridCol>
 
-<FluentSelect TOption="bool?"
-              Label="Show Only"
-              Items="@([true, false, null])"
-              Placeholder="Make a selection..."
-              OptionValue="@(p => p.ToString())"
-              OptionText="@(p => p ?? true ? "Downloaded" : "Not Downloaded")"
-              @bind-SelectedOption="@ShowDownloaded" />
+    <GridCol Class="gutter-row" Span="3">
+        <span>Show Only</span>
+        <Select
+            TItem="bool?"
+            TItemValue="bool?"
+            DefaultValue="null"
+            @bind-Value="@ShowDownloaded"
+            OnSelectedItemChanged="OnParametersSetAsync">
+            <SelectOptions>
+                <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
+                <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Downloaded"/>
+                <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Downloaded"/>
+            </SelectOptions>
+        </Select>
+    </GridCol>
 
-<FluentSelect TOption="int"
-              Label="Results per page"
-              Items="@([25, 50, 100, 200])"
-              Placeholder="Make a selection..."
-              OptionValue="@(p => p.ToString())"
-              OptionText="@(p => p.ToString())"
-              @bind-SelectedOption="@ResultsPerPage" />
+    <GridCol Class="gutter-row" Span="2">
+        <span>Results per page</span>
+        <Select
+            TItem="int"
+            TItemValue="int"
+            @bind-Value="@ResultsPerPage"
+            OnSelectedItemChanged="OnParametersSetAsync">
+            <SelectOptions>
+                <SelectOption Value="25" Label="25"/>
+                <SelectOption Value="50" Label="50"/>
+                <SelectOption Value="100" Label="100"/>
+                <SelectOption Value="200" Label="200"/>
+            </SelectOptions>
+        </Select>
+    </GridCol>
 
-<FluentButton IconStart="@(new Icons.Regular.Size16.PlayMultiple())">
-    Watch All Now
-</FluentButton>
+    <GridCol Class="gutter-row" Span="8">
+        <Flex Justify="space-evenly">
+            <Tooltip Title="Watch All Now">
+                <Button Icon="@(IconType.Outline.PlayCircle)"></Button>
+            </Tooltip>
 
-<FluentButton IconStart="@(new Icons.Regular.Size16.BracesCheckmark())">
-    Mark All as Watched
-</FluentButton>
+            <Tooltip Title="Mark All as Watched">
+                <Button Icon="@(IconType.Outline.CheckCircle)"></Button>
+            </Tooltip>
 
-<FluentButton IconStart="@(new Icons.Regular.Size16.Timer())">
-    TIME
-</FluentButton>
+            <Button Icon="@(IconType.Outline.ClockCircle)">
+                @Duration.Humanize()
+            </Button>
 
-<FluentButton IconStart="@(new Icons.Regular.Size16.ArrowShuffle())">
-    Shuffle
-</FluentButton>
-</FluentStack>
+            <Tooltip Title="Shuffle">
+                <Button Icon="@(IconType.Outline.Swap)"></Button>
+            </Tooltip>
+        </Flex>
+    </GridCol>
+</GridRow>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<p>Folder: @FolderId</p>
-<p>Subscription: @SubscriptionId</p>
-
-<FluentGrid Spacing="5" AdaptiveRendering="true">
+<GridRow Gutter="(16, 16)" Style="padding: 16px;" Justify="space-around">
     @if (Videos != null)
     {
         @foreach (var video in Videos)
         {
-            <FluentGridItem md="3" sm="6" xs="12">
-                <FluentCard>
-                    <img src="@video.Thumb"/>
-                    <img src="@video.Thumbnail"/>
-                    Downloaded: @(video.DownloadedPath == null)
-                    Watched: @video.Watched
-                    New: @video.New
-
-                    Name: @video.Name
-
-                    @video.Views Views
-                    @video.PublishDate
-                    @video.DurationSpan
-
-                    <p>@video.Description</p>
-
-                    <FluentButton Appearance="Appearance.Accent">Hello</FluentButton>
-                </FluentCard>
-            </FluentGridItem>
+            <GridCol Md="4" Sm="6" Xs="12">
+                <VideoCard Video="video"/>
+            </GridCol>
         }
     }
     else
     {
-        <FluentSkeleton Shape="SkeletonShape.Circle"></FluentSkeleton>
-        <FluentSkeleton Style="margin-top: 10px" Height="10px;"></FluentSkeleton>
-        <FluentSkeleton Style="margin-top: 10px" Height="10px;"></FluentSkeleton>
-        <FluentSkeleton Style="margin-top: 10px" Height="10px;"></FluentSkeleton>
-        <FluentSkeleton Style="margin-top: 20px;margin-bottom: 10px;" Width="75px" Height="30px"></FluentSkeleton>
+        <VideoCard Video="null"/>
+        <VideoCard Video="null"/>
+        <VideoCard Video="null"/>
+        <VideoCard Video="null"/>
+        <VideoCard Video="null"/>
+        <VideoCard Video="null"/>
     }
-</FluentGrid>
+</GridRow>
 
-@code {
-    [Parameter]
-    public int? FolderId { get; set; }
-    
-    [Parameter]
-    public int? SubscriptionId { get; set; }
-    
-    public List<YtManagerAppVideo>? Videos { get; set; }
-    
-    [Inject]
-    public MediaFeederDataContext? DataContext { get; set; }
-    
-    FluentSearch? searchTest;
-    string? searchValue { get; set; } = string.Empty;
-    SortOrders SortOrder { get; set; } = SortOrders.Oldest;
-    bool? ShowWatched { get; set; } = true;
-    bool? ShowDownloaded { get; set; }
-    int ResultsPerPage  { get; set; } = 50;
-
-    protected async override Task OnParametersSetAsync()
-    {
-        var source = DataContext.YtManagerAppVideos.AsQueryable();
-
-        if (FolderId != null)
-        {
-            source = source.Where(v => v.Subscription.ParentFolderId == FolderId);
-        }
-
-        if (SubscriptionId != null)
-        {
-            source = source.Where(v => v.SubscriptionId == SubscriptionId);
-        }
-
-        source = SortOrder switch
-        {
-            SortOrders.Oldest => source.OrderBy(v => v.PublishDate),
-            SortOrders.Newest => source.OrderByDescending(v => v.PublishDate),
-            SortOrders.PlaylistOrder => source.OrderBy(v => v.PlaylistIndex),
-            SortOrders.ReversePlaylistOrder => source.OrderByDescending(v => v.PlaylistIndex),
-            SortOrders.Popularity => source.OrderByDescending(v => v.Views),
-            SortOrders.TopRated => source.OrderByDescending(v => v.Rating),
-            _ => source
-        };
-        
-        if(ShowWatched != null)
-            source = source.Where(v => v.Watched == ShowWatched);
-
-        if (ShowDownloaded != null)
-            source = source.Where(v => string.IsNullOrWhiteSpace(v.DownloadedPath) != ShowDownloaded);
-        
-        if (!string.IsNullOrWhiteSpace(searchValue))
-        {
-            source = source.Where(v => v.Name.Contains(searchValue) || v.Description.Contains((searchValue)));
-        }
-
-        source = source.Take(ResultsPerPage);
-
-        Videos = await source.ToListAsync();
-        
-        await base.OnParametersSetAsync();
-    }
-}
+<Flex Justify="center">
+    <Pagination Current="@PageNumber" Total="@ItemsAvailable" PageSize="@ResultsPerPage"
+                OnChange="PageChange"/>
+</Flex>

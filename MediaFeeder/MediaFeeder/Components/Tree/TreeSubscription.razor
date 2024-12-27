@@ -1,40 +1,32 @@
-﻿@using MediaFeeder.Data.db
-
-<FluentNavLink Href="@("/subscription/"+Subscription.Id)">
-    <img src="@Subscription.Thumb" style="max-height: 20px;"/>
-    <img src="@Subscription.Thumbnail" style="max-height: 20px;"/>
-
-    <FluentCounterBadge Count="@Unwatched" VerticalPosition="0" HorizontalPosition="100">
-        @Subscription.Name
-    </FluentCounterBadge>
-</FluentNavLink>
-
-@code {
-    private int Unwatched { get; set; }
-    
-    [Parameter] public TreeFolder? Parent { get; set; }
-   
-    [Parameter]
-    public YtManagerAppSubscription? Subscription { get; set; }
-
-    protected override void OnParametersSet()
-    {
-        if (
-            Unwatched == 0 &&
-            Subscription != null &&
-            UnwatchedCache != null && 
-            UnwatchedCache.TryGetValue(Subscription.Id, out var unwatched) &&
-            Parent != null
-        )
-        {
-            Unwatched = unwatched;
-            Parent.AddUnwatched(unwatched);
-            StateHasChanged();
-        }
-        
-        base.OnParametersSet();
-    }
-    
-    [CascadingParameter(Name = nameof(UnwatchedCache))]
-    public Dictionary<int, int>? UnwatchedCache { get; set; }
+﻿@using Humanizer
+@using MediaFeeder.Data
+@if (Subscription != null)
+{
+    <TreeNode SelectedChanged="OnSelectedChanged" IsLeaf="true" TItem="ITreeSelectable" DataItem="@Subscription">
+        <IconTemplate>
+            <Image Src="@("https://ytsm.home.foxocube.xyz/media/" + Subscription.Thumb)" Alt="Subscription Icon"
+                   Style="max-width: 24px; max-height: 24px;"/>
+        </IconTemplate>
+        <TitleTemplate>
+            <Badge Count="@Unwatched" Offset="(15, 0)" >
+                <CountTemplate>
+                    @if (Unwatched > 0)
+                    {
+                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px;">
+                            @Unwatched.ToMetric()
+                        </sup>
+                    }
+                </CountTemplate>
+                <ChildContent>
+                <span>
+                    @Subscription.Name
+                </span>
+                </ChildContent>
+            </Badge>
+        </TitleTemplate>
+    </TreeNode>
+}
+else
+{
+    <Skeleton/>
 }

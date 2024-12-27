@@ -7,6 +7,5 @@ public enum SortOrders
     PlaylistOrder,
     ReversePlaylistOrder,
     Popularity,
-    TopRated,
-    
+    TopRated
 }

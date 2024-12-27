@@ -1,10 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaFeeder.Aspire", "MediaFeeder.Aspire\MediaFeeder.Aspire.csproj", "{207AF68F-D466-496C-9868-3EF61B51EEA8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaFeeder", "MediaFeeder\MediaFeeder\MediaFeeder.csproj", "{D374D07C-DC65-489F-9494-4E0C764C22EC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaFeeder.Client", "MediaFeeder\MediaFeeder.Client\MediaFeeder.Client.csproj", "{60660EBB-511B-40AE-87DA-4370B242D301}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,17 +8,9 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{207AF68F-D466-496C-9868-3EF61B51EEA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{207AF68F-D466-496C-9868-3EF61B51EEA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{207AF68F-D466-496C-9868-3EF61B51EEA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{207AF68F-D466-496C-9868-3EF61B51EEA8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D374D07C-DC65-489F-9494-4E0C764C22EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D374D07C-DC65-489F-9494-4E0C764C22EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D374D07C-DC65-489F-9494-4E0C764C22EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D374D07C-DC65-489F-9494-4E0C764C22EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{60660EBB-511B-40AE-87DA-4370B242D301}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{60660EBB-511B-40AE-87DA-4370B242D301}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{60660EBB-511B-40AE-87DA-4370B242D301}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{60660EBB-511B-40AE-87DA-4370B242D301}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

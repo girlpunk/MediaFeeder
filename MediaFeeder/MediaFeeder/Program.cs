@@ -1,17 +1,18 @@
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using MediaFeeder.Client.Pages;
+using MediaFeeder;
 using MediaFeeder.Components;
 using MediaFeeder.Components.Account;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
+using MediaFeeder.Providers.Youtube;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.FluentUI.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+// using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,11 +36,11 @@ builder.Services.AddAuthentication(options =>
         OpenIdConnectDefaults.AuthenticationScheme,
         "Authentik",
         options =>
-    {
-        options.MetadataAddress = "https://authentik.home.foxocube.xyz/application/o/mediafeeder/";
-        options.ClientId = "bz2cp1KiWnFio7N7rGp3wtcuehbhWc17sSE9Nedk";
-        options.Scope.Add("email");
-    })
+        {
+            options.MetadataAddress = "https://authentik.home.foxocube.xyz/application/o/mediafeeder/";
+            options.ClientId = "bz2cp1KiWnFio7N7rGp3wtcuehbhWc17sSE9Nedk";
+            options.Scope.Add("email");
+        })
     .AddIdentityCookies();
 
 // builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -48,7 +49,8 @@ builder.Services.AddAuthentication(options =>
 //         builder.Configuration.GetSection("Auth").Bind(options);
 //     });
 
-builder.Services.AddDbContextFactory<MediaFeederDataContext>(options => {
+builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
+{
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connectionString);
 });
@@ -98,10 +100,15 @@ builder.Services.AddHealthChecks()
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddFluentUIComponents(options =>
-{
-    options.ValidateClassNames = false;
-});
+builder.Services.AddScoped<IProvider, YoutubeProvider>();
+
+// builder.Services.AddFluentUIComponents(options =>
+// {
+//     options.ValidateClassNames = false;
+// });
+
+builder.Services.AddAntDesign();
+builder.Services.AddControllers();
 
 
 var app = builder.Build();
@@ -115,7 +122,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Error", true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -131,10 +138,9 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapControllers();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(MediaFeeder.Client._Imports).Assembly);
+    .AddInteractiveServerRenderMode();
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();

@@ -1,18 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MediaFeeder.Data.db
+namespace MediaFeeder.Data.db;
+
+public class DjangoContentType
 {
-    public class DjangoContentType
-    {
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [MaxLength(100)]
-        public string AppLabel { get; set; }
+    [MaxLength(100)] public string AppLabel { get; set; }
 
-        [MaxLength(100)]
-        public string Model { get; set; }
+    [MaxLength(100)] public string Model { get; set; }
 
-        public virtual ICollection<AuthPermission> AuthPermissions { get; init; }
-        public virtual ICollection<DjangoAdminLog> DjangoAdminLogs { get; init; }
-    }
+    public virtual ICollection<AuthPermission> AuthPermissions { get; init; }
+    public virtual ICollection<DjangoAdminLog> DjangoAdminLogs { get; init; }
 }

@@ -1,5 +1,4 @@
 ﻿using MediaFeeder.Data.db;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Data;
@@ -21,8 +20,19 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
     public virtual DbSet<DjangoContentType> DjangoContentTypes { get; init; }
     public virtual DbSet<DjangoMigration> DjangoMigrations { get; init; }
     public virtual DbSet<DjangoSession> DjangoSessions { get; init; }
-    public virtual DbSet<DynamicPreferencesGlobalpreferencemodel> DynamicPreferencesGlobalpreferencemodels { get; init; }
-    public virtual DbSet<DynamicPreferencesUsersUserpreferencemodel> DynamicPreferencesUsersUserpreferencemodels { get; init; }
+
+    public virtual DbSet<DynamicPreferencesGlobalpreferencemodel> DynamicPreferencesGlobalpreferencemodels
+    {
+        get;
+        init;
+    }
+
+    public virtual DbSet<DynamicPreferencesUsersUserpreferencemodel> DynamicPreferencesUsersUserpreferencemodels
+    {
+        get;
+        init;
+    }
+
     public virtual DbSet<EasyThumbnailsSource> EasyThumbnailsSources { get; init; }
     public virtual DbSet<EasyThumbnailsThumbnail> EasyThumbnailsThumbnails { get; init; }
     public virtual DbSet<EasyThumbnailsThumbnaildimension> EasyThumbnailsThumbnaildimensions { get; init; }
@@ -37,17 +47,16 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         optionsBuilder = optionsBuilder.UseLazyLoadingProxies();
 
         if (!optionsBuilder.IsConfigured)
-        {
             optionsBuilder
                 .UseLazyLoadingProxies()
-                .UseNpgsql("Host=localhost;Database=ytsm;Username=ytsm;Password=verysecurepassword;port=5432");
-        }
+                .UseNpgsql(
+                    "Host=localhost;Database=ytsm;Username=ytsm;Password=verysecurepassword;port=5432;Timeout=60");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         modelBuilder.Entity<AuthGroup>(entity =>
         {
             entity.ToTable("auth_group");
@@ -68,7 +77,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
 
         modelBuilder.Entity<AuthProvider>(entity =>
         {
-            entity.HasIndex(e => new {e.LoginProvider, e.ProviderKey})
+            entity.HasIndex(e => new { e.LoginProvider, e.ProviderKey })
                 .IsUnique();
 
             entity.Property(e => e.LoginProvider)
@@ -87,7 +96,8 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
 
             entity.HasIndex(e => e.GroupId, "auth_group_permissions_group_id_b120cbf9");
 
-            entity.HasIndex(e => new { e.GroupId, e.PermissionId }, "auth_group_permissions_group_id_permission_id_0cd325b0_uniq")
+            entity.HasIndex(e => new { e.GroupId, e.PermissionId },
+                    "auth_group_permissions_group_id_permission_id_0cd325b0_uniq")
                 .IsUnique();
 
             entity.HasIndex(e => e.PermissionId, "auth_group_permissions_permission_id_84c5c92e");
@@ -117,7 +127,8 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
 
             entity.HasIndex(e => e.ContentTypeId, "auth_permission_content_type_id_2f476e4b");
 
-            entity.HasIndex(e => new { e.ContentTypeId, e.Codename }, "auth_permission_content_type_id_codename_01ab375a_uniq")
+            entity.HasIndex(e => new { e.ContentTypeId, e.Codename },
+                    "auth_permission_content_type_id_codename_01ab375a_uniq")
                 .IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -146,7 +157,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.ToTable("auth_user");
 
             entity.HasIndex(e => e.Username, "auth_user_username_6821ab7c_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.Username, "auth_user_username_key")
                 .IsUnique();
@@ -187,7 +198,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("username");
-                
+
             entity.Ignore(e => e.AccessFailedCount);
             entity.Ignore(e => e.ConcurrencyStamp);
             entity.Ignore(e => e.EmailConfirmed);
@@ -241,7 +252,8 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
 
             entity.HasIndex(e => e.UserId, "auth_user_user_permissions_user_id_a95ead1b");
 
-            entity.HasIndex(e => new { e.UserId, e.PermissionId }, "auth_user_user_permissions_user_id_permission_id_14a6b632_uniq")
+            entity.HasIndex(e => new { e.UserId, e.PermissionId },
+                    "auth_user_user_permissions_user_id_permission_id_14a6b632_uniq")
                 .IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -309,7 +321,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.ToTable("django_celery_results_chordcounter");
 
             entity.HasIndex(e => e.GroupId, "django_celery_results_chordcounter_group_id_1f70858c_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.GroupId, "django_celery_results_chordcounter_group_id_key")
                 .IsUnique();
@@ -337,7 +349,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasIndex(e => e.DateDone, "django_cele_date_do_caae0e_idx");
 
             entity.HasIndex(e => e.GroupId, "django_celery_results_groupresult_group_id_a085f1a9_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.GroupId, "django_celery_results_groupresult_group_id_key")
                 .IsUnique();
@@ -381,7 +393,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasIndex(e => e.Worker, "django_cele_worker_d54dd8_idx");
 
             entity.HasIndex(e => e.TaskId, "django_celery_results_taskresult_task_id_de0d95bf_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.TaskId, "django_celery_results_taskresult_task_id_key")
                 .IsUnique();
@@ -480,7 +492,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasIndex(e => e.ExpireDate, "django_session_expire_date_a5c62663");
 
             entity.HasIndex(e => e.SessionKey, "django_session_session_key_c0390e0f_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.Property(e => e.SessionKey)
                 .HasMaxLength(40)
@@ -503,12 +515,12 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasIndex(e => e.Name, "dynamic_preferences_globalpreferencemodel_name_033debe0");
 
             entity.HasIndex(e => e.Name, "dynamic_preferences_globalpreferencemodel_name_033debe0_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.Section, "dynamic_preferences_globalpreferencemodel_section_c1ee9cc3");
 
             entity.HasIndex(e => e.Section, "dynamic_preferences_globalpreferencemodel_section_c1ee9cc3_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.Property(e => e.Id).HasColumnName("id");
 
@@ -528,14 +540,15 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("dynamic_preferences_users_userpreferencemodel");
 
-            entity.HasIndex(e => new { e.InstanceId, e.Section, e.Name }, "dynamic_preferences_user_instance_id_section_name_29814e3f_uniq")
+            entity.HasIndex(e => new { e.InstanceId, e.Section, e.Name },
+                    "dynamic_preferences_user_instance_id_section_name_29814e3f_uniq")
                 .IsUnique();
 
             entity.HasIndex(e => e.Name, "dynamic_preferences_user_name_11ac488d_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.Section, "dynamic_preferences_user_section_ba869570_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.InstanceId, "dynamic_preferences_users__instance_id_bf1d7718");
 
@@ -572,14 +585,15 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasIndex(e => e.Name, "easy_thumbnails_source_name_5fe0edc6");
 
             entity.HasIndex(e => e.Name, "easy_thumbnails_source_name_5fe0edc6_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.StorageHash, "easy_thumbnails_source_storage_hash_946cbcc9");
 
             entity.HasIndex(e => e.StorageHash, "easy_thumbnails_source_storage_hash_946cbcc9_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => new { e.StorageHash, e.Name }, "easy_thumbnails_source_storage_hash_name_481ce32d_uniq")
+            entity.HasIndex(e => new { e.StorageHash, e.Name },
+                    "easy_thumbnails_source_storage_hash_name_481ce32d_uniq")
                 .IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -601,20 +615,21 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("easy_thumbnails_thumbnail");
 
-            entity.HasIndex(e => new { e.StorageHash, e.Name, e.SourceId }, "easy_thumbnails_thumbnai_storage_hash_name_source_fb375270_uniq")
+            entity.HasIndex(e => new { e.StorageHash, e.Name, e.SourceId },
+                    "easy_thumbnails_thumbnai_storage_hash_name_source_fb375270_uniq")
                 .IsUnique();
 
             entity.HasIndex(e => e.Name, "easy_thumbnails_thumbnail_name_b5882c31");
 
             entity.HasIndex(e => e.Name, "easy_thumbnails_thumbnail_name_b5882c31_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.HasIndex(e => e.SourceId, "easy_thumbnails_thumbnail_source_id_5b57bc77");
 
             entity.HasIndex(e => e.StorageHash, "easy_thumbnails_thumbnail_storage_hash_f1435f49");
 
             entity.HasIndex(e => e.StorageHash, "easy_thumbnails_thumbnail_storage_hash_f1435f49_like")
-                .HasOperators(new[] { "varchar_pattern_ops" });
+                .HasOperators("varchar_pattern_ops");
 
             entity.Property(e => e.Id).HasColumnName("id");
 

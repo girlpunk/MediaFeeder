@@ -1,0 +1,86 @@
+@page "/video/{id:int}/{next}"
+@page "/video/{id:int}"
+@using Humanizer
+@using MediaFeeder.Data
+@inject MediaFeederDataContext Context
+@inject IServiceProvider ServiceProvider
+
+<Layout>
+    <Header Style="background-color: white;">
+        <Flex Justify="space-between" Align="flex-start">
+            <div class="top-row ps-3 navbar">
+                <div class="container-fluid">
+                    <Title>
+                        <a class="navbar-brand" href="/">MediaFeeder</a> 
+                        @if (VideoObject != null)
+                        {
+                            @VideoObject?.Name
+                        }
+                        else
+                        {
+                            <Skeleton/>
+                        }
+                    </Title>
+                </div>
+            </div>
+            <div class="top-row px-4">
+                @if (VideoObject != null && Frame != null)
+                {
+                    <Tooltip Title="@($"Watch on {Frame.Name}")">
+                        <a href="@("https://youtube.com/watch?v=" + VideoObject.VideoId)">
+                            <Button Icon="@IconType.Outline.Youtube"></Button>
+                        </a>
+                    </Tooltip>
+                }
+
+                <Tooltip Title="@WatchButtonText">
+                    <Button Icon="@WatchButtonIcon" Color="@WatchButtonColour" OnClick="@MarkWatched"></Button>
+                </Tooltip>
+                
+                @if (Next != null)
+                {
+                    <Tooltip Title="Go to next video">
+                        <Button Icon="@IconType.Outline.FastForward" OnClick="@GoNext"></Button>
+                    </Tooltip>
+                }
+
+                <Tooltip Title="@DownloadButtonText" >
+                    <Button Icon="@DownloadButtonIcon" Color="@DownloadButtonColour" OnClick="@Download"></Button>
+                </Tooltip>
+
+                @if (Next != null)
+                {
+                    <Tooltip Title="Remaining">
+                        <Button>@UpNextCount, @UpNextDuration.Humanize()</Button>
+                    </Tooltip>
+                }
+            </div>
+        </Flex>
+    </Header>
+    <Content>
+        @if (VideoObject != null && Frame != null)
+        {
+            <DynamicComponent Type="@Frame" Parameters="@(new Dictionary<string, object>() { { "VideoId", VideoObject.VideoId } })"/>
+            
+            <AntDesign.Text Type="secondary">
+                @if (VideoObject.Views > 0)
+                {
+                    <span>@VideoObject.Views.ToMetric() views &#x2022; </span>
+                }
+            
+                <span>@VideoObject.PublishDate.Humanize()</span>
+
+                @if (VideoObject.Rating > 0)
+                {
+                    <span> &#x2022; @VideoObject.Rating </span>
+                }
+            </AntDesign.Text>
+            
+            <Paragraph>@VideoObject.Description</Paragraph>
+        }
+        else
+        {
+            <Skeleton/>
+        }
+    </Content>
+</Layout>

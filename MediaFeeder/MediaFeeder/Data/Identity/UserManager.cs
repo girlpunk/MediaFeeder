@@ -16,7 +16,8 @@ public class UserManager : UserManager<AuthUser>
         IdentityErrorDescriber errors,
         IServiceProvider services,
         ILogger<UserManager<AuthUser>> logger
-    ) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger)
+    ) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors,
+        services, logger)
     {
     }
 }

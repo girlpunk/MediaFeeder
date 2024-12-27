@@ -1,0 +1,49 @@
+﻿@using MediaFeeder.Data
+<Flex Vertical="true">
+    <Flex Justify="space-evenly">
+        <Tooltip Title="Add Subscription">
+            <Button Icon="@(IconType.Outline.AppstoreAdd)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Add Folder">
+            <Button Icon="@(IconType.Outline.FolderAdd)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Import Subscriptions">
+            <Button Icon="@(IconType.Outline.Import)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Edit">
+            <Button Icon="@(IconType.Outline.Edit)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Delete">
+            <Button Icon="@(IconType.Outline.Delete)"></Button>
+        </Tooltip>
+    </Flex>
+
+    @if (Folders != null)
+    {
+        <span>Subscriptions:</span>
+        <CascadingValue Value="UnwatchedCache" Name="@nameof(UnwatchedCache)">
+            <Tree
+                ShowIcon="true"
+                ShowExpand="true"
+                BlockNode="true"
+                ShowLeafIcon="true"
+                Selectable="true"
+                TItem="ITreeSelectable"
+                DefaultExpandAll="true">
+                @foreach (var folder in Folders)
+                {
+                    <TreeFolder Folder="@folder"/>
+                }
+            </Tree>
+        </CascadingValue>
+    }
+    else
+    {
+        <span>Loading...</span>
+        <Skeleton/>
+    }
+</Flex>

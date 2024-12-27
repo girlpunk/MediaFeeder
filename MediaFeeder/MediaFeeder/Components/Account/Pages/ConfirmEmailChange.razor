@@ -1,10 +1,8 @@
 ﻿@page "/Account/ConfirmEmailChange"
-
 @using System.Text
+@using MediaFeeder.Data.db
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using MediaFeeder.Data
-@using MediaFeeder.Data.db
 
 @inject UserManager<AuthUser> UserManager
 @inject SignInManager<AuthUser> SignInManager
@@ -14,10 +12,10 @@
 
 <h1>Confirm email change</h1>
 
-<StatusMessage Message="@message"/>
+<StatusMessage Message="@_message"/>
 
 @code {
-    private string? message;
+    private string? _message;
 
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
@@ -38,7 +36,7 @@
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
-            message = "Unable to find user with Id '{userId}'";
+            _message = "Unable to find user with Id '{userId}'";
             return;
         }
 
@@ -46,7 +44,7 @@
         var result = await UserManager.ChangeEmailAsync(user, Email, code);
         if (!result.Succeeded)
         {
-            message = "Error changing email.";
+            _message = "Error changing email.";
             return;
         }
 
@@ -55,12 +53,12 @@
         var setUserNameResult = await UserManager.SetUserNameAsync(user, Email);
         if (!setUserNameResult.Succeeded)
         {
-            message = "Error changing user name.";
+            _message = "Error changing user name.";
             return;
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        message = "Thank you for confirming your email change.";
+        _message = "Thank you for confirming your email change.";
     }
 
 }

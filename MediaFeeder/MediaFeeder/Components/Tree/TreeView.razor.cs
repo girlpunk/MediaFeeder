@@ -1,0 +1,53 @@
+﻿using MediaFeeder.Data;
+using MediaFeeder.Data.db;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace MediaFeeder.Components.Tree;
+
+public partial class TreeView
+{
+    [Inject] public IDbContextFactory<MediaFeederDataContext>? ContextFactory { get; set; }
+
+    public Dictionary<int, int>? UnwatchedCache { get; set; }
+
+    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+
+    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+
+    private List<YtManagerAppSubscriptionFolder>? Folders { get; set; }
+
+    private SemaphoreSlim Updating { get; } = new(1);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UnwatchedCache == null && ContextFactory != null && Folders == null)
+            try
+            {
+                await Updating.WaitAsync();
+
+                var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = await UserManager.GetUserAsync(auth.User);
+
+                await using var context = await ContextFactory.CreateDbContextAsync();
+                UnwatchedCache = context.YtManagerAppVideos
+                    .Where(v => !v.Watched && v.Subscription.User == user)
+                    .GroupBy(v => v.SubscriptionId)
+                    .Select(g => new { Id = g.Key, Count = g.Count() })
+                    .ToDictionary(g => g.Id, g => g.Count);
+
+                Folders = context.YtManagerAppSubscriptionFolders.Where(f => f.User == user)
+                    .Include(f => f.InverseParent)
+                    .Include(f => f.YtManagerAppSubscriptions)
+                    .ToList();
+            }
+            finally
+            {
+                Updating.Release();
+            }
+
+        await base.OnParametersSetAsync();
+    }
+}

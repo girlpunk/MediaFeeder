@@ -1,42 +1,39 @@
-﻿@using MediaFeeder.Data.db
-
-<FluentNavGroup
-    Href="@("/folder/"+Folder.Id)"
-    >
-    <TitleTemplate>
-        <FluentCounterBadge Count="@Unwatched" VerticalPosition="25" HorizontalPosition="100">
-            @Folder.Name
-        </FluentCounterBadge>
-    </TitleTemplate>
-    <ChildContent>
-        @foreach (var subfolder in Folder.InverseParent)
-        {
-            <TreeFolder Folder="subfolder" Parent="@this" />
-        }
-        @if(Folder != null)
-            @foreach (var subscription in Folder.YtManagerAppSubscriptions)
-        {
-            <TreeSubscription Subscription="@subscription" Parent="this"/>
-        }
-    </ChildContent>
-</FluentNavGroup>
-
-
-@code {
-    private int Unwatched { get; set; } = 0;
-
-    internal int AddUnwatched(int add)
-    {
-        Unwatched += add;
-        Parent?.AddUnwatched(add);
-        StateHasChanged();
-
-        return Unwatched;
-    }
-
-    [Parameter]
-    public YtManagerAppSubscriptionFolder? Folder { get; set; }
-    
-    [Parameter]
-    public TreeFolder? Parent { get; set; }
+﻿@using Humanizer
+@using MediaFeeder.Data
+@if (Folder != null)
+{
+    <TreeNode SelectedChanged="OnSelectedChanged" TItem="ITreeSelectable" DataItem="@Folder">
+        <TitleTemplate>
+            <Badge Count="@Unwatched" Offset="(15, 0)">
+                <CountTemplate>
+                    @if (Unwatched > 0)
+                    {
+                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px;">
+                            @Unwatched.ToMetric()
+                        </sup>
+                    }
+                </CountTemplate>
+                <ChildContent>
+                <span>
+                    @Folder.Name
+                </span>
+                </ChildContent>
+            </Badge>
+        </TitleTemplate>
+        <ChildContent>
+            @foreach (var subfolder in Folder.InverseParent)
+            {
+                <TreeFolder Folder="subfolder" Parent="@(this)"/>
+            }
+            @if (Folder != null)
+                @foreach (var subscription in Folder.YtManagerAppSubscriptions)
+            {
+                <TreeSubscription Subscription="@subscription" Parent="this"/>
+            }
+        </ChildContent>
+    </TreeNode>
+}
+else
+{
+    <Skeleton/>
 }
