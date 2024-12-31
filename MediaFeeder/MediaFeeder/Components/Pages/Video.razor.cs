@@ -4,14 +4,14 @@ using Microsoft.AspNetCore.Components;
 
 namespace MediaFeeder.Components.Pages;
 
-public partial class Video
+public sealed partial class Video
 {
     [Parameter] public int Id { get; set; }
 
     [Parameter] public string? Next { get; set; }
-    
+
     [Inject] public required NavigationManager NavigationManager { get; set; }
-    
+
     [Inject] public required MessageService MessageService { get; set; }
 
     private YtManagerAppVideo? VideoObject { get; set; }
@@ -34,7 +34,7 @@ public partial class Video
     protected override async Task OnInitializedAsync()
     {
         VideoObject = Context.YtManagerAppVideos.Single(v => v.Id == Id);
-        await Context.Entry(VideoObject).Reference(v => v.Subscription).LoadAsync();
+        await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
         Frame = ServiceProvider.GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider)
             .VideoFrameView;
@@ -43,14 +43,14 @@ public partial class Video
         {
             var more = Next.Split(',').Select(int.Parse).ToList();
             UpNextCount = more.Count;
-            UpNextDuration = TimeSpan.FromSeconds(Context.YtManagerAppVideos.Where(v => more.Contains(v.Id)).Sum(v => v.Duration));
+            UpNextDuration = TimeSpan.FromSeconds(Context.YtManagerAppVideos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
         }
     }
 
     private async Task MarkWatched()
     {
         ArgumentNullException.ThrowIfNull(VideoObject);
-        
+
         VideoObject.Watched = !VideoObject.Watched;
         await Context.SaveChangesAsync();
 
@@ -61,7 +61,7 @@ public partial class Video
     {
         if (string.IsNullOrWhiteSpace(Next))
             return;
-        
+
         var more = Next.Split(",");
 
         NavigationManager.NavigateTo($"/video/{more[0]}/{string.Join(',', more[1..])}");

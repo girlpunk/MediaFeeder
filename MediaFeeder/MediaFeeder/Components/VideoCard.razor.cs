@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components;
 
-public partial class VideoCard : ComponentBase
+public sealed partial class VideoCard : ComponentBase
 {
-    [Parameter] [EditorRequired] public YtManagerAppVideo? Video { get; set; }
+    [Parameter][EditorRequired] public YtManagerAppVideo? Video { get; set; }
 
     [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 

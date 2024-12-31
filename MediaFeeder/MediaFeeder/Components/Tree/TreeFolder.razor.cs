@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Components;
 
 namespace MediaFeeder.Components.Tree;
 
-public partial class TreeFolder
+public sealed partial class TreeFolder
 {
     private int Unwatched { get; set; } = 0;
 
-    [Parameter] [EditorRequired] public YtManagerAppSubscriptionFolder? Folder { get; set; }
+    [Parameter][EditorRequired] public YtManagerAppSubscriptionFolder? Folder { get; set; }
 
     [Parameter] public TreeFolder? Parent { get; set; }
 

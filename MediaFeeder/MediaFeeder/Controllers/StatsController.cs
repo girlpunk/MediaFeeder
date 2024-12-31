@@ -21,22 +21,22 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
 
         var subscriptions = await Context.YtManagerAppSubscriptions.CountAsync();
         var trackedVideos = await Context.YtManagerAppVideos.CountAsync();
-        var watchedVideos = await Context.YtManagerAppVideos.CountAsync(video => video.Watched);
-        var newUnwatched = await Context.YtManagerAppVideos.CountAsync(video => !video.Watched);
+        var watchedVideos = await Context.YtManagerAppVideos.CountAsync(static video => video.Watched);
+        var newUnwatched = await Context.YtManagerAppVideos.CountAsync(static video => !video.Watched);
 
         var folders = await Context.YtManagerAppVideos
-            .GroupBy(video => video.Subscription.ParentFolderId)
-            .Select(group => new
+            .GroupBy(static video => video.Subscription.ParentFolderId)
+            .Select(static group => new
             {
                 Key = group.Key ?? -1,
                 group.First().Subscription.ParentFolder.Name,
                 Tracked = group.Count(),
-                UnwatchedCount = group.Count(video => !video.Watched),
+                UnwatchedCount = group.Count(static video => !video.Watched),
                 UnwatchedDuration = group
-                    .Where(video => !video.Watched)
-                    .Sum(video => video.Duration)
+                    .Where(static video => !video.Watched)
+                    .Sum(static video => video.Duration)
             })
-            .ToDictionaryAsync(group => group.Key, group => group);
+            .ToDictionaryAsync(static group => group.Key, static group => group);
 
         return Ok(new
         {

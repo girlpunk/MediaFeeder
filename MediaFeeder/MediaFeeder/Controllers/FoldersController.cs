@@ -20,7 +20,7 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
 
         return await context.YtManagerAppSubscriptionFolders
             .Where(folder => folder.User == user && folder.Parent == null)
-            .Select(folder => folder.Id)
+            .Select(static folder => folder.Id)
             .ToListAsync(HttpContext.RequestAborted);
     }
 
@@ -31,8 +31,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         var user = await userManager.GetUserAsync(HttpContext.User);
 
         var ytManagerAppSubscriptionFolder = await context.YtManagerAppSubscriptionFolders
-            .Include(ytManagerAppSubscriptionFolder => ytManagerAppSubscriptionFolder.InverseParent)
-            .Include(ytManagerAppSubscriptionFolder => ytManagerAppSubscriptionFolder.YtManagerAppSubscriptions)
+            .Include(static ytManagerAppSubscriptionFolder => ytManagerAppSubscriptionFolder.InverseParent)
+            .Include(static ytManagerAppSubscriptionFolder => ytManagerAppSubscriptionFolder.YtManagerAppSubscriptions)
             .SingleOrDefaultAsync(f => f.Id == id && f.User == user, HttpContext.RequestAborted);
 
         if (ytManagerAppSubscriptionFolder == null)
@@ -42,8 +42,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         {
             ytManagerAppSubscriptionFolder.Name,
             ytManagerAppSubscriptionFolder.Id,
-            ChildFolders = ytManagerAppSubscriptionFolder.InverseParent.Select(f => f.Id).ToList(),
-            ChildSubscriptions = ytManagerAppSubscriptionFolder.YtManagerAppSubscriptions.Select(s => s.Id).ToList()
+            ChildFolders = ytManagerAppSubscriptionFolder.InverseParent.Select(static f => f.Id).ToList(),
+            ChildSubscriptions = ytManagerAppSubscriptionFolder.YtManagerAppSubscriptions.Select(static s => s.Id).ToList()
         };
     }
 

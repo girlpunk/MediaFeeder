@@ -22,7 +22,9 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     public async Task<ActionResult<object>> GetYtManagerAppSubscription(int id)
     {
         var ytManagerAppSubscription =
-            await context.YtManagerAppSubscriptions.FindAsync([id], HttpContext.RequestAborted);
+            await context.YtManagerAppSubscriptions
+                .Include(static v => v.YtManagerAppVideos)
+                .SingleOrDefaultAsync(v => v.Id == id, HttpContext.RequestAborted);
 
         if (ytManagerAppSubscription == null)
             return NotFound();
@@ -40,7 +42,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
             ytManagerAppSubscription.Id,
             ytManagerAppSubscription.Thumb,
             ytManagerAppSubscription.Thumbnail,
-            Unwatched = ytManagerAppSubscription.YtManagerAppVideos.Count(v => !v.Watched)
+            Unwatched = ytManagerAppSubscription.YtManagerAppVideos.Count(static v => !v.Watched)
         };
     }
 

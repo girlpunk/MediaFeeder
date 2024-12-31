@@ -61,7 +61,7 @@
         @if (VideoObject != null && Frame != null)
         {
             <DynamicComponent Type="@Frame" Parameters="@(new Dictionary<string, object>() { { "VideoId", VideoObject.VideoId } })"/>
-            
+
             <AntDesign.Text Type="secondary">
                 @if (VideoObject.Views > 0)
                 {
@@ -75,7 +75,7 @@
                     <span> &#x2022; @VideoObject.Rating </span>
                 }
             </AntDesign.Text>
-            
+
             <Paragraph>@VideoObject.Description</Paragraph>
         }
         else

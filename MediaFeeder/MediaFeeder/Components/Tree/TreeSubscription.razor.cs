@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Components;
 
 namespace MediaFeeder.Components.Tree;
 
-public partial class TreeSubscription
+public sealed partial class TreeSubscription
 {
     private int Unwatched { get; set; }
-    [Parameter] [EditorRequired] public TreeFolder? Parent { get; set; }
+    [Parameter][EditorRequired] public TreeFolder? Parent { get; set; }
 
-    [Parameter] [EditorRequired] public YtManagerAppSubscription? Subscription { get; set; }
+    [Parameter][EditorRequired] public YtManagerAppSubscription? Subscription { get; set; }
 
     [CascadingParameter(Name = nameof(UnwatchedCache))]
     public Dictionary<int, int>? UnwatchedCache { get; set; }

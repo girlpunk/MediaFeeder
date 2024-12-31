@@ -34,13 +34,11 @@ public partial class Home
     {
         var newHash = $"{FolderId}{SubscriptionId}{SortOrder}{ShowWatched}{ShowDownloaded}{SearchValue}".GetHashCode();
 
-        if (newHash != FilterHash)
-        {
-            FilterHash = newHash;
-            return true;
-        }
+        if (newHash == FilterHash)
+            return false;
 
-        return false;
+        FilterHash = newHash;
+        return true;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -81,12 +79,12 @@ public partial class Home
 
             source = SortOrder switch
             {
-                SortOrders.Oldest => source.OrderBy(v => v.PublishDate),
-                SortOrders.Newest => source.OrderByDescending(v => v.PublishDate),
-                SortOrders.PlaylistOrder => source.OrderBy(v => v.PlaylistIndex),
-                SortOrders.ReversePlaylistOrder => source.OrderByDescending(v => v.PlaylistIndex),
-                SortOrders.Popularity => source.OrderByDescending(v => v.Views),
-                SortOrders.TopRated => source.OrderByDescending(v => v.Rating),
+                SortOrders.Oldest => source.OrderBy(static v => v.PublishDate),
+                SortOrders.Newest => source.OrderByDescending(static v => v.PublishDate),
+                SortOrders.PlaylistOrder => source.OrderBy(static v => v.PlaylistIndex),
+                SortOrders.ReversePlaylistOrder => source.OrderByDescending(static v => v.PlaylistIndex),
+                SortOrders.Popularity => source.OrderByDescending(static v => v.Views),
+                SortOrders.TopRated => source.OrderByDescending(static v => v.Rating),
                 _ => source
             };
 
@@ -100,7 +98,7 @@ public partial class Home
                 source = source.Where(v => v.Name.Contains(SearchValue) || v.Description.Contains(SearchValue));
 
             ItemsAvailable = await source.CountAsync();
-            Duration = TimeSpan.FromSeconds(await source.SumAsync(v => v.Duration));
+            Duration = TimeSpan.FromSeconds(await source.SumAsync(static v => v.Duration));
             Videos = await source.Skip((PageNumber - 1) * ResultsPerPage).Take(ResultsPerPage).ToListAsync();
         }
         finally

@@ -34,13 +34,13 @@ public partial class TreeView
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.YtManagerAppVideos
                     .Where(v => !v.Watched && v.Subscription.User == user)
-                    .GroupBy(v => v.SubscriptionId)
-                    .Select(g => new { Id = g.Key, Count = g.Count() })
-                    .ToDictionary(g => g.Id, g => g.Count);
+                    .GroupBy(static v => v.SubscriptionId)
+                    .Select(static g => new { Id = g.Key, Count = g.Count() })
+                    .ToDictionary(static g => g.Id, static g => g.Count);
 
                 Folders = context.YtManagerAppSubscriptionFolders.Where(f => f.User == user)
-                    .Include(f => f.InverseParent)
-                    .Include(f => f.YtManagerAppSubscriptions)
+                    .Include(static f => f.InverseParent)
+                    .Include(static f => f.YtManagerAppSubscriptions)
                     .ToList();
             }
             finally

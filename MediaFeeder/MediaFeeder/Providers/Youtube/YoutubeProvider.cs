@@ -30,4 +30,6 @@ public class YoutubeProvider : IProvider
     public Type VideoFrameView => typeof(VideoFrame);
 
     public string ProviderIdentifier => "Youtube";
+
+    public string MimeType { get; } = "Video/YouTube";
 }

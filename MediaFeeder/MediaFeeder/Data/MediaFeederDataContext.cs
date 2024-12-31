@@ -57,490 +57,490 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<AuthGroup>(entity =>
+        modelBuilder.Entity<AuthGroup>(static entity =>
         {
             entity.ToTable("auth_group");
 
-            entity.HasIndex(e => e.Name, "auth_group_name_a6ea08ec_like")
+            entity.HasIndex(static e => e.Name, "auth_group_name_a6ea08ec_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.Name, "auth_group_name_key")
+            entity.HasIndex(static e => e.Name, "auth_group_name_key")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("name");
         });
 
-        modelBuilder.Entity<AuthProvider>(entity =>
+        modelBuilder.Entity<AuthProvider>(static entity =>
         {
-            entity.HasIndex(e => new { e.LoginProvider, e.ProviderKey })
+            entity.HasIndex(static e => new { e.LoginProvider, e.ProviderKey })
                 .IsUnique();
 
-            entity.Property(e => e.LoginProvider)
+            entity.Property(static e => e.LoginProvider)
                 .IsRequired();
 
-            entity.Property(e => e.ProviderKey)
+            entity.Property(static e => e.ProviderKey)
                 .IsRequired();
 
-            entity.Property(e => e.UserId)
+            entity.Property(static e => e.UserId)
                 .IsRequired();
         });
 
-        modelBuilder.Entity<AuthGroupPermission>(entity =>
+        modelBuilder.Entity<AuthGroupPermission>(static entity =>
         {
             entity.ToTable("auth_group_permissions");
 
-            entity.HasIndex(e => e.GroupId, "auth_group_permissions_group_id_b120cbf9");
+            entity.HasIndex(static e => e.GroupId, "auth_group_permissions_group_id_b120cbf9");
 
-            entity.HasIndex(e => new { e.GroupId, e.PermissionId },
+            entity.HasIndex(static e => new { e.GroupId, e.PermissionId },
                     "auth_group_permissions_group_id_permission_id_0cd325b0_uniq")
                 .IsUnique();
 
-            entity.HasIndex(e => e.PermissionId, "auth_group_permissions_permission_id_84c5c92e");
+            entity.HasIndex(static e => e.PermissionId, "auth_group_permissions_permission_id_84c5c92e");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.GroupId).HasColumnName("group_id");
+            entity.Property(static e => e.GroupId).HasColumnName("group_id");
 
-            entity.Property(e => e.PermissionId).HasColumnName("permission_id");
+            entity.Property(static e => e.PermissionId).HasColumnName("permission_id");
 
-            entity.HasOne(d => d.Group)
-                .WithMany(p => p.AuthGroupPermissions)
-                .HasForeignKey(d => d.GroupId)
+            entity.HasOne(static d => d.Group)
+                .WithMany(static p => p.AuthGroupPermissions)
+                .HasForeignKey(static d => d.GroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_group_permissions_group_id_b120cbf9_fk_auth_group_id");
 
-            entity.HasOne(d => d.Permission)
-                .WithMany(p => p.AuthGroupPermissions)
-                .HasForeignKey(d => d.PermissionId)
+            entity.HasOne(static d => d.Permission)
+                .WithMany(static p => p.AuthGroupPermissions)
+                .HasForeignKey(static d => d.PermissionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_group_permissio_permission_id_84c5c92e_fk_auth_perm");
         });
 
-        modelBuilder.Entity<AuthPermission>(entity =>
+        modelBuilder.Entity<AuthPermission>(static entity =>
         {
             entity.ToTable("auth_permission");
 
-            entity.HasIndex(e => e.ContentTypeId, "auth_permission_content_type_id_2f476e4b");
+            entity.HasIndex(static e => e.ContentTypeId, "auth_permission_content_type_id_2f476e4b");
 
-            entity.HasIndex(e => new { e.ContentTypeId, e.Codename },
+            entity.HasIndex(static e => new { e.ContentTypeId, e.Codename },
                     "auth_permission_content_type_id_codename_01ab375a_uniq")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Codename)
+            entity.Property(static e => e.Codename)
                 .IsRequired()
                 .HasMaxLength(100)
                 .HasColumnName("codename");
 
-            entity.Property(e => e.ContentTypeId).HasColumnName("content_type_id");
+            entity.Property(static e => e.ContentTypeId).HasColumnName("content_type_id");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("name");
 
-            entity.HasOne(d => d.ContentType)
-                .WithMany(p => p.AuthPermissions)
-                .HasForeignKey(d => d.ContentTypeId)
+            entity.HasOne(static d => d.ContentType)
+                .WithMany(static p => p.AuthPermissions)
+                .HasForeignKey(static d => d.ContentTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_permission_content_type_id_2f476e4b_fk_django_co");
         });
 
-        modelBuilder.Entity<AuthUser>(entity =>
+        modelBuilder.Entity<AuthUser>(static entity =>
         {
             entity.ToTable("auth_user");
 
-            entity.HasIndex(e => e.Username, "auth_user_username_6821ab7c_like")
+            entity.HasIndex(static e => e.Username, "auth_user_username_6821ab7c_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.Username, "auth_user_username_key")
+            entity.HasIndex(static e => e.Username, "auth_user_username_key")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.DateJoined).HasColumnName("date_joined");
+            entity.Property(static e => e.DateJoined).HasColumnName("date_joined");
 
-            entity.Property(e => e.Email)
+            entity.Property(static e => e.Email)
                 .IsRequired()
                 .HasMaxLength(254)
                 .HasColumnName("email");
 
-            entity.Property(e => e.FirstName)
+            entity.Property(static e => e.FirstName)
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("first_name");
 
-            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(static e => e.IsActive).HasColumnName("is_active");
 
-            entity.Property(e => e.IsStaff).HasColumnName("is_staff");
+            entity.Property(static e => e.IsStaff).HasColumnName("is_staff");
 
-            entity.Property(e => e.IsSuperuser).HasColumnName("is_superuser");
+            entity.Property(static e => e.IsSuperuser).HasColumnName("is_superuser");
 
-            entity.Property(e => e.LastLogin).HasColumnName("last_login");
+            entity.Property(static e => e.LastLogin).HasColumnName("last_login");
 
-            entity.Property(e => e.LastName)
+            entity.Property(static e => e.LastName)
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("last_name");
 
-            entity.Property(e => e.Password)
+            entity.Property(static e => e.Password)
                 .IsRequired()
                 .HasMaxLength(128)
                 .HasColumnName("password");
 
-            entity.Property(e => e.Username)
+            entity.Property(static e => e.Username)
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("username");
 
-            entity.Ignore(e => e.AccessFailedCount);
-            entity.Ignore(e => e.ConcurrencyStamp);
-            entity.Ignore(e => e.EmailConfirmed);
-            entity.Ignore(e => e.LockoutEnabled);
-            entity.Ignore(e => e.LockoutEnd);
-            entity.Ignore(e => e.NormalizedEmail);
-            entity.Ignore(e => e.NormalizedUserName);
-            entity.Ignore(e => e.PasswordHash);
-            entity.Ignore(e => e.PhoneNumber);
-            entity.Ignore(e => e.PhoneNumberConfirmed);
-            entity.Ignore(e => e.SecurityStamp);
-            entity.Ignore(e => e.TwoFactorEnabled);
-            entity.Ignore(e => e.UserName);
+            entity.Ignore(static e => e.AccessFailedCount);
+            entity.Ignore(static e => e.ConcurrencyStamp);
+            entity.Ignore(static e => e.EmailConfirmed);
+            entity.Ignore(static e => e.LockoutEnabled);
+            entity.Ignore(static e => e.LockoutEnd);
+            entity.Ignore(static e => e.NormalizedEmail);
+            entity.Ignore(static e => e.NormalizedUserName);
+            entity.Ignore(static e => e.PasswordHash);
+            entity.Ignore(static e => e.PhoneNumber);
+            entity.Ignore(static e => e.PhoneNumberConfirmed);
+            entity.Ignore(static e => e.SecurityStamp);
+            entity.Ignore(static e => e.TwoFactorEnabled);
+            entity.Ignore(static e => e.UserName);
         });
 
-        modelBuilder.Entity<AuthUserGroup>(entity =>
+        modelBuilder.Entity<AuthUserGroup>(static entity =>
         {
             entity.ToTable("auth_user_groups");
 
-            entity.HasIndex(e => e.GroupId, "auth_user_groups_group_id_97559544");
+            entity.HasIndex(static e => e.GroupId, "auth_user_groups_group_id_97559544");
 
-            entity.HasIndex(e => e.UserId, "auth_user_groups_user_id_6a12ed8b");
+            entity.HasIndex(static e => e.UserId, "auth_user_groups_user_id_6a12ed8b");
 
-            entity.HasIndex(e => new { e.UserId, e.GroupId }, "auth_user_groups_user_id_group_id_94350c0c_uniq")
+            entity.HasIndex(static e => new { e.UserId, e.GroupId }, "auth_user_groups_user_id_group_id_94350c0c_uniq")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.GroupId).HasColumnName("group_id");
+            entity.Property(static e => e.GroupId).HasColumnName("group_id");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(static e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Group)
-                .WithMany(p => p.AuthUserGroups)
-                .HasForeignKey(d => d.GroupId)
+            entity.HasOne(static d => d.Group)
+                .WithMany(static p => p.AuthUserGroups)
+                .HasForeignKey(static d => d.GroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_user_groups_group_id_97559544_fk_auth_group_id");
 
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.AuthUserGroups)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(static d => d.User)
+                .WithMany(static p => p.AuthUserGroups)
+                .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_user_groups_user_id_6a12ed8b_fk_auth_user_id");
         });
 
-        modelBuilder.Entity<AuthUserUserPermission>(entity =>
+        modelBuilder.Entity<AuthUserUserPermission>(static entity =>
         {
             entity.ToTable("auth_user_user_permissions");
 
-            entity.HasIndex(e => e.PermissionId, "auth_user_user_permissions_permission_id_1fbb5f2c");
+            entity.HasIndex(static e => e.PermissionId, "auth_user_user_permissions_permission_id_1fbb5f2c");
 
-            entity.HasIndex(e => e.UserId, "auth_user_user_permissions_user_id_a95ead1b");
+            entity.HasIndex(static e => e.UserId, "auth_user_user_permissions_user_id_a95ead1b");
 
-            entity.HasIndex(e => new { e.UserId, e.PermissionId },
+            entity.HasIndex(static e => new { e.UserId, e.PermissionId },
                     "auth_user_user_permissions_user_id_permission_id_14a6b632_uniq")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.PermissionId).HasColumnName("permission_id");
+            entity.Property(static e => e.PermissionId).HasColumnName("permission_id");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(static e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Permission)
-                .WithMany(p => p.AuthUserUserPermissions)
-                .HasForeignKey(d => d.PermissionId)
+            entity.HasOne(static d => d.Permission)
+                .WithMany(static p => p.AuthUserUserPermissions)
+                .HasForeignKey(static d => d.PermissionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm");
 
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.AuthUserUserPermissions)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(static d => d.User)
+                .WithMany(static p => p.AuthUserUserPermissions)
+                .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id");
         });
 
-        modelBuilder.Entity<DjangoAdminLog>(entity =>
+        modelBuilder.Entity<DjangoAdminLog>(static entity =>
         {
             entity.ToTable("django_admin_log");
 
-            entity.HasIndex(e => e.ContentTypeId, "django_admin_log_content_type_id_c4bce8eb");
+            entity.HasIndex(static e => e.ContentTypeId, "django_admin_log_content_type_id_c4bce8eb");
 
-            entity.HasIndex(e => e.UserId, "django_admin_log_user_id_c564eba6");
+            entity.HasIndex(static e => e.UserId, "django_admin_log_user_id_c564eba6");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.ActionFlag).HasColumnName("action_flag");
+            entity.Property(static e => e.ActionFlag).HasColumnName("action_flag");
 
-            entity.Property(e => e.ActionTime).HasColumnName("action_time");
+            entity.Property(static e => e.ActionTime).HasColumnName("action_time");
 
-            entity.Property(e => e.ChangeMessage)
+            entity.Property(static e => e.ChangeMessage)
                 .IsRequired()
                 .HasColumnName("change_message");
 
-            entity.Property(e => e.ContentTypeId).HasColumnName("content_type_id");
+            entity.Property(static e => e.ContentTypeId).HasColumnName("content_type_id");
 
-            entity.Property(e => e.ObjectId).HasColumnName("object_id");
+            entity.Property(static e => e.ObjectId).HasColumnName("object_id");
 
-            entity.Property(e => e.ObjectRepr)
+            entity.Property(static e => e.ObjectRepr)
                 .IsRequired()
                 .HasMaxLength(200)
                 .HasColumnName("object_repr");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(static e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.ContentType)
-                .WithMany(p => p.DjangoAdminLogs)
-                .HasForeignKey(d => d.ContentTypeId)
+            entity.HasOne(static d => d.ContentType)
+                .WithMany(static p => p.DjangoAdminLogs)
+                .HasForeignKey(static d => d.ContentTypeId)
                 .HasConstraintName("django_admin_log_content_type_id_c4bce8eb_fk_django_co");
 
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.DjangoAdminLogs)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(static d => d.User)
+                .WithMany(static p => p.DjangoAdminLogs)
+                .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("django_admin_log_user_id_c564eba6_fk_auth_user_id");
         });
 
-        modelBuilder.Entity<DjangoCeleryResultsChordcounter>(entity =>
+        modelBuilder.Entity<DjangoCeleryResultsChordcounter>(static entity =>
         {
             entity.ToTable("django_celery_results_chordcounter");
 
-            entity.HasIndex(e => e.GroupId, "django_celery_results_chordcounter_group_id_1f70858c_like")
+            entity.HasIndex(static e => e.GroupId, "django_celery_results_chordcounter_group_id_1f70858c_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.GroupId, "django_celery_results_chordcounter_group_id_key")
+            entity.HasIndex(static e => e.GroupId, "django_celery_results_chordcounter_group_id_key")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Count).HasColumnName("count");
+            entity.Property(static e => e.Count).HasColumnName("count");
 
-            entity.Property(e => e.GroupId)
+            entity.Property(static e => e.GroupId)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("group_id");
 
-            entity.Property(e => e.SubTasks)
+            entity.Property(static e => e.SubTasks)
                 .IsRequired()
                 .HasColumnName("sub_tasks");
         });
 
-        modelBuilder.Entity<DjangoCeleryResultsGroupresult>(entity =>
+        modelBuilder.Entity<DjangoCeleryResultsGroupresult>(static entity =>
         {
             entity.ToTable("django_celery_results_groupresult");
 
-            entity.HasIndex(e => e.DateCreated, "django_cele_date_cr_bd6c1d_idx");
+            entity.HasIndex(static e => e.DateCreated, "django_cele_date_cr_bd6c1d_idx");
 
-            entity.HasIndex(e => e.DateDone, "django_cele_date_do_caae0e_idx");
+            entity.HasIndex(static e => e.DateDone, "django_cele_date_do_caae0e_idx");
 
-            entity.HasIndex(e => e.GroupId, "django_celery_results_groupresult_group_id_a085f1a9_like")
+            entity.HasIndex(static e => e.GroupId, "django_celery_results_groupresult_group_id_a085f1a9_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.GroupId, "django_celery_results_groupresult_group_id_key")
+            entity.HasIndex(static e => e.GroupId, "django_celery_results_groupresult_group_id_key")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.ContentEncoding)
+            entity.Property(static e => e.ContentEncoding)
                 .IsRequired()
                 .HasMaxLength(64)
                 .HasColumnName("content_encoding");
 
-            entity.Property(e => e.ContentType)
+            entity.Property(static e => e.ContentType)
                 .IsRequired()
                 .HasMaxLength(128)
                 .HasColumnName("content_type");
 
-            entity.Property(e => e.DateCreated).HasColumnName("date_created");
+            entity.Property(static e => e.DateCreated).HasColumnName("date_created");
 
-            entity.Property(e => e.DateDone).HasColumnName("date_done");
+            entity.Property(static e => e.DateDone).HasColumnName("date_done");
 
-            entity.Property(e => e.GroupId)
+            entity.Property(static e => e.GroupId)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("group_id");
 
-            entity.Property(e => e.Result).HasColumnName("result");
+            entity.Property(static e => e.Result).HasColumnName("result");
         });
 
-        modelBuilder.Entity<DjangoCeleryResultsTaskresult>(entity =>
+        modelBuilder.Entity<DjangoCeleryResultsTaskresult>(static entity =>
         {
             entity.ToTable("django_celery_results_taskresult");
 
-            entity.HasIndex(e => e.DateCreated, "django_cele_date_cr_f04a50_idx");
+            entity.HasIndex(static e => e.DateCreated, "django_cele_date_cr_f04a50_idx");
 
-            entity.HasIndex(e => e.DateDone, "django_cele_date_do_f59aad_idx");
+            entity.HasIndex(static e => e.DateDone, "django_cele_date_do_f59aad_idx");
 
-            entity.HasIndex(e => e.Status, "django_cele_status_9b6201_idx");
+            entity.HasIndex(static e => e.Status, "django_cele_status_9b6201_idx");
 
-            entity.HasIndex(e => e.TaskName, "django_cele_task_na_08aec9_idx");
+            entity.HasIndex(static e => e.TaskName, "django_cele_task_na_08aec9_idx");
 
-            entity.HasIndex(e => e.Worker, "django_cele_worker_d54dd8_idx");
+            entity.HasIndex(static e => e.Worker, "django_cele_worker_d54dd8_idx");
 
-            entity.HasIndex(e => e.TaskId, "django_celery_results_taskresult_task_id_de0d95bf_like")
+            entity.HasIndex(static e => e.TaskId, "django_celery_results_taskresult_task_id_de0d95bf_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.TaskId, "django_celery_results_taskresult_task_id_key")
+            entity.HasIndex(static e => e.TaskId, "django_celery_results_taskresult_task_id_key")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.ContentEncoding)
+            entity.Property(static e => e.ContentEncoding)
                 .IsRequired()
                 .HasMaxLength(64)
                 .HasColumnName("content_encoding");
 
-            entity.Property(e => e.ContentType)
+            entity.Property(static e => e.ContentType)
                 .IsRequired()
                 .HasMaxLength(128)
                 .HasColumnName("content_type");
 
-            entity.Property(e => e.DateCreated).HasColumnName("date_created");
+            entity.Property(static e => e.DateCreated).HasColumnName("date_created");
 
-            entity.Property(e => e.DateDone).HasColumnName("date_done");
+            entity.Property(static e => e.DateDone).HasColumnName("date_done");
 
-            entity.Property(e => e.Meta).HasColumnName("meta");
+            entity.Property(static e => e.Meta).HasColumnName("meta");
 
-            entity.Property(e => e.Result).HasColumnName("result");
+            entity.Property(static e => e.Result).HasColumnName("result");
 
-            entity.Property(e => e.Status)
+            entity.Property(static e => e.Status)
                 .IsRequired()
                 .HasMaxLength(50)
                 .HasColumnName("status");
 
-            entity.Property(e => e.TaskArgs).HasColumnName("task_args");
+            entity.Property(static e => e.TaskArgs).HasColumnName("task_args");
 
-            entity.Property(e => e.TaskId)
+            entity.Property(static e => e.TaskId)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("task_id");
 
-            entity.Property(e => e.TaskKwargs).HasColumnName("task_kwargs");
+            entity.Property(static e => e.TaskKwargs).HasColumnName("task_kwargs");
 
-            entity.Property(e => e.TaskName)
+            entity.Property(static e => e.TaskName)
                 .HasMaxLength(255)
                 .HasColumnName("task_name");
 
-            entity.Property(e => e.Traceback).HasColumnName("traceback");
+            entity.Property(static e => e.Traceback).HasColumnName("traceback");
 
-            entity.Property(e => e.Worker)
+            entity.Property(static e => e.Worker)
                 .HasMaxLength(100)
                 .HasColumnName("worker");
         });
 
-        modelBuilder.Entity<DjangoContentType>(entity =>
+        modelBuilder.Entity<DjangoContentType>(static entity =>
         {
             entity.ToTable("django_content_type");
 
-            entity.HasIndex(e => new { e.AppLabel, e.Model }, "django_content_type_app_label_model_76bd3d3b_uniq")
+            entity.HasIndex(static e => new { e.AppLabel, e.Model }, "django_content_type_app_label_model_76bd3d3b_uniq")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.AppLabel)
+            entity.Property(static e => e.AppLabel)
                 .IsRequired()
                 .HasMaxLength(100)
                 .HasColumnName("app_label");
 
-            entity.Property(e => e.Model)
+            entity.Property(static e => e.Model)
                 .IsRequired()
                 .HasMaxLength(100)
                 .HasColumnName("model");
         });
 
-        modelBuilder.Entity<DjangoMigration>(entity =>
+        modelBuilder.Entity<DjangoMigration>(static entity =>
         {
             entity.ToTable("django_migrations");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.App)
+            entity.Property(static e => e.App)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("app");
 
-            entity.Property(e => e.Applied).HasColumnName("applied");
+            entity.Property(static e => e.Applied).HasColumnName("applied");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("name");
         });
 
-        modelBuilder.Entity<DjangoSession>(entity =>
+        modelBuilder.Entity<DjangoSession>(static entity =>
         {
-            entity.HasKey(e => e.SessionKey)
+            entity.HasKey(static e => e.SessionKey)
                 .HasName("django_session_pkey");
 
             entity.ToTable("django_session");
 
-            entity.HasIndex(e => e.ExpireDate, "django_session_expire_date_a5c62663");
+            entity.HasIndex(static e => e.ExpireDate, "django_session_expire_date_a5c62663");
 
-            entity.HasIndex(e => e.SessionKey, "django_session_session_key_c0390e0f_like")
+            entity.HasIndex(static e => e.SessionKey, "django_session_session_key_c0390e0f_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.Property(e => e.SessionKey)
+            entity.Property(static e => e.SessionKey)
                 .HasMaxLength(40)
                 .HasColumnName("session_key");
 
-            entity.Property(e => e.ExpireDate).HasColumnName("expire_date");
+            entity.Property(static e => e.ExpireDate).HasColumnName("expire_date");
 
-            entity.Property(e => e.SessionData)
+            entity.Property(static e => e.SessionData)
                 .IsRequired()
                 .HasColumnName("session_data");
         });
 
-        modelBuilder.Entity<DynamicPreferencesGlobalpreferencemodel>(entity =>
+        modelBuilder.Entity<DynamicPreferencesGlobalpreferencemodel>(static entity =>
         {
             entity.ToTable("dynamic_preferences_globalpreferencemodel");
 
-            entity.HasIndex(e => new { e.Section, e.Name }, "dynamic_preferences_glob_section_name_f4a2439b_uniq")
+            entity.HasIndex(static e => new { e.Section, e.Name }, "dynamic_preferences_glob_section_name_f4a2439b_uniq")
                 .IsUnique();
 
-            entity.HasIndex(e => e.Name, "dynamic_preferences_globalpreferencemodel_name_033debe0");
+            entity.HasIndex(static e => e.Name, "dynamic_preferences_globalpreferencemodel_name_033debe0");
 
-            entity.HasIndex(e => e.Name, "dynamic_preferences_globalpreferencemodel_name_033debe0_like")
+            entity.HasIndex(static e => e.Name, "dynamic_preferences_globalpreferencemodel_name_033debe0_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.Section, "dynamic_preferences_globalpreferencemodel_section_c1ee9cc3");
+            entity.HasIndex(static e => e.Section, "dynamic_preferences_globalpreferencemodel_section_c1ee9cc3");
 
-            entity.HasIndex(e => e.Section, "dynamic_preferences_globalpreferencemodel_section_c1ee9cc3_like")
+            entity.HasIndex(static e => e.Section, "dynamic_preferences_globalpreferencemodel_section_c1ee9cc3_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("name");
 
-            entity.Property(e => e.RawValue).HasColumnName("raw_value");
+            entity.Property(static e => e.RawValue).HasColumnName("raw_value");
 
-            entity.Property(e => e.Section)
+            entity.Property(static e => e.Section)
                 .HasMaxLength(150)
                 .HasColumnName("section");
         });
 
-        modelBuilder.Entity<DynamicPreferencesUsersUserpreferencemodel>(entity =>
+        modelBuilder.Entity<DynamicPreferencesUsersUserpreferencemodel>(static entity =>
         {
             entity.ToTable("dynamic_preferences_users_userpreferencemodel");
 
-            entity.HasIndex(e => new { e.InstanceId, e.Section, e.Name },
+            entity.HasIndex(static e => new { e.InstanceId, e.Section, e.Name },
                     "dynamic_preferences_user_instance_id_section_name_29814e3f_uniq")
                 .IsUnique();
 

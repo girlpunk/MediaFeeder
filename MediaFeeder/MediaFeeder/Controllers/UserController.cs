@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MediaFeeder.API.Controllers;
+namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("[controller]")]

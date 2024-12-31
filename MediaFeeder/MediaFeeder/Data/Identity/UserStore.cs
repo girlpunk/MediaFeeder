@@ -19,7 +19,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
 
     public Task<string?> GetUserNameAsync(AuthUser user, CancellationToken cancellationToken)
     {
-        return Task.FromResult((string?)user.Username);
+        return Task.FromResult<string?>(user.Username);
     }
 
     public Task SetUserNameAsync(AuthUser user, string? userName, CancellationToken cancellationToken)
@@ -32,7 +32,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
 
     public Task<string?> GetNormalizedUserNameAsync(AuthUser user, CancellationToken cancellationToken)
     {
-        return Task.FromResult((string?)user.UserName);
+        return Task.FromResult<string?>(user.UserName);
     }
 
     public Task SetNormalizedUserNameAsync(AuthUser user, string? normalizedName, CancellationToken cancellationToken)
@@ -92,7 +92,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
 
     public Task<string?> GetEmailAsync(AuthUser user, CancellationToken cancellationToken)
     {
-        return Task.FromResult((string?)user.Email);
+        return Task.FromResult<string?>(user.Email);
     }
 
     public Task SetEmailAsync(AuthUser user, string? email, CancellationToken cancellationToken)
@@ -123,7 +123,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
 
     public Task<string?> GetNormalizedEmailAsync(AuthUser user, CancellationToken cancellationToken)
     {
-        return Task.FromResult((string?)user.Email);
+        return Task.FromResult<string?>(user.Email);
     }
 
     public Task SetNormalizedEmailAsync(AuthUser user, string? normalizedEmail, CancellationToken cancellationToken)

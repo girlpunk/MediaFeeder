@@ -31,7 +31,7 @@
                                 SortOrders.TopRated
                             ])"
                 @bind-Value="@SortOrder"
-                ItemLabel="c => c.Humanize()"
+                ItemLabel="static c => c.Humanize()"
                 DefaultActiveFirstOption
                 Placeholder="Make a selection..."
                 OnSelectedItemChanged="OnParametersSetAsync">
