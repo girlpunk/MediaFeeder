@@ -119,8 +119,12 @@ builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
 
+IdentityModelEventSource.ShowPII = true;
+
 
 var app = builder.Build();
+
+IdentityModelEventSource.ShowPII = true;
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -157,5 +161,7 @@ app.MapAdditionalIdentityEndpoints();
 
 app.MapGrpcService<MediaToadService>();
 app.MapGrpcHealthChecksService();
+
+IdentityModelEventSource.ShowPII = true;
 
 app.Run();
