@@ -1,6 +1,8 @@
 ﻿using MediaFeeder.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
+using System.Diagnostics;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -45,7 +47,9 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
             VideosTracked = trackedVideos,
             VideosWatched = watchedVideos,
             VideosUnwatched = newUnwatched,
-            Folders = folders
+            Folders = folders,
+            Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion,
+            AltVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
         });
     }
 }
