@@ -15,8 +15,6 @@ using OpenTelemetry.Trace;
 using Grpc.AspNetCore;
 using MediaFeeder.Services;
 
-// using Microsoft.FluentUI.AspNetCore.Components;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -125,6 +123,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    IdentityModelEventSource.ShowPII = true;
     app.UseWebAssemblyDebugging();
     app.UseMigrationsEndPoint();
     app.UseDeveloperExceptionPage();
