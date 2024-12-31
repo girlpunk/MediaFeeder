@@ -13,10 +13,12 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using Grpc.AspNetCore;
 using MediaFeeder.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+    IdentityModelEventSource.ShowPII = true;
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -31,18 +33,18 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services.AddAuthentication(options =>
+builder.Services.AddAuthentication(static options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
     .AddOpenIdConnect(
         OpenIdConnectDefaults.AuthenticationScheme,
-        "Authentik",
-        options =>
+        "Authentik", options =>
         {
-            options.MetadataAddress = "https://authentik.home.foxocube.xyz/application/o/mediafeeder/";
-            options.ClientId = "bz2cp1KiWnFio7N7rGp3wtcuehbhWc17sSE9Nedk";
+            builder.Configuration.GetSection("Auth").Bind(options);
+            //options.MetadataAddress =  "https://authentik.home.foxocube.xyz/application/o/mediafeeder/";
+            //options.ClientId = "bz2cp1KiWnFio7N7rGp3wtcuehbhWc17sSE9Nedk";
             options.Scope.Add("email");
         })
     .AddIdentityCookies();
@@ -61,7 +63,7 @@ builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentityCore<AuthUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.RequireConfirmedAccount = true)
     .AddUserManager<UserManager>()
     .AddUserStore<UserStore>()
     .AddRoles<AuthGroup>()
@@ -73,14 +75,14 @@ builder.Services.AddIdentityCore<AuthUser>(options => options.SignIn.RequireConf
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
 
-builder.Logging.AddOpenTelemetry(logging =>
+builder.Logging.AddOpenTelemetry(static logging =>
 {
     logging.IncludeFormattedMessage = true;
     logging.IncludeScopes = true;
 });
 
 builder.Services.AddOpenTelemetry()
-    .WithMetrics(metrics =>
+    .WithMetrics(static metrics =>
     {
         metrics.AddRuntimeInstrumentation()
             .AddAspNetCoreInstrumentation()
