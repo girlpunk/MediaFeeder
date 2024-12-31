@@ -17,8 +17,7 @@ using MediaFeeder.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (builder.Environment.IsDevelopment())
-    IdentityModelEventSource.ShowPII = true;
+IdentityModelEventSource.ShowPII = true;
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
