@@ -8,7 +8,6 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["MediaFeeder/MediaFeeder/MediaFeeder.csproj", "MediaFeeder/MediaFeeder/"]
-COPY ["MediaFeeder/MediaFeeder.Client/MediaFeeder.Client.csproj", "MediaFeeder/MediaFeeder.Client/"]
 RUN dotnet restore "MediaFeeder/MediaFeeder/MediaFeeder.csproj"
 COPY . .
 WORKDIR "/src/MediaFeeder/MediaFeeder"
