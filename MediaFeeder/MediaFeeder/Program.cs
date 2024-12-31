@@ -12,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Grpc.AspNetCore;
+using MediaFeeder.Services;
+
 // using Microsoft.FluentUI.AspNetCore.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +24,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents()
     .AddAuthenticationStateSerialization();
+
+builder.Services.AddGrpc();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -97,8 +102,12 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<MediaFeederDataContext>();
 
+builder.Services.AddGrpcHealthChecks()
+    .AddDbContextCheck<MediaFeederDataContext>();
+
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
+
 
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 
@@ -144,5 +153,8 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+app.MapGrpcService<MediaToadService>();
+app.MapGrpcHealthChecksService();
 
 app.Run();
