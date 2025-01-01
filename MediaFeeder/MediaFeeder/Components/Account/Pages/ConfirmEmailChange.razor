@@ -1,12 +1,15 @@
 ﻿@page "/Account/ConfirmEmailChange"
 @using System.Text
 @using MediaFeeder.Data.db
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 
 @inject UserManager<AuthUser> UserManager
 @inject SignInManager<AuthUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+
+@attribute [AllowAnonymous]
 
 <PageTitle>Confirm email change</PageTitle>
 
