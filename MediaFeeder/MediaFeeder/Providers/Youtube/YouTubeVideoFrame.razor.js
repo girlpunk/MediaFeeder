@@ -14,12 +14,12 @@ export function initPlayer(DotNetHelper, videoId)
                 autoplay: 1,
             },
             events: {
-                'onReady': (event => DotNetHelper.invokeMethodAsync('OnPlayerReady', event)),
-                'onStateChange': (event => DotNetHelper.invokeMethodAsync('OnPlayerStateChange', event)),
-                'onPlaybackQualityChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackQualityChange', event)),
-                'onPlaybackRateChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackRateChange', event)),
-                'onError': (event => DotNetHelper.invokeMethodAsync('OnError', event)),
-                'onApiChange': (event => DotNetHelper.invokeMethodAsync('OnApiChange', event)),
+                'onReady': (event => DotNetHelper.invokeMethodAsync('OnPlayerReady', DotNetHelper.createJSObjectReference(event.target), event.data)),
+                'onStateChange': (event => DotNetHelper.invokeMethodAsync('OnPlayerStateChange', DotNetHelper.createJSObjectReference(event.target), event.data)),
+                'onPlaybackQualityChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackQualityChange', DotNetHelper.createJSObjectReference(event.target), event.data)),
+                'onPlaybackRateChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackRateChange', DotNetHelper.createJSObjectReference(event.target), event.data)),
+                'onError': (event => DotNetHelper.invokeMethodAsync('OnError', DotNetHelper.createJSObjectReference(event.target), event.data)),
+                'onApiChange': (event => DotNetHelper.invokeMethodAsync('OnApiChange', DotNetHelper.createJSObjectReference(event.target), event.data)),
             }
         });
 }

@@ -27,7 +27,7 @@ public class YoutubeProvider : IProvider
 
     public Provider Provider => Provider.YouTube;
 
-    public Type VideoFrameView => typeof(VideoFrame);
+    public Type VideoFrameView => typeof(YouTubeVideoFrame);
 
     public string ProviderIdentifier => "Youtube";
 
