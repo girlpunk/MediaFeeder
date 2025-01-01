@@ -1,5 +1,6 @@
 @inject IJSRuntime JsRuntime
 @using Microsoft.JSInterop
-@implements IDisposable
+@implements IAsyncDisposable
+@inherits  VideoFrame
 
 <div id="ytplayer" style="width: 100%; height: 80vh;"></div>

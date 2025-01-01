@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="AntDesign" Version="1.0.1"/>
+        <PackageReference Include="Blazored.Video" Version="1.0.1" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
         <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.67.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.0"/>

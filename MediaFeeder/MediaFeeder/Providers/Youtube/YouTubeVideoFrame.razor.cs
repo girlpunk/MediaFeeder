@@ -1,14 +1,13 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
 namespace MediaFeeder.Providers.Youtube;
 
-public partial class YouTubeVideoFrame
+public sealed partial class YouTubeVideoFrame
 {
-    [Parameter] public string? VideoId { get; set; }
     private IJSObjectReference? _youtubeCustomModule;
     private IJSObjectReference? _youtubeLibraryModule;
+    private IJSObjectReference? _player;
     private DotNetObjectReference<YouTubeVideoFrame>? _videoFrameRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -17,14 +16,17 @@ public partial class YouTubeVideoFrame
         {
             _youtubeLibraryModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/iframe_api.js");
             _youtubeCustomModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Providers/Youtube/YouTubeVideoFrame.razor.js");
+        }
+    }
 
-            Console.WriteLine($"_youtubeLibraryModule: {JsonSerializer.Serialize(_youtubeLibraryModule)}");
-            Console.WriteLine($"_youtubeCustomModule: {JsonSerializer.Serialize(_youtubeCustomModule)}");
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_player == null && Video != null)
+        {
+            ArgumentNullException.ThrowIfNull(_youtubeCustomModule);
 
             _videoFrameRef ??= DotNetObjectReference.Create(this);
-            var player = await _youtubeCustomModule.InvokeAsync<object>("initPlayer", _videoFrameRef, VideoId);
-
-            Console.WriteLine($"player: {JsonSerializer.Serialize(player)}");
+            _player = await _youtubeCustomModule.InvokeAsync<IJSObjectReference>("initPlayer", _videoFrameRef, Video.VideoId);
         }
     }
 
@@ -79,30 +81,31 @@ public partial class YouTubeVideoFrame
     }
 
     [JSInvokable]
-    public Task OnPlayerStateChange(IJSObjectReference target, JsonElement data)
+    public async Task OnPlayerStateChange(IJSObjectReference target, JsonElement data)
     {
         Console.WriteLine($"State change: {JsonSerializer.Serialize(data)}");
 
-        var state = (PlayerState) data.GetInt32();
+        var state = (PlayerState)
+            data.GetInt32();
+
         if (state == PlayerState.ENDED)
         {
-            Console.WriteLine("Video finished!");
             // setWatchedStatus(1);
+            Console.WriteLine("Video finished!");
         }
         else if (state == PlayerState.UNSTARTED)
         {
             // player.playVideo();
-            target.InvokeVoidAsync("playVideo");
+            await target.InvokeVoidAsync("playVideo");
         }
-
-        return Task.CompletedTask;
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         _videoFrameRef?.Dispose();
-        _youtubeLibraryModule?.DisposeAsync();
-        _youtubeCustomModule?.DisposeAsync();
+        if (_player != null) await _player.DisposeAsync();
+        if (_youtubeLibraryModule != null) await _youtubeLibraryModule.DisposeAsync();
+        if (_youtubeCustomModule != null) await _youtubeCustomModule.DisposeAsync();
     }
 
     enum PlayerState

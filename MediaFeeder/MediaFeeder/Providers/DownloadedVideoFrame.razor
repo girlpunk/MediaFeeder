@@ -1,5 +1,27 @@
+@using Blazored.Video
+@using AntDesign
+@inherits VideoFrame
+
 <h3>DownloadedVideoFrame</h3>
 
-@code {
-    
+@if (Video != null)
+{
+    @if (Video.DownloadedPath != null)
+    {
+        <BlazoredVideo CanPlay="CanPlay"
+                       Ended="Ended"
+                       CanPlayThrough="CanPlayThrough"
+                       class="w-100"
+                       controls="controls">
+            <source src="@Video.DownloadedPath" type="video/mp4"/>
+        </BlazoredVideo>
+    }
+    else
+    {
+        <h4>Video is not downloaded</h4>
+    }
+}
+else
+{
+    <Skeleton/>
 }
