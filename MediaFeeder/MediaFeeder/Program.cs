@@ -5,6 +5,7 @@ using MediaFeeder.Components.Account;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
+using MediaFeeder.Providers;
 using MediaFeeder.Providers.Youtube;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -112,6 +113,8 @@ builder.Services.AddEndpointsApiExplorer();
 
 
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
+builder.Services.AddScoped<IProvider, SonarrProvider>();
+builder.Services.AddScoped<IProvider, RSSProvider>();
 
 // builder.Services.AddFluentUIComponents(options =>
 // {
