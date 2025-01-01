@@ -2,7 +2,7 @@
 
 namespace MediaFeeder.Data.db;
 
-public class YtManagerAppSubscriptionFolder : ITreeSelectable
+public class Folder : ITreeSelectable
 {
     public int Id { get; set; }
 
@@ -11,10 +11,10 @@ public class YtManagerAppSubscriptionFolder : ITreeSelectable
     public int? ParentId { get; set; }
     public int UserId { get; set; }
 
-    public virtual YtManagerAppSubscriptionFolder? Parent { get; set; }
+    public virtual Folder? Parent { get; set; }
     public virtual required AuthUser User { get; set; }
-    public virtual required ICollection<YtManagerAppSubscriptionFolder> InverseParent { get; init; }
-    public virtual required ICollection<YtManagerAppSubscription> YtManagerAppSubscriptions { get; init; }
+    public virtual required ICollection<Folder> Subfolders { get; init; }
+    public virtual required ICollection<Subscription> Subscriptions { get; init; }
 
     public string OnSelectedNavigate => "/folder/" + Id;
 }

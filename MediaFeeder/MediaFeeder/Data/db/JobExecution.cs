@@ -2,11 +2,11 @@
 
 namespace MediaFeeder.Data.db;
 
-public class YtManagerAppJobexecution
+public class JobExecution
 {
-    public YtManagerAppJobexecution()
+    public JobExecution()
     {
-        YtManagerAppJobmessages = new HashSet<YtManagerAppJobmessage>();
+        Jobmessages = new HashSet<JobMessage>();
     }
 
     public int Id { get; set; }
@@ -19,5 +19,5 @@ public class YtManagerAppJobexecution
     public int? UserId { get; set; }
 
     public virtual AuthUser User { get; set; }
-    public virtual ICollection<YtManagerAppJobmessage> YtManagerAppJobmessages { get; init; }
+    public virtual ICollection<JobMessage> Jobmessages { get; init; }
 }

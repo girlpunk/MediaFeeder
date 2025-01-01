@@ -43,7 +43,7 @@ public sealed class MediaToadService(
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid ID"));
 
         await using var dbContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var video = await dbContext.YtManagerAppVideos
+        var video = await dbContext.Videos
             .Include(static v => v.Subscription)
             .ThenInclude(static s => s.Provider)
             .Include(static v => v.Subscription)
@@ -103,7 +103,7 @@ public sealed class MediaToadService(
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid ID"));
 
         await using var dbContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var video = await dbContext.YtManagerAppVideos
+        var video = await dbContext.Videos
             .Include(static v => v.Subscription)
             .ThenInclude(static s => s.Provider)
             .Include(static v => v.Subscription)
@@ -170,9 +170,9 @@ public sealed class MediaToadService(
     private async Task<ListNodeReply> ListSubscription(int nodeId, AuthUser user, CancellationToken cancellationToken)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var subscription = await context.YtManagerAppSubscriptions
+        var subscription = await context.Subscriptions
             .Include(static s => s.User)
-            .Include(static s => s.YtManagerAppVideos)
+            .Include(static s => s.Videos)
             .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
 
         if (subscription == null)
@@ -185,7 +185,7 @@ public sealed class MediaToadService(
         {
             Item =
             {
-                subscription.YtManagerAppVideos.Select(static v =>
+                subscription.Videos.Select(static v =>
                     new MediaItem()
                     {
                         Id = v.Id.ToString(),
@@ -200,10 +200,10 @@ public sealed class MediaToadService(
     private async Task<ListNodeReply> ListFolder(int nodeId, AuthUser user, CancellationToken cancellationToken)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var folder = await context.YtManagerAppSubscriptionFolders
+        var folder = await context.Folders
             .Include(static s => s.User)
-            .Include(static s => s.YtManagerAppSubscriptions)
-            .Include(static s => s.InverseParent)
+            .Include(static s => s.Subscriptions)
+            .Include(static s => s.Subfolders)
             .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
 
         if (folder == null)
@@ -216,13 +216,13 @@ public sealed class MediaToadService(
         {
             Node =
             {
-                folder.InverseParent.Select(static f =>
+                folder.Subfolders.Select(static f =>
                         new MediaNode()
                         {
                             Id = $"f{f.Id}",
                             Title = f.Name
                         })
-                    .Concat(folder.YtManagerAppSubscriptions.Select(static s =>
+                    .Concat(folder.Subscriptions.Select(static s =>
                         new MediaNode()
                         {
                             Id = $"s{s.Id}",

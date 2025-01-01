@@ -19,14 +19,14 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
     public async Task<IActionResult> Get()
     {
         var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
-        var newPublished = await Context.YtManagerAppVideos.CountAsync(video => video.PublishDate >= lastHour);
+        var newPublished = await Context.Videos.CountAsync(video => video.PublishDate >= lastHour);
 
-        var subscriptions = await Context.YtManagerAppSubscriptions.CountAsync();
-        var trackedVideos = await Context.YtManagerAppVideos.CountAsync();
-        var watchedVideos = await Context.YtManagerAppVideos.CountAsync(static video => video.Watched);
-        var newUnwatched = await Context.YtManagerAppVideos.CountAsync(static video => !video.Watched);
+        var subscriptions = await Context.Subscriptions.CountAsync();
+        var trackedVideos = await Context.Videos.CountAsync();
+        var watchedVideos = await Context.Videos.CountAsync(static video => video.Watched);
+        var newUnwatched = await Context.Videos.CountAsync(static video => !video.Watched);
 
-        var folders = await Context.YtManagerAppVideos
+        var folders = await Context.Videos
             .GroupBy(static video => video.Subscription.ParentFolderId)
             .Select(static group => new
             {

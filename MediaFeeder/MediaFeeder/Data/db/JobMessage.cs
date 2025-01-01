@@ -2,7 +2,7 @@
 
 namespace MediaFeeder.Data.db;
 
-public class YtManagerAppJobmessage
+public class JobMessage
 {
     public int Id { get; set; }
     public DateTime Timestamp { get; set; }
@@ -14,5 +14,5 @@ public class YtManagerAppJobmessage
     public bool SuppressNotification { get; set; }
     public int JobId { get; set; }
 
-    public virtual YtManagerAppJobexecution Job { get; set; }
+    public virtual JobExecution Job { get; set; }
 }

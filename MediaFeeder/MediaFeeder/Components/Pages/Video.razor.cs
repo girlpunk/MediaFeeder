@@ -1,5 +1,4 @@
 ﻿using AntDesign;
-using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
 
 namespace MediaFeeder.Components.Pages;
@@ -14,7 +13,7 @@ public sealed partial class Video
 
     [Inject] public required MessageService MessageService { get; set; }
 
-    private YtManagerAppVideo? VideoObject { get; set; }
+    private Data.db.Video? VideoObject { get; set; }
     private Type? Frame { get; set; }
     private string WatchButtonText => VideoObject?.Watched ?? false ? "Mark as not watched" : "Mark as watched";
 
@@ -33,7 +32,7 @@ public sealed partial class Video
 
     protected override async Task OnInitializedAsync()
     {
-        VideoObject = Context.YtManagerAppVideos.Single(v => v.Id == Id);
+        VideoObject = Context.Videos.Single(v => v.Id == Id);
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
         Frame = ServiceProvider.GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider)
@@ -43,7 +42,7 @@ public sealed partial class Video
         {
             var more = Next.Split(',').Select(int.Parse).ToList();
             UpNextCount = more.Count;
-            UpNextDuration = TimeSpan.FromSeconds(Context.YtManagerAppVideos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
+            UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
         }
     }
 

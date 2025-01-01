@@ -59,11 +59,11 @@ public class AuthUser : IdentityUser<int>
         init;
     } = default!;
 
-    public virtual ICollection<YtManagerAppJobexecution> YtManagerAppJobexecutions { get; init; } = default!;
+    public virtual ICollection<JobExecution> JobExecutions { get; init; } = default!;
 
-    public virtual ICollection<YtManagerAppSubscriptionFolder> YtManagerAppSubscriptionfolders { get; init; } =
+    public virtual ICollection<Folder> Folders { get; init; } =
         default!;
 
-    public virtual ICollection<YtManagerAppSubscription> YtManagerAppSubscriptions { get; init; } = default!;
+    public virtual ICollection<Subscription> Subscriptions { get; init; } = default!;
     public virtual ICollection<AuthProvider> AuthProviders { get; init; } = default!;
 }

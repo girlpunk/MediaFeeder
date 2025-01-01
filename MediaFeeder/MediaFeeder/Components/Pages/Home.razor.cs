@@ -12,7 +12,7 @@ public partial class Home
 
     [Parameter] public int? SubscriptionId { get; set; }
 
-    private List<YtManagerAppVideo>? Videos { get; set; }
+    private List<Data.db.Video>? Videos { get; set; }
 
     [Inject] public MediaFeederDataContext? DataContext { get; set; }
 
@@ -62,18 +62,18 @@ public partial class Home
             Videos = null;
             StateHasChanged();
 
-            var source = DataContext.YtManagerAppVideos.AsQueryable();
+            var source = DataContext.Videos.AsQueryable();
 
             if (FolderId != null)
             {
                 source = source.Where(v => v.Subscription.ParentFolderId == FolderId);
-                Title = (await DataContext.YtManagerAppSubscriptionFolders.FindAsync(FolderId))?.Name ?? "";
+                Title = (await DataContext.Folders.FindAsync(FolderId))?.Name ?? "";
             }
 
             if (SubscriptionId != null)
             {
                 source = source.Where(v => v.SubscriptionId == SubscriptionId);
-                Title = (await DataContext.YtManagerAppSubscriptions.FindAsync(SubscriptionId))?.Name ?? "";
+                Title = (await DataContext.Subscriptions.FindAsync(SubscriptionId))?.Name ?? "";
             }
 
             source = SortOrder switch

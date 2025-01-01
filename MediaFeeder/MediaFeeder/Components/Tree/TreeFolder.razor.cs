@@ -7,7 +7,9 @@ public sealed partial class TreeFolder
 {
     private int Unwatched { get; set; } = 0;
 
-    [Parameter][EditorRequired] public YtManagerAppSubscriptionFolder? Folder { get; set; }
+    [Parameter]
+    [EditorRequired]
+    public Folder? Folder { get; set; }
 
     [Parameter] public TreeFolder? Parent { get; set; }
 

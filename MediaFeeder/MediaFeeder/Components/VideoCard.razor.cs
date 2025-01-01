@@ -8,7 +8,9 @@ namespace MediaFeeder.Components;
 
 public sealed partial class VideoCard : ComponentBase
 {
-    [Parameter][EditorRequired] public YtManagerAppVideo? Video { get; set; }
+    [Parameter]
+    [EditorRequired]
+    public Video? Video { get; set; }
 
     [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 
@@ -59,7 +61,7 @@ public sealed partial class VideoCard : ComponentBase
         ArgumentNullException.ThrowIfNull(Video);
 
         await using var context = await ContextFactory.CreateDbContextAsync();
-        var video = await context.YtManagerAppVideos.FindAsync(Video.Id);
+        var video = await context.Videos.FindAsync(Video.Id);
 
         if (video != null)
             video.Watched = !video.Watched;

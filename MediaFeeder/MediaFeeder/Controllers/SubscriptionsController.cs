@@ -12,55 +12,55 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
 {
     // GET: api/Subscriptions
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<YtManagerAppSubscription>>> GetYtManagerAppSubscriptions()
+    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions()
     {
-        return await context.YtManagerAppSubscriptions.ToListAsync(HttpContext.RequestAborted);
+        return await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
     }
 
     // GET: api/Subscriptions/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<object>> GetYtManagerAppSubscription(int id)
+    public async Task<ActionResult<object>> GetSubscription(int id)
     {
-        var ytManagerAppSubscription =
-            await context.YtManagerAppSubscriptions
-                .Include(static v => v.YtManagerAppVideos)
+        var subscription =
+            await context.Subscriptions
+                .Include(static v => v.Videos)
                 .SingleOrDefaultAsync(v => v.Id == id, HttpContext.RequestAborted);
 
-        if (ytManagerAppSubscription == null)
+        if (subscription == null)
             return NotFound();
 
         var user = await userManager.GetUserAsync(HttpContext.User);
         if (user == null)
             return Forbid();
 
-        if (ytManagerAppSubscription.UserId != user.Id)
+        if (subscription.UserId != user.Id)
             return Unauthorized();
 
         return new
         {
-            ytManagerAppSubscription.Name,
-            ytManagerAppSubscription.Id,
-            ytManagerAppSubscription.Thumb,
-            ytManagerAppSubscription.Thumbnail,
-            Unwatched = ytManagerAppSubscription.YtManagerAppVideos.Count(static v => !v.Watched)
+            subscription.Name,
+            subscription.Id,
+            subscription.Thumb,
+            subscription.Thumbnail,
+            Unwatched = subscription.Videos.Count(static v => !v.Watched)
         };
     }
 
     // PUT: api/Subscriptions/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutYtManagerAppSubscription(int id,
-        YtManagerAppSubscription ytManagerAppSubscription)
+    public async Task<IActionResult> PutSubscription(int id,
+        Subscription subscription)
     {
-        if (id != ytManagerAppSubscription.Id) return BadRequest();
+        if (id != subscription.Id) return BadRequest();
 
-        context.Entry(ytManagerAppSubscription).State = EntityState.Modified;
+        context.Entry(subscription).State = EntityState.Modified;
 
         try
         {
             await context.SaveChangesAsync(HttpContext.RequestAborted);
         }
-        catch (DbUpdateConcurrencyException) when (!YtManagerAppSubscriptionExists(id))
+        catch (DbUpdateConcurrencyException) when (!SubscriptionExists(id))
         {
             return NotFound();
         }
@@ -71,32 +71,32 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     // POST: api/Subscriptions
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<YtManagerAppSubscription>> PostYtManagerAppSubscription(
-        YtManagerAppSubscription ytManagerAppSubscription)
+    public async Task<ActionResult<Subscription>> PostSubscription(
+        Subscription subscription)
     {
-        context.YtManagerAppSubscriptions.Add(ytManagerAppSubscription);
+        context.Subscriptions.Add(subscription);
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
-        return CreatedAtAction("GetYtManagerAppSubscription", new { id = ytManagerAppSubscription.Id },
-            ytManagerAppSubscription);
+        return CreatedAtAction("GetSubscription", new { id = subscription.Id },
+            subscription);
     }
 
     // DELETE: api/Subscriptions/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteYtManagerAppSubscription(int id)
+    public async Task<IActionResult> DeleteSubscription(int id)
     {
-        var ytManagerAppSubscription =
-            await context.YtManagerAppSubscriptions.FindAsync([id], HttpContext.RequestAborted);
-        if (ytManagerAppSubscription == null) return NotFound();
+        var subscription =
+            await context.Subscriptions.FindAsync([id], HttpContext.RequestAborted);
+        if (subscription == null) return NotFound();
 
-        context.YtManagerAppSubscriptions.Remove(ytManagerAppSubscription);
+        context.Subscriptions.Remove(subscription);
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
         return NoContent();
     }
 
-    private bool YtManagerAppSubscriptionExists(int id)
+    private bool SubscriptionExists(int id)
     {
-        return context.YtManagerAppSubscriptions.Any(e => e.Id == id);
+        return context.Subscriptions.Any(e => e.Id == id);
     }
 }

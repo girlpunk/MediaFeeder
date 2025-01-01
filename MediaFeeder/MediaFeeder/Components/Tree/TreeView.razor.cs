@@ -17,7 +17,7 @@ public partial class TreeView
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
-    private List<YtManagerAppSubscriptionFolder>? Folders { get; set; }
+    private List<Folder>? Folders { get; set; }
 
     private SemaphoreSlim Updating { get; } = new(1);
 
@@ -32,15 +32,15 @@ public partial class TreeView
                 var user = await UserManager.GetUserAsync(auth.User);
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
-                UnwatchedCache = context.YtManagerAppVideos
+                UnwatchedCache = context.Videos
                     .Where(v => !v.Watched && v.Subscription.User == user)
                     .GroupBy(static v => v.SubscriptionId)
                     .Select(static g => new { Id = g.Key, Count = g.Count() })
                     .ToDictionary(static g => g.Id, static g => g.Count);
 
-                Folders = context.YtManagerAppSubscriptionFolders.Where(f => f.User == user)
-                    .Include(static f => f.InverseParent)
-                    .Include(static f => f.YtManagerAppSubscriptions)
+                Folders = context.Folders.Where(f => f.User == user)
+                    .Include(static f => f.Subfolders)
+                    .Include(static f => f.Subscriptions)
                     .ToList();
             }
             finally

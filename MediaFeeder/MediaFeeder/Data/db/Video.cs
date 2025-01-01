@@ -2,7 +2,7 @@
 
 namespace MediaFeeder.Data.db;
 
-public class YtManagerAppVideo
+public class Video
 {
     public int Id { get; set; }
 
@@ -28,5 +28,5 @@ public class YtManagerAppVideo
 
     public TimeSpan DurationSpan => TimeSpan.FromSeconds(Duration);
 
-    public virtual YtManagerAppSubscription Subscription { get; set; }
+    public virtual Subscription Subscription { get; set; }
 }

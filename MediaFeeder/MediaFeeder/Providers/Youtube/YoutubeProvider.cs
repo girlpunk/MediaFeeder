@@ -5,17 +5,17 @@ namespace MediaFeeder.Providers.Youtube;
 
 public class YoutubeProvider : IProvider
 {
-    public Task DownloadVideo(YtManagerAppVideo video)
+    public Task DownloadVideo(Video video)
     {
         throw new NotImplementedException();
     }
 
-    public Task SynchroniseSubscription(YtManagerAppSubscription subscription)
+    public Task SynchroniseSubscription(Subscription subscription)
     {
         throw new NotImplementedException();
     }
 
-    public Task<bool> ProcessUrl(string url, YtManagerAppSubscription subscription)
+    public Task<bool> ProcessUrl(string url, Subscription subscription)
     {
         throw new NotImplementedException();
     }

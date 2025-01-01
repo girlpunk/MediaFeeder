@@ -36,22 +36,11 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
     public virtual DbSet<EasyThumbnailsSource> EasyThumbnailsSources { get; init; }
     public virtual DbSet<EasyThumbnailsThumbnail> EasyThumbnailsThumbnails { get; init; }
     public virtual DbSet<EasyThumbnailsThumbnaildimension> EasyThumbnailsThumbnaildimensions { get; init; }
-    public virtual DbSet<YtManagerAppJobexecution> YtManagerAppJobexecutions { get; init; }
-    public virtual DbSet<YtManagerAppJobmessage> YtManagerAppJobmessages { get; init; }
-    public virtual DbSet<YtManagerAppSubscription> YtManagerAppSubscriptions { get; init; }
-    public virtual DbSet<YtManagerAppSubscriptionFolder> YtManagerAppSubscriptionFolders { get; init; }
-    public virtual DbSet<YtManagerAppVideo> YtManagerAppVideos { get; init; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder = optionsBuilder.UseLazyLoadingProxies();
-
-        if (!optionsBuilder.IsConfigured)
-            optionsBuilder
-                .UseLazyLoadingProxies()
-                .UseNpgsql(
-                    "Host=localhost;Database=ytsm;Username=ytsm;Password=verysecurepassword;port=5432;Timeout=60");
-    }
+    public virtual DbSet<JobExecution> YtManagerAppJobexecutions { get; init; }
+    public virtual DbSet<JobMessage> YtManagerAppJobmessages { get; init; }
+    public virtual DbSet<Subscription> Subscriptions { get; init; }
+    public virtual DbSet<Folder> Folders { get; init; }
+    public virtual DbSet<Video> Videos { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -676,7 +665,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
                 .HasConstraintName("easy_thumbnails_thum_thumbnail_id_c3a0c549_fk_easy_thum");
         });
 
-        modelBuilder.Entity<YtManagerAppJobexecution>(entity =>
+        modelBuilder.Entity<JobExecution>(static entity =>
         {
             entity.ToTable("YtManagerApp_jobexecution");
 
@@ -698,12 +687,12 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.Property(static e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(static d => d.User)
-                .WithMany(static p => p.YtManagerAppJobexecutions)
+                .WithMany(static p => p.JobExecutions)
                 .HasForeignKey(static d => d.UserId)
                 .HasConstraintName("YtManagerApp_jobexecution_user_id_60530e6f_fk_auth_user_id");
         });
 
-        modelBuilder.Entity<YtManagerAppJobmessage>(entity =>
+        modelBuilder.Entity<JobMessage>(static entity =>
         {
             entity.ToTable("YtManagerApp_jobmessage");
 
@@ -727,13 +716,13 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.Property(static e => e.Timestamp).HasColumnName("timestamp");
 
             entity.HasOne(static d => d.Job)
-                .WithMany(static p => p.YtManagerAppJobmessages)
+                .WithMany(static p => p.Jobmessages)
                 .HasForeignKey(static d => d.JobId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_jobmess_job_id_ec6435ce_fk_YtManager");
         });
 
-        modelBuilder.Entity<YtManagerAppSubscription>(entity =>
+        modelBuilder.Entity<Subscription>(static entity =>
         {
             entity.ToTable("YtManagerApp_subscription");
 
@@ -800,18 +789,18 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.Property(static e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(static d => d.ParentFolder)
-                .WithMany(static p => p.YtManagerAppSubscriptions)
+                .WithMany(static p => p.Subscriptions)
                 .HasForeignKey(static d => d.ParentFolderId)
                 .HasConstraintName("YtManagerApp_subscri_parent_folder_id_c4c64c21_fk_YtManager");
 
             entity.HasOne(static d => d.User)
-                .WithMany(static p => p.YtManagerAppSubscriptions)
+                .WithMany(static p => p.Subscriptions)
                 .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_subscription_user_id_9d38617d_fk_auth_user_id");
         });
 
-        modelBuilder.Entity<YtManagerAppSubscriptionFolder>(entity =>
+        modelBuilder.Entity<Folder>(static entity =>
         {
             entity.ToTable("YtManagerApp_subscriptionfolder");
 
@@ -831,18 +820,18 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.Property(static e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(static d => d.Parent)
-                .WithMany(static p => p.InverseParent)
+                .WithMany(static p => p.Subfolders)
                 .HasForeignKey(static d => d.ParentId)
                 .HasConstraintName("YtManagerApp_subscri_parent_id_bd5f4bc1_fk_YtManager");
 
             entity.HasOne(static d => d.User)
-                .WithMany(static p => p.YtManagerAppSubscriptionfolders)
+                .WithMany(static p => p.Folders)
                 .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_subscri_user_id_6fb12da0_fk_auth_user");
         });
 
-        modelBuilder.Entity<YtManagerAppVideo>(entity =>
+        modelBuilder.Entity<Video>(static entity =>
         {
             entity.ToTable("YtManagerApp_video");
 
@@ -895,7 +884,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.Property(static e => e.Watched).HasColumnName("watched");
 
             entity.HasOne(static d => d.Subscription)
-                .WithMany(static p => p.YtManagerAppVideos)
+                .WithMany(static p => p.Videos)
                 .HasForeignKey(static d => d.SubscriptionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_video_subscription_id_720d4227_fk_YtManager");

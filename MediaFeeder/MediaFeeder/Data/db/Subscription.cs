@@ -2,11 +2,11 @@
 
 namespace MediaFeeder.Data.db;
 
-public class YtManagerAppSubscription : ITreeSelectable
+public class Subscription : ITreeSelectable
 {
-    public YtManagerAppSubscription()
+    public Subscription()
     {
-        YtManagerAppVideos = new HashSet<YtManagerAppVideo>();
+        Videos = new HashSet<Video>();
     }
 
     public int Id { get; set; }
@@ -39,9 +39,9 @@ public class YtManagerAppSubscription : ITreeSelectable
 
     [MaxLength(100)] public string Thumb { get; set; }
 
-    public virtual YtManagerAppSubscriptionFolder ParentFolder { get; set; }
+    public virtual Folder ParentFolder { get; set; }
     public virtual AuthUser User { get; set; }
-    public virtual ICollection<YtManagerAppVideo> YtManagerAppVideos { get; init; }
+    public virtual ICollection<Video> Videos { get; init; }
 
     public string OnSelectedNavigate => "/subscription/" + Id;
 }
