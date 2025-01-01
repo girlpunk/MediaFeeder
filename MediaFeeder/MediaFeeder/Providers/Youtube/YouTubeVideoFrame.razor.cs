@@ -21,7 +21,7 @@ public sealed partial class YouTubeVideoFrame
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_player == null && Video != null)
+        if (_player == null && Video != null && _youtubeCustomModule != null)
         {
             ArgumentNullException.ThrowIfNull(_youtubeCustomModule);
 
