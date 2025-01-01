@@ -1,4 +1,4 @@
-function initPlayer(DotNetHelper, videoId)
+export function initPlayer(DotNetHelper, videoId)
 {
     "use strict";
     console.log("Starting player init");
