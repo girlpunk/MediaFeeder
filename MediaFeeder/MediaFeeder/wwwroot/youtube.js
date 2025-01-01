@@ -1,68 +1,27 @@
-let player;
-let dotNetHelper;
-
-export function initPlayer(DotNetHelper, videoId) {
+function initPlayer(DotNetHelper, videoId)
+{
+    "use strict";
     console.log("Starting player init");
-    dotNetHelper = DotNetHelper;
-    player = new YT.Player('ytplayer', {
-        height: '100%',
-        width: '100%',
-        videoId: videoId,
-        playerVars: {
-            origin: window.location,
-            autoplay: 1,
-        },
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange,
-            'onPlaybackQualityChange': onPlaybackQualityChange,
-            'onPlaybackRateChange': onPlaybackRateChange,
-            'onError': onError,
-            'onApiChange': onApiChange
-        }
-    });
-}
 
-function onPlayerReady(event) {
-    dotNetHelper.invokeMethodAsync('onPlayerReady', event);
-    console.log("Player Ready: ", event);
-    event.target.playVideo();
-}
-
-function onPlaybackQualityChange(event) {
-    dotNetHelper.invokeMethodAsync('onPlaybackQualityChange', event);
-    console.log("Quality change: ", event);
-}
-
-function onPlaybackRateChange(event) {
-    dotNetHelper.invokeMethodAsync('onPlaybackRateChange', event);
-    console.log("Playback rate change: ", event);
-}
-
-function onError(event) {
-    dotNetHelper.invokeMethodAsync('onError', event);
-    console.log("Playback Error: ", event);
-    if(event.data == 150) {
-        // "This error is the same as 101. It's just a 101 error in disguise!" - from the YT API Documentation, not 100% this is true.
-        // Skip to the next video after 10 seconds, do not mark as watched.
-        setTimeout(goNextVideo, 10 * 1000);
-    }
-}
-
-function onApiChange(event) {
-    dotNetHelper.invokeMethodAsync('onApiChange', event);
-    console.log("API Change: ", event);
-}
-
-function onPlayerStateChange(event) {
-    dotNetHelper.invokeMethodAsync('onPlayerStateChange', event);
-    console.log("State change: ", event);
-    if (event.data == YT.PlayerState.ENDED) {
-        console.log("Video finished!");
-        setWatchedStatus(1);
-    } else if (event.data == YT.PlayerState.UNSTARTED) {
-        player.playVideo();
-    }
+    return new YT.Player(
+        'ytplayer',
+        {
+            height: '100%',
+            width: '100%',
+            videoId: videoId,
+            playerVars: {
+                origin: window.location,
+                autoplay: 1,
+            },
+            events: {
+                'onReady': (event => DotNetHelper.invokeMethodAsync('OnPlayerReady', event)),
+                'onStateChange': (event => DotNetHelper.invokeMethodAsync('OnPlayerStateChange', event)),
+                'onPlaybackQualityChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackQualityChange', event)),
+                'onPlaybackRateChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackRateChange', event)),
+                'onError': (event => DotNetHelper.invokeMethodAsync('OnError', event)),
+                'onApiChange': (event => DotNetHelper.invokeMethodAsync('OnApiChange', event)),
+            }
+        });
 }
 
 // function isFullScreen() {

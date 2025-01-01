@@ -16,65 +16,77 @@
     {
         if (firstRender)
         {
-            var _youtubeLibraryModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/iframe_api.js");
+            var youtubeLibraryModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/iframe_api.js");
             _youtubeCustomModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/youtube.js");
 
+            Console.WriteLine($"_youtubeLibraryModule: {JsonSerializer.Serialize(youtubeLibraryModule)}");
+            Console.WriteLine($"_youtubeCustomModule: {JsonSerializer.Serialize(_youtubeCustomModule)}");
+
             _videoFrameRef ??= DotNetObjectReference.Create(this);
-            await _youtubeCustomModule.InvokeVoidAsync("initPlayer", _videoFrameRef, VideoId);
-        }
-    }
+            var player = await _youtubeCustomModule.InvokeAsync<object>("initPlayer", _videoFrameRef, VideoId);
 
-    protected override async Task OnParametersSetAsync()
-    {
-        if (_youtubeCustomModule != null)
-        {
+            Console.WriteLine($"player: {JsonSerializer.Serialize(player)}");
         }
     }
 
     [JSInvokable]
-    public Task onPlayerReady(JsonElement eventData)
+    public Task OnPlayerReady(JsonElement eventData)
     {
-        Console.WriteLine("Player Ready: ");
+        Console.WriteLine($"Player Ready: {JsonSerializer.Serialize(eventData)}");
+        // event.target.playVideo();
 
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task onPlaybackQualityChange(JsonElement eventData)
+    public Task OnPlaybackQualityChange(JsonElement eventData)
     {
-        Console.WriteLine("Quality change: ");
+        Console.WriteLine($"Quality change: {JsonSerializer.Serialize(eventData)}");
 
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task onPlaybackRateChange(object eventData)
+    public Task OnPlaybackRateChange(object eventData)
     {
-        Console.WriteLine("Playback rate change: ");
+        Console.WriteLine($"Playback rate change: {JsonSerializer.Serialize(eventData)}");
 
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task onError(object eventData)
+    public Task OnError(object eventData)
     {
-        Console.WriteLine("Playback Error: ");
+        Console.WriteLine($"Playback Error: {JsonSerializer.Serialize(eventData)}");
+
+        // if(eventData.data == 150) {
+        //     // "This error is the same as 101. It's just a 101 error in disguise!" - from the YT API Documentation, not 100% this is true.
+        //     // Skip to the next video after 10 seconds, do not mark as watched.
+        //     setTimeout(goNextVideo, 10 * 1000);
+        // }
 
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task onApiChange(object eventData)
+    public Task OnApiChange(object eventData)
     {
-        Console.WriteLine("API Change: ");
+        Console.WriteLine($"API Change: {JsonSerializer.Serialize(eventData)}");
 
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task onPlayerStateChange(JsonElement eventData)
+    public Task OnPlayerStateChange(JsonElement eventData)
     {
-        Console.WriteLine("State change: ");
+        Console.WriteLine($"State change: {JsonSerializer.Serialize(eventData)}");
+
+        // if (event.data == YT.PlayerState.ENDED) {
+        //     console.log("Video finished!");
+        //     setWatchedStatus(1);
+        // } else if (event.data == YT.PlayerState.UNSTARTED) {
+        //     player.playVideo();
+        // }
 
         return Task.CompletedTask;
     }
@@ -85,5 +97,4 @@
         // _youtubeLibraryModule?.DisposeAsync();
         _youtubeCustomModule?.DisposeAsync();
     }
-
 }
