@@ -29,7 +29,7 @@ public class SonarrProvider : IProvider
 
     public Type VideoFrameView => typeof(DownloadedVideoFrame);
 
-    public string ProviderIdentifier => "Youtube";
+    public string ProviderIdentifier => "Sonarr";
 
     public string MimeType { get; } = "Video/YouTube";
 }

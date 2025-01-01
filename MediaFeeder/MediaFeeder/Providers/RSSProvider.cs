@@ -29,7 +29,7 @@ public class RSSProvider : IProvider
 
     public Type VideoFrameView => typeof(DownloadedVideoFrame);
 
-    public string ProviderIdentifier => "Youtube";
+    public string ProviderIdentifier => "RSS";
 
     public string MimeType { get; } = "Video/YouTube";
 }
