@@ -59,7 +59,7 @@ builder.Services.AddAuthentication(static options =>
 builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseNpgsql(connectionString);
+    options.UseNpgsql(connectionString, static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -154,11 +154,13 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
-app.UseStaticFiles(new StaticFileOptions()
-{
-    FileProvider = new PhysicalFileProvider(app.Configuration.GetValue<string>("MediaRoot")),
-    RequestPath = new PathString("/media")
-});
+var mediaRoot = app.Configuration.GetValue<string>("MediaRoot");
+if (mediaRoot != null)
+    app.UseStaticFiles(new StaticFileOptions()
+    {
+        FileProvider = new PhysicalFileProvider(mediaRoot),
+        RequestPath = new PathString("/media")
+    });
 
 app.MapStaticAssets();
 app.MapControllers();

@@ -4,7 +4,6 @@
 @using System.Text
 @using System.Text.Encodings.Web
 @using MediaFeeder.Data.db
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Mvc
 @using Microsoft.AspNetCore.WebUtilities
@@ -54,7 +53,7 @@
     private string? _message;
     private ExternalLoginInfo? _externalLoginInfo;
 
-    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
 
     [SupplyParameterFromForm] private InputModel Input { get; set;  } = new();
 
@@ -68,6 +67,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        ArgumentNullException.ThrowIfNull(HttpContext);
+
         if (RemoteError is not null)
         {
             RedirectManager.RedirectToWithStatus("Account/Login", $"Error from external provider: {RemoteError}", HttpContext);
@@ -76,7 +77,6 @@
         var info = await SignInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
         }
 
         _externalLoginInfo = info;
@@ -97,6 +97,8 @@
 
     private async Task OnLoginCallbackAsync()
     {
+        ArgumentNullException.ThrowIfNull(HttpContext);
+
         if (_externalLoginInfo is null)
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
@@ -130,7 +132,7 @@
         }
 
         // If the user does not have an account, then ask the user to create an account.
-        if (_externalLoginInfo.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
+        if (_externalLoginInfo.Principal.HasClaim(static c => c.Type == ClaimTypes.Email))
         {
             Input.Email = _externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email) ?? "";
         }
@@ -140,6 +142,8 @@
 
     private async Task OnValidSubmitAsync()
     {
+        ArgumentNullException.ThrowIfNull(HttpContext);
+
         if (_externalLoginInfo is null)
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information during confirmation.", HttpContext);
@@ -157,7 +161,7 @@
 
             var result = await UserManager.CreateAsync(user);
 
-            _message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
+            _message = $"Error: {string.Join(",", result.Errors.Select(static error => error.Description))}";
 
             if (result != IdentityResult.Success)
                 return;
@@ -181,10 +185,10 @@
             RedirectManager.RedirectTo(ReturnUrl);
         }
 
-        _message = $"Error: {string.Join(",", result2.Errors.Select(error => error.Description))}";
+        _message = $"Error: {string.Join(",", result2.Errors.Select(static error => error.Description))}";
     }
 
-    private AuthUser CreateUser()
+    private static AuthUser CreateUser()
     {
         try
         {
@@ -211,5 +215,4 @@
     {
         [Required] [EmailAddress] public string Email { get; set; } = "";
     }
-
 }

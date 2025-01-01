@@ -544,134 +544,134 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
                     "dynamic_preferences_user_instance_id_section_name_29814e3f_uniq")
                 .IsUnique();
 
-            entity.HasIndex(e => e.Name, "dynamic_preferences_user_name_11ac488d_like")
+            entity.HasIndex(static e => e.Name, "dynamic_preferences_user_name_11ac488d_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.Section, "dynamic_preferences_user_section_ba869570_like")
+            entity.HasIndex(static e => e.Section, "dynamic_preferences_user_section_ba869570_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.InstanceId, "dynamic_preferences_users__instance_id_bf1d7718");
+            entity.HasIndex(static e => e.InstanceId, "dynamic_preferences_users__instance_id_bf1d7718");
 
-            entity.HasIndex(e => e.Name, "dynamic_preferences_users_userpreferencemodel_name_11ac488d");
+            entity.HasIndex(static e => e.Name, "dynamic_preferences_users_userpreferencemodel_name_11ac488d");
 
-            entity.HasIndex(e => e.Section, "dynamic_preferences_users_userpreferencemodel_section_ba869570");
+            entity.HasIndex(static e => e.Section, "dynamic_preferences_users_userpreferencemodel_section_ba869570");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.InstanceId).HasColumnName("instance_id");
+            entity.Property(static e => e.InstanceId).HasColumnName("instance_id");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(150)
                 .HasColumnName("name");
 
-            entity.Property(e => e.RawValue).HasColumnName("raw_value");
+            entity.Property(static e => e.RawValue).HasColumnName("raw_value");
 
-            entity.Property(e => e.Section)
+            entity.Property(static e => e.Section)
                 .HasMaxLength(150)
                 .HasColumnName("section");
 
-            entity.HasOne(d => d.Instance)
-                .WithMany(p => p.DynamicPreferencesUsersUserpreferencemodels)
-                .HasForeignKey(d => d.InstanceId)
+            entity.HasOne(static d => d.Instance)
+                .WithMany(static p => p.DynamicPreferencesUsersUserpreferencemodels)
+                .HasForeignKey(static d => d.InstanceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("dynamic_preferences__instance_id_bf1d7718_fk_auth_user");
         });
 
-        modelBuilder.Entity<EasyThumbnailsSource>(entity =>
+        modelBuilder.Entity<EasyThumbnailsSource>(static entity =>
         {
             entity.ToTable("easy_thumbnails_source");
 
-            entity.HasIndex(e => e.Name, "easy_thumbnails_source_name_5fe0edc6");
+            entity.HasIndex(static e => e.Name, "easy_thumbnails_source_name_5fe0edc6");
 
-            entity.HasIndex(e => e.Name, "easy_thumbnails_source_name_5fe0edc6_like")
+            entity.HasIndex(static e => e.Name, "easy_thumbnails_source_name_5fe0edc6_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.StorageHash, "easy_thumbnails_source_storage_hash_946cbcc9");
+            entity.HasIndex(static e => e.StorageHash, "easy_thumbnails_source_storage_hash_946cbcc9");
 
-            entity.HasIndex(e => e.StorageHash, "easy_thumbnails_source_storage_hash_946cbcc9_like")
+            entity.HasIndex(static e => e.StorageHash, "easy_thumbnails_source_storage_hash_946cbcc9_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => new { e.StorageHash, e.Name },
+            entity.HasIndex(static e => new { e.StorageHash, e.Name },
                     "easy_thumbnails_source_storage_hash_name_481ce32d_uniq")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Modified).HasColumnName("modified");
+            entity.Property(static e => e.Modified).HasColumnName("modified");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("name");
 
-            entity.Property(e => e.StorageHash)
+            entity.Property(static e => e.StorageHash)
                 .IsRequired()
                 .HasMaxLength(40)
                 .HasColumnName("storage_hash");
         });
 
-        modelBuilder.Entity<EasyThumbnailsThumbnail>(entity =>
+        modelBuilder.Entity<EasyThumbnailsThumbnail>(static entity =>
         {
             entity.ToTable("easy_thumbnails_thumbnail");
 
-            entity.HasIndex(e => new { e.StorageHash, e.Name, e.SourceId },
+            entity.HasIndex(static e => new { e.StorageHash, e.Name, e.SourceId },
                     "easy_thumbnails_thumbnai_storage_hash_name_source_fb375270_uniq")
                 .IsUnique();
 
-            entity.HasIndex(e => e.Name, "easy_thumbnails_thumbnail_name_b5882c31");
+            entity.HasIndex(static e => e.Name, "easy_thumbnails_thumbnail_name_b5882c31");
 
-            entity.HasIndex(e => e.Name, "easy_thumbnails_thumbnail_name_b5882c31_like")
+            entity.HasIndex(static e => e.Name, "easy_thumbnails_thumbnail_name_b5882c31_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.HasIndex(e => e.SourceId, "easy_thumbnails_thumbnail_source_id_5b57bc77");
+            entity.HasIndex(static e => e.SourceId, "easy_thumbnails_thumbnail_source_id_5b57bc77");
 
-            entity.HasIndex(e => e.StorageHash, "easy_thumbnails_thumbnail_storage_hash_f1435f49");
+            entity.HasIndex(static e => e.StorageHash, "easy_thumbnails_thumbnail_storage_hash_f1435f49");
 
-            entity.HasIndex(e => e.StorageHash, "easy_thumbnails_thumbnail_storage_hash_f1435f49_like")
+            entity.HasIndex(static e => e.StorageHash, "easy_thumbnails_thumbnail_storage_hash_f1435f49_like")
                 .HasOperators("varchar_pattern_ops");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Modified).HasColumnName("modified");
+            entity.Property(static e => e.Modified).HasColumnName("modified");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("name");
 
-            entity.Property(e => e.SourceId).HasColumnName("source_id");
+            entity.Property(static e => e.SourceId).HasColumnName("source_id");
 
-            entity.Property(e => e.StorageHash)
+            entity.Property(static e => e.StorageHash)
                 .IsRequired()
                 .HasMaxLength(40)
                 .HasColumnName("storage_hash");
 
-            entity.HasOne(d => d.Source)
-                .WithMany(p => p.EasyThumbnailsThumbnails)
-                .HasForeignKey(d => d.SourceId)
+            entity.HasOne(static d => d.Source)
+                .WithMany(static p => p.EasyThumbnailsThumbnails)
+                .HasForeignKey(static d => d.SourceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("easy_thumbnails_thum_source_id_5b57bc77_fk_easy_thum");
         });
 
-        modelBuilder.Entity<EasyThumbnailsThumbnaildimension>(entity =>
+        modelBuilder.Entity<EasyThumbnailsThumbnaildimension>(static entity =>
         {
             entity.ToTable("easy_thumbnails_thumbnaildimensions");
 
-            entity.HasIndex(e => e.ThumbnailId, "easy_thumbnails_thumbnaildimensions_thumbnail_id_key")
+            entity.HasIndex(static e => e.ThumbnailId, "easy_thumbnails_thumbnaildimensions_thumbnail_id_key")
                 .IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(static e => e.Height).HasColumnName("height");
 
-            entity.Property(e => e.ThumbnailId).HasColumnName("thumbnail_id");
+            entity.Property(static e => e.ThumbnailId).HasColumnName("thumbnail_id");
 
-            entity.Property(e => e.Width).HasColumnName("width");
+            entity.Property(static e => e.Width).HasColumnName("width");
 
-            entity.HasOne(d => d.Thumbnail)
-                .WithOne(p => p.EasyThumbnailsThumbnaildimension)
-                .HasForeignKey<EasyThumbnailsThumbnaildimension>(d => d.ThumbnailId)
+            entity.HasOne(static d => d.Thumbnail)
+                .WithOne(static p => p.EasyThumbnailsThumbnaildimension)
+                .HasForeignKey<EasyThumbnailsThumbnaildimension>(static d => d.ThumbnailId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("easy_thumbnails_thum_thumbnail_id_c3a0c549_fk_easy_thum");
         });
@@ -680,26 +680,26 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("YtManagerApp_jobexecution");
 
-            entity.HasIndex(e => e.UserId, "YtManagerApp_jobexecution_user_id_60530e6f");
+            entity.HasIndex(static e => e.UserId, "YtManagerApp_jobexecution_user_id_60530e6f");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Description)
+            entity.Property(static e => e.Description)
                 .IsRequired()
                 .HasMaxLength(250)
                 .HasColumnName("description");
 
-            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(static e => e.EndDate).HasColumnName("end_date");
 
-            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(static e => e.StartDate).HasColumnName("start_date");
 
-            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(static e => e.Status).HasColumnName("status");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(static e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.YtManagerAppJobexecutions)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(static d => d.User)
+                .WithMany(static p => p.YtManagerAppJobexecutions)
+                .HasForeignKey(static d => d.UserId)
                 .HasConstraintName("YtManagerApp_jobexecution_user_id_60530e6f_fk_auth_user_id");
         });
 
@@ -707,28 +707,28 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("YtManagerApp_jobmessage");
 
-            entity.HasIndex(e => e.JobId, "YtManagerApp_jobmessage_job_id_ec6435ce");
+            entity.HasIndex(static e => e.JobId, "YtManagerApp_jobmessage_job_id_ec6435ce");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.JobId).HasColumnName("job_id");
+            entity.Property(static e => e.JobId).HasColumnName("job_id");
 
-            entity.Property(e => e.Level).HasColumnName("level");
+            entity.Property(static e => e.Level).HasColumnName("level");
 
-            entity.Property(e => e.Message)
+            entity.Property(static e => e.Message)
                 .IsRequired()
                 .HasMaxLength(1024)
                 .HasColumnName("message");
 
-            entity.Property(e => e.Progress).HasColumnName("progress");
+            entity.Property(static e => e.Progress).HasColumnName("progress");
 
-            entity.Property(e => e.SuppressNotification).HasColumnName("suppress_notification");
+            entity.Property(static e => e.SuppressNotification).HasColumnName("suppress_notification");
 
-            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+            entity.Property(static e => e.Timestamp).HasColumnName("timestamp");
 
-            entity.HasOne(d => d.Job)
-                .WithMany(p => p.YtManagerAppJobmessages)
-                .HasForeignKey(d => d.JobId)
+            entity.HasOne(static d => d.Job)
+                .WithMany(static p => p.YtManagerAppJobmessages)
+                .HasForeignKey(static d => d.JobId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_jobmess_job_id_ec6435ce_fk_YtManager");
         });
@@ -737,76 +737,76 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("YtManagerApp_subscription");
 
-            entity.HasIndex(e => e.ParentFolderId, "YtManagerApp_subscription_parent_folder_id_c4c64c21");
+            entity.HasIndex(static e => e.ParentFolderId, "YtManagerApp_subscription_parent_folder_id_c4c64c21");
 
-            entity.HasIndex(e => e.UserId, "YtManagerApp_subscription_user_id_9d38617d");
+            entity.HasIndex(static e => e.UserId, "YtManagerApp_subscription_user_id_9d38617d");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.AutoDownload).HasColumnName("auto_download");
+            entity.Property(static e => e.AutoDownload).HasColumnName("auto_download");
 
-            entity.Property(e => e.AutomaticallyDeleteWatched).HasColumnName("automatically_delete_watched");
+            entity.Property(static e => e.AutomaticallyDeleteWatched).HasColumnName("automatically_delete_watched");
 
-            entity.Property(e => e.ChannelId)
+            entity.Property(static e => e.ChannelId)
                 .IsRequired()
                 .HasMaxLength(128)
                 .HasColumnName("channel_id");
 
-            entity.Property(e => e.ChannelName)
+            entity.Property(static e => e.ChannelName)
                 .IsRequired()
                 .HasMaxLength(1024)
                 .HasColumnName("channel_name");
 
-            entity.Property(e => e.Description)
+            entity.Property(static e => e.Description)
                 .IsRequired()
                 .HasColumnName("description");
 
-            entity.Property(e => e.DownloadLimit).HasColumnName("download_limit");
+            entity.Property(static e => e.DownloadLimit).HasColumnName("download_limit");
 
-            entity.Property(e => e.DownloadOrder)
+            entity.Property(static e => e.DownloadOrder)
                 .HasMaxLength(128)
                 .HasColumnName("download_order");
 
-            entity.Property(e => e.LastSynchronised).HasColumnName("last_synchronised");
+            entity.Property(static e => e.LastSynchronised).HasColumnName("last_synchronised");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(1024)
                 .HasColumnName("name");
 
-            entity.Property(e => e.ParentFolderId).HasColumnName("parent_folder_id");
+            entity.Property(static e => e.ParentFolderId).HasColumnName("parent_folder_id");
 
-            entity.Property(e => e.PlaylistId)
+            entity.Property(static e => e.PlaylistId)
                 .IsRequired()
                 .HasMaxLength(128)
                 .HasColumnName("playlist_id");
 
-            entity.Property(e => e.Provider)
+            entity.Property(static e => e.Provider)
                 .IsRequired()
                 .HasMaxLength(64)
                 .HasColumnName("provider");
 
-            entity.Property(e => e.RewritePlaylistIndices).HasColumnName("rewrite_playlist_indices");
+            entity.Property(static e => e.RewritePlaylistIndices).HasColumnName("rewrite_playlist_indices");
 
-            entity.Property(e => e.Thumb)
+            entity.Property(static e => e.Thumb)
                 .HasMaxLength(100)
                 .HasColumnName("thumb");
 
-            entity.Property(e => e.Thumbnail)
+            entity.Property(static e => e.Thumbnail)
                 .IsRequired()
                 .HasMaxLength(1024)
                 .HasColumnName("thumbnail");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(static e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.ParentFolder)
-                .WithMany(p => p.YtManagerAppSubscriptions)
-                .HasForeignKey(d => d.ParentFolderId)
+            entity.HasOne(static d => d.ParentFolder)
+                .WithMany(static p => p.YtManagerAppSubscriptions)
+                .HasForeignKey(static d => d.ParentFolderId)
                 .HasConstraintName("YtManagerApp_subscri_parent_folder_id_c4c64c21_fk_YtManager");
 
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.YtManagerAppSubscriptions)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(static d => d.User)
+                .WithMany(static p => p.YtManagerAppSubscriptions)
+                .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_subscription_user_id_9d38617d_fk_auth_user_id");
         });
@@ -815,29 +815,29 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("YtManagerApp_subscriptionfolder");
 
-            entity.HasIndex(e => e.ParentId, "YtManagerApp_subscriptionfolder_parent_id_bd5f4bc1");
+            entity.HasIndex(static e => e.ParentId, "YtManagerApp_subscriptionfolder_parent_id_bd5f4bc1");
 
-            entity.HasIndex(e => e.UserId, "YtManagerApp_subscriptionfolder_user_id_6fb12da0");
+            entity.HasIndex(static e => e.UserId, "YtManagerApp_subscriptionfolder_user_id_6fb12da0");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasMaxLength(250)
                 .HasColumnName("name");
 
-            entity.Property(e => e.ParentId).HasColumnName("parent_id");
+            entity.Property(static e => e.ParentId).HasColumnName("parent_id");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(static e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Parent)
-                .WithMany(p => p.InverseParent)
-                .HasForeignKey(d => d.ParentId)
+            entity.HasOne(static d => d.Parent)
+                .WithMany(static p => p.InverseParent)
+                .HasForeignKey(static d => d.ParentId)
                 .HasConstraintName("YtManagerApp_subscri_parent_id_bd5f4bc1_fk_YtManager");
 
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.YtManagerAppSubscriptionfolders)
-                .HasForeignKey(d => d.UserId)
+            entity.HasOne(static d => d.User)
+                .WithMany(static p => p.YtManagerAppSubscriptionfolders)
+                .HasForeignKey(static d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_subscri_user_id_6fb12da0_fk_auth_user");
         });
@@ -846,57 +846,57 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("YtManagerApp_video");
 
-            entity.HasIndex(e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
+            entity.HasIndex(static e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id");
 
-            entity.Property(e => e.Description)
+            entity.Property(static e => e.Description)
                 .IsRequired()
                 .HasColumnName("description");
 
-            entity.Property(e => e.DownloadedPath).HasColumnName("downloaded_path");
+            entity.Property(static e => e.DownloadedPath).HasColumnName("downloaded_path");
 
-            entity.Property(e => e.Duration).HasColumnName("duration");
+            entity.Property(static e => e.Duration).HasColumnName("duration");
 
-            entity.Property(e => e.Name)
+            entity.Property(static e => e.Name)
                 .IsRequired()
                 .HasColumnName("name");
 
-            entity.Property(e => e.New).HasColumnName("new");
+            entity.Property(static e => e.New).HasColumnName("new");
 
-            entity.Property(e => e.PlaylistIndex).HasColumnName("playlist_index");
+            entity.Property(static e => e.PlaylistIndex).HasColumnName("playlist_index");
 
-            entity.Property(e => e.PublishDate).HasColumnName("publish_date");
+            entity.Property(static e => e.PublishDate).HasColumnName("publish_date");
 
-            entity.Property(e => e.Rating).HasColumnName("rating");
+            entity.Property(static e => e.Rating).HasColumnName("rating");
 
-            entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
+            entity.Property(static e => e.SubscriptionId).HasColumnName("subscription_id");
 
-            entity.Property(e => e.Thumb)
+            entity.Property(static e => e.Thumb)
                 .HasMaxLength(100)
                 .HasColumnName("thumb");
 
-            entity.Property(e => e.Thumbnail)
+            entity.Property(static e => e.Thumbnail)
                 .IsRequired()
                 .HasColumnName("thumbnail");
 
-            entity.Property(e => e.UploaderName)
+            entity.Property(static e => e.UploaderName)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("uploader_name");
 
-            entity.Property(e => e.VideoId)
+            entity.Property(static e => e.VideoId)
                 .IsRequired()
                 .HasMaxLength(12)
                 .HasColumnName("video_id");
 
-            entity.Property(e => e.Views).HasColumnName("views");
+            entity.Property(static e => e.Views).HasColumnName("views");
 
-            entity.Property(e => e.Watched).HasColumnName("watched");
+            entity.Property(static e => e.Watched).HasColumnName("watched");
 
-            entity.HasOne(d => d.Subscription)
-                .WithMany(p => p.YtManagerAppVideos)
-                .HasForeignKey(d => d.SubscriptionId)
+            entity.HasOne(static d => d.Subscription)
+                .WithMany(static p => p.YtManagerAppVideos)
+                .HasForeignKey(static d => d.SubscriptionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_video_subscription_id_720d4227_fk_YtManager");
         });

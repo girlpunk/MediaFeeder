@@ -59,17 +59,19 @@
 
 @code {
     private string? _message;
-    private AuthUser _user = default!;
+    private AuthUser? _user;
     private string? _email;
     private bool _isEmailConfirmed;
 
-    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
 
     [SupplyParameterFromForm(FormName = "change-email")]
     private InputModel Input { get; } = new();
 
     protected override async Task OnInitializedAsync()
     {
+        ArgumentNullException.ThrowIfNull(HttpContext);
+
         _user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         _email = await UserManager.GetEmailAsync(_user);
         _isEmailConfirmed = await UserManager.IsEmailConfirmedAsync(_user);
@@ -84,6 +86,8 @@
             _message = "Your email is unchanged.";
             return;
         }
+
+        ArgumentNullException.ThrowIfNull(_user);
 
         var userId = await UserManager.GetUserIdAsync(_user);
         var code = await UserManager.GenerateChangeEmailTokenAsync(_user, Input.NewEmail);
@@ -103,6 +107,8 @@
         {
             return;
         }
+
+        ArgumentNullException.ThrowIfNull(_user);
 
         var userId = await UserManager.GetUserIdAsync(_user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(_user);

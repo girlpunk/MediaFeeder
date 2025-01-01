@@ -6,7 +6,6 @@ namespace MediaFeeder.Components.Tree;
 public sealed partial class TreeSubscription
 {
     private int Unwatched { get; set; }
-    [Parameter][EditorRequired] public TreeFolder? Parent { get; set; }
 
     [Parameter][EditorRequired] public YtManagerAppSubscription? Subscription { get; set; }
 
