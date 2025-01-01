@@ -16,6 +16,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.FileProviders;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -152,6 +153,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+app.UseStaticFiles(new StaticFileOptions()
+{
+    FileProvider = new PhysicalFileProvider(app.Configuration.GetValue<string>("MediaRoot")),
+    RequestPath = new PathString("/media")
+});
 
 app.MapStaticAssets();
 app.MapControllers();
