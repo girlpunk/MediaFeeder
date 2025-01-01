@@ -1,3 +1,4 @@
+using System.Net;
 using MediaFeeder;
 using MediaFeeder.Components;
 using MediaFeeder.Components.Account;
@@ -15,10 +16,9 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
-
-IdentityModelEventSource.ShowPII = true;
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -120,12 +120,7 @@ builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
 
-IdentityModelEventSource.ShowPII = true;
-
-
 var app = builder.Build();
-
-IdentityModelEventSource.ShowPII = true;
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -145,6 +140,7 @@ else
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.All,
+    KnownNetworks = { new IPNetwork(new IPAddress(0), 0) }
 });
 
 app.UseHealthChecks("/healthz");
@@ -167,7 +163,5 @@ app.MapAdditionalIdentityEndpoints();
 
 app.MapGrpcService<MediaToadService>();
 app.MapGrpcHealthChecksService();
-
-IdentityModelEventSource.ShowPII = true;
 
 app.Run();
