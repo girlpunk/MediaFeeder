@@ -85,7 +85,7 @@
     </GridCol>
 
     <GridCol Class="gutter-row" Span="8">
-        <Flex Justify="space-evenly">
+        <Flex Justify="FlexJustify.SpaceEvenly">
             <Tooltip Title="Watch All Now">
                 <Button Icon="@(IconType.Outline.PlayCircle)"></Button>
             </Tooltip>
@@ -105,7 +105,7 @@
     </GridCol>
 </GridRow>
 
-<GridRow Gutter="(16, 16)" Style="padding: 16px;" Justify="space-around">
+<GridRow Gutter="(16, 16)" Style="padding: 16px;" Justify="RowJustify.SpaceAround">
     @if (Videos != null)
     {
         @foreach (var video in Videos)
@@ -126,7 +126,7 @@
     }
 </GridRow>
 
-<Flex Justify="center">
+<Flex Justify="FlexJustify.Center">
     <Pagination Current="@PageNumber" Total="@ItemsAvailable" PageSize="@ResultsPerPage"
                 OnChange="PageChange"/>
 </Flex>

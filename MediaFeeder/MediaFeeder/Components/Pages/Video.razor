@@ -7,7 +7,7 @@
 
 <Layout>
     <Header Style="background-color: white;">
-        <Flex Justify="space-between" Align="flex-start">
+        <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.FlexStart">
             <div class="top-row ps-3 navbar">
                 <div class="container-fluid">
                     <Title>
@@ -62,7 +62,7 @@
         {
             <DynamicComponent Type="@Frame" Parameters="@(new Dictionary<string, object>() { { "Video", VideoObject } })"/>
 
-            <AntDesign.Text Type="secondary">
+            <AntDesign.Text Type="TextElementType.Secondary">
                 @if (VideoObject.Views > 0)
                 {
                     <span>@VideoObject.Views.ToMetric() views &#x2022; </span>
