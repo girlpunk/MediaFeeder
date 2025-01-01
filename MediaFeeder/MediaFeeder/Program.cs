@@ -111,7 +111,6 @@ builder.Services.AddGrpcHealthChecks()
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 
-
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
@@ -163,6 +162,14 @@ if (mediaRoot != null)
     {
         FileProvider = new PhysicalFileProvider(mediaRoot),
         RequestPath = new PathString("/media")
+    });
+
+var tvRoot = app.Configuration.GetValue<string>("TVRoot");
+if (tvRoot != null)
+    app.UseStaticFiles(new StaticFileOptions()
+    {
+        FileProvider = new PhysicalFileProvider(tvRoot),
+        RequestPath = new PathString("/tv")
     });
 
 app.MapStaticAssets();
