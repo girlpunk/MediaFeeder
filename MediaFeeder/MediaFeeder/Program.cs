@@ -100,10 +100,10 @@ builder.Services.AddOpenTelemetry()
     });
 
 builder.Services.AddHealthChecks()
-    .AddDbContextCheck<MediaFeederDataContext>();
+    .AddDbContextCheck<MediaFeederDataContext>("DB");
 
 builder.Services.AddGrpcHealthChecks()
-    .AddDbContextCheck<MediaFeederDataContext>();
+    .AddDbContextCheck<MediaFeederDataContext>("DB-GRPC");
 
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
