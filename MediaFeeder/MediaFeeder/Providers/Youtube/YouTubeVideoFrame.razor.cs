@@ -36,7 +36,7 @@ public sealed partial class YouTubeVideoFrame
     [JSInvokable]
     public Task OnPlayerReady(IJSObjectReference target, JsonElement data)
     {
-        Console.WriteLine($"Player Ready: {JsonSerializer.Serialize(data)}");
+        Console.WriteLine($"Player Ready: {JsonSerializer.Serialize(data)}. Trying to play.");
 
         // event.target.playVideo();
         target.InvokeVoidAsync("playVideo");

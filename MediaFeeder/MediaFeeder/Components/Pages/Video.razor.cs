@@ -20,13 +20,13 @@ public sealed partial class Video
     private string WatchButtonIcon =>
         VideoObject?.Watched ?? false ? IconType.Outline.EyeInvisible : IconType.Outline.Eye;
 
-    private Color WatchButtonColour => VideoObject?.Watched ?? false ? Color.Green10 : Color.Blue1;
+    private Color WatchButtonColour => VideoObject?.Watched ?? false ? Color.Green10 : Color.None;
     private string DownloadButtonText => VideoObject?.DownloadedPath == null ? "Download" : "Delete Download";
 
     private string DownloadButtonIcon =>
         VideoObject?.DownloadedPath == null ? IconType.Outline.Download : IconType.Outline.Delete;
 
-    private Color DownloadButtonColour => VideoObject?.DownloadedPath == null ? Color.Blue1 : Color.Green10;
+    private Color DownloadButtonColour => VideoObject?.DownloadedPath == null ? Color.None : Color.Green10;
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; }
 
@@ -48,9 +48,12 @@ public sealed partial class Video
     private async Task MarkWatched()
     {
         ArgumentNullException.ThrowIfNull(VideoObject);
+        Console.WriteLine("Marking as watched");
 
         VideoObject.Watched = !VideoObject.Watched;
         await Context.SaveChangesAsync();
+
+        StateHasChanged();
 
         GoNext();
     }
@@ -66,7 +69,12 @@ public sealed partial class Video
     public void GoNext()
     {
         if (string.IsNullOrWhiteSpace(Next))
+        {
+            Console.WriteLine("No next video to try");
             return;
+        }
+
+        Console.WriteLine("Going to next video");
 
         var more = Next.Split(",");
 
