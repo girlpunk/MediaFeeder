@@ -6,9 +6,15 @@
 {
     @if (Video.DownloadedPath != null)
     {
-        <BlazoredVideo CanPlay="CanPlay"
+        <BlazoredVideo
+            @ref="Player"
+            CanPlay="CanPlay"
                        Ended="Ended"
                        CanPlayThrough="CanPlayThrough"
+                       Abort="Abort"
+                       Error="Error"
+                       LoadedData="LoadedData"
+                       
                        class="w-100"
                        controls="controls">
             <source src="@Video.DownloadedPath" type="video/mp4"/>
