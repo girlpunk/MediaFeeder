@@ -10,6 +10,8 @@ public sealed partial class YouTubeVideoFrame
     private IJSObjectReference? _player;
     private DotNetObjectReference<YouTubeVideoFrame>? _videoFrameRef;
 
+    private int? _playingVideo;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) //_player == null && Video != null)
@@ -26,9 +28,10 @@ public sealed partial class YouTubeVideoFrame
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_player != null)
+        if (_player != null && Video?.Id != _playingVideo)
         {
             ArgumentNullException.ThrowIfNull(Video);
+            _playingVideo = Video.Id;
 
             await _player.InvokeVoidAsync("loadVideoById", Video.VideoId);
         }
