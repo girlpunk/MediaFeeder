@@ -107,9 +107,13 @@ public sealed partial class YouTubeVideoFrame
                 break;
             }
             case PlayerState.Unstarted:
-                // player.playVideo();
+            {
+                ArgumentNullException.ThrowIfNull(_player);
+
                 await target.InvokeVoidAsync("playVideo");
+                await _player.InvokeVoidAsync("playVideo");
                 break;
+            }
         }
     }
 

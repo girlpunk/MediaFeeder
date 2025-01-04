@@ -1,13 +1,23 @@
 let helper;
+let ready = false;
 
 export function helperReady(DotNetHelper) {
     "use strict";
     helper = DotNetHelper;
+    
+    if(ready === true) {
+        helper.invokeMethodAsync('OnLibraryLoaded');
+    }
 }
 
 window.onYouTubePlayerAPIReady = function() {
     "use strict";
-    helper.invokeMethodAsync('OnLibraryLoaded');
+    
+    if (helper == null) {
+        ready = true;
+    } else {
+        helper.invokeMethodAsync('OnLibraryLoaded');
+    }
 };
 
 export function initPlayer(videoId)
@@ -25,7 +35,10 @@ export function initPlayer(videoId)
                 autoplay: 1,
             },
             events: {
-                'onReady': (event => helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data)),
+                'onReady': (event => {
+                    event.target.playVideo();
+                    helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data);
+                }),
                 'onStateChange': (event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
                 'onPlaybackQualityChange': (event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
                 'onPlaybackRateChange': (event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),
