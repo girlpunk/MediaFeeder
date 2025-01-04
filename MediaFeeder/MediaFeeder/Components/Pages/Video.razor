@@ -29,7 +29,7 @@
                     <BreadcrumbItem>
                         @if (VideoObject != null)
                         {
-                            @VideoObject.Subscription.ParentFolder.Name
+                            @VideoObject?.Subscription?.ParentFolder?.Name
                         }
                         else
                         {
@@ -39,7 +39,7 @@
                     <BreadcrumbItem>
                         @if (VideoObject != null)
                         {
-                            @VideoObject.Subscription.Name
+                            @VideoObject?.Subscription?.Name
                         }
                         else
                         {

@@ -45,6 +45,11 @@ public sealed partial class Video
         }
     }
 
+    protected override void OnParametersSet()
+    {
+        Console.WriteLine("Parameters set, should this reload a video?");
+    }
+
     private async Task MarkWatched()
     {
         ArgumentNullException.ThrowIfNull(VideoObject);
