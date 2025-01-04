@@ -1,5 +1,6 @@
 ﻿using AntDesign;
 using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Pages;
 
@@ -30,10 +31,14 @@ public sealed partial class Video
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        VideoObject = Context.Videos.Single(v => v.Id == Id);
+        VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id);
+        Provider = null;
+        StateHasChanged();
+
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
+
         Provider = ServiceProvider.GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider);
 
@@ -43,11 +48,8 @@ public sealed partial class Video
             UpNextCount = more.Count;
             UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
         }
-    }
 
-    protected override void OnParametersSet()
-    {
-        Console.WriteLine("Parameters set, should this reload a video?");
+        StateHasChanged();
     }
 
     private async Task MarkWatched()
