@@ -1,0 +1,14 @@
+@page "/ajax/get_video_shuffle/"
+@page "/shuffle"
+
+@page "/ajax/get_video_shuffle/subscription/{folderId:int}"
+@page "/folder/{folderId:int}"
+
+@page "/ajax/get_video_shuffle/folder/{subscriptionId:int}"
+@page "/subscription/{subscriptionId:int}/shuffle"
+@using Humanizer
+
+<h1>Finding some videos...</h1>
+<h2>Searching @_subscriptions.Count subscriptions</h2>
+<h2>Got @_videos.Count so far</h2>
+<h2>Looking for @_timeRemaining.Humanize() more content</h2>
