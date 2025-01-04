@@ -46,14 +46,12 @@ public sealed class MediaToadService(
         var video = await dbContext.Videos
             .Include(static v => v.Subscription)
             .ThenInclude(static s => s.Provider)
-            .Include(static v => v.Subscription)
-            .ThenInclude(static s => s.User)
             .SingleOrDefaultAsync(v => v.Id == videoId, context.CancellationToken);
 
         if (video == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
-        if (video.Subscription.User != user)
+        if (video.Subscription.UserId != user.Id)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
         string? mimeType;
@@ -106,14 +104,12 @@ public sealed class MediaToadService(
         var video = await dbContext.Videos
             .Include(static v => v.Subscription)
             .ThenInclude(static s => s.Provider)
-            .Include(static v => v.Subscription)
-            .ThenInclude(static s => s.User)
             .SingleOrDefaultAsync(v => v.Id == videoId, context.CancellationToken);
 
         if (video == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
-        if (video.Subscription.User != user)
+        if (video.Subscription.UserId != user.Id)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
         if (video.DownloadedPath == null)
@@ -171,14 +167,13 @@ public sealed class MediaToadService(
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var subscription = await context.Subscriptions
-            .Include(static s => s.User)
             .Include(static s => s.Videos)
             .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
 
         if (subscription == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
-        if (subscription.User != user)
+        if (subscription.UserId != user.Id)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
         return new ListNodeReply()
@@ -201,7 +196,6 @@ public sealed class MediaToadService(
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var folder = await context.Folders
-            .Include(static s => s.User)
             .Include(static s => s.Subscriptions)
             .Include(static s => s.Subfolders)
             .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
@@ -209,7 +203,7 @@ public sealed class MediaToadService(
         if (folder == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
-        if (folder.User != user)
+        if (folder.UserId != user.Id)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
         return new ListNodeReply()

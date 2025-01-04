@@ -41,7 +41,7 @@ public sealed partial class Shuffle
 
         _videos.Enqueue(
             await DataContext.Videos
-                .Where(v => v.Watched == false && _subscriptions.Contains(v.Subscription))
+                .Where(v => v.Watched == false && _subscriptions.Select(s => s.Id).Contains(v.SubscriptionId))
                 .OrderBy(static v => v.PublishDate)
                 .FirstAsync()
         );
@@ -59,7 +59,7 @@ public sealed partial class Shuffle
             foreach (var subscription in _subscriptions)
             {
                 var video = await DataContext.Videos
-                    .Where(v => v.Subscription == subscription && v.Watched == false && !_videos.Select(static q => q.Id).Contains(v.Id))
+                    .Where(v => v.SubscriptionId == subscription.Id && v.Watched == false && !_videos.Select(static q => q.Id).Contains(v.Id))
                     .OrderBy(static v => v.PublishDate)
                     .FirstOrDefaultAsync();
 

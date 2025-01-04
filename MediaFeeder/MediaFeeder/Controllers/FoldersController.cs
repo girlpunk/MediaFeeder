@@ -17,9 +17,10 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
     public async Task<ActionResult<IEnumerable<int>>> GetFolders()
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
 
         return await context.Folders
-            .Where(folder => folder.User == user && folder.Parent == null)
+            .Where(folder => folder.UserId == user.Id && folder.ParentId == null)
             .Select(static folder => folder.Id)
             .ToListAsync(HttpContext.RequestAborted);
     }
@@ -29,11 +30,12 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
     public async Task<ActionResult<object>> GetFolder(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
 
         var folder = await context.Folders
             .Include(static folder => folder.Subfolders)
             .Include(static folder => folder.Subscriptions)
-            .SingleOrDefaultAsync(f => f.Id == id && f.User == user, HttpContext.RequestAborted);
+            .SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id, HttpContext.RequestAborted);
 
         if (folder == null)
             return NotFound();
@@ -54,8 +56,10 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         Folder folder)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
+
         var dbFolder =
-            await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.User == user,
+            await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id,
                 HttpContext.RequestAborted);
 
         if (dbFolder == null)
@@ -89,7 +93,7 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         if (user == null)
             return Forbid();
 
-        if (folder.User != user)
+        if (folder.UserId != user.Id)
             return Unauthorized();
 
         context.Folders.Add(folder);
@@ -104,8 +108,10 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
     public async Task<IActionResult> DeleteFolder(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
+
         var folder =
-            await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.User == user,
+            await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id,
                 HttpContext.RequestAborted);
 
         if (folder == null) return NotFound();

@@ -31,14 +31,16 @@ public partial class TreeView
                 var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
                 var user = await UserManager.GetUserAsync(auth.User);
 
+                ArgumentNullException.ThrowIfNull(user);
+
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.Videos
-                    .Where(v => !v.Watched && v.Subscription.User == user)
+                    .Where(v => !v.Watched && v.Subscription.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .Select(static g => new { Id = g.Key, Count = g.Count() })
                     .ToDictionary(static g => g.Id, static g => g.Count);
 
-                Folders = context.Folders.Where(f => f.User == user)
+                Folders = context.Folders.Where(f => f.UserId == user.Id)
                     .Include(static f => f.Subfolders)
                     .Include(static f => f.Subscriptions)
                     .ToList();
