@@ -28,8 +28,5 @@ public class RoleStore : IRoleStore<AuthGroup>
 
     public Task<AuthGroup?> FindByIdAsync(string roleId, CancellationToken cancellationToken) => throw new NotImplementedException();
 
-    public Task<AuthGroup?> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<AuthGroup?> FindByNameAsync(string normalizedRoleName, CancellationToken cancellationToken) => throw new NotImplementedException();
 }

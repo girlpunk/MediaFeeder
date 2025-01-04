@@ -6,13 +6,13 @@
 @inject IServiceProvider ServiceProvider
 
 <Layout>
-    <PageHeader Class="site-page-header" Subtitle="@(VideoObject?.Subscription?.ParentFolder?.Name + " > " + VideoObject?.Subscription?.Name)">
+    <PageHeader Class="site-page-header" Subtitle="@(VideoObject?.Subscription?.ParentFolder.Name + " > " + VideoObject?.Subscription?.Name)">
         <TitleTemplate>
             <a class="navbar-brand" href="/">
                 <img src="/logo.png" alt="Logo image" height="30px"/>
                 MediaFeeder
             </a>
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
                 @if (VideoObject != null)
                 {
                     @VideoObject?.Name
@@ -25,6 +25,7 @@
         </TitleTemplate>
 
         <PageHeaderExtra>
+            <div style="margin: auto 0;">
             @if (VideoObject != null && Provider != null)
             {
                 <Tooltip Title="@($"Watch on {Provider.Name}")">
@@ -74,6 +75,7 @@
                     <Button>@UpNextCount, @UpNextDuration.Humanize()</Button>
                 </Tooltip>
             }
+            </div>
         </PageHeaderExtra>
     </PageHeader>
     <Content>

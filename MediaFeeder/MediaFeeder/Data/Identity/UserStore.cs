@@ -12,15 +12,9 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
     {
     }
 
-    public Task<string> GetUserIdAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(user.Id.ToString("D", CultureInfo.InvariantCulture));
-    }
+    public Task<string> GetUserIdAsync(AuthUser user, CancellationToken cancellationToken) => Task.FromResult(user.Id.ToString("D", CultureInfo.InvariantCulture));
 
-    public Task<string?> GetUserNameAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<string?>(user.Username);
-    }
+    public Task<string?> GetUserNameAsync(AuthUser user, CancellationToken cancellationToken) => Task.FromResult<string?>(user.Username);
 
     public Task SetUserNameAsync(AuthUser user, string? userName, CancellationToken cancellationToken)
     {
@@ -30,10 +24,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetNormalizedUserNameAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<string?>(user.UserName);
-    }
+    public Task<string?> GetNormalizedUserNameAsync(AuthUser user, CancellationToken cancellationToken) => Task.FromResult<string?>(user.UserName);
 
     public Task SetNormalizedUserNameAsync(AuthUser user, string? normalizedName, CancellationToken cancellationToken)
     {
@@ -51,10 +42,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         return await Task.FromResult(IdentityResult.Success).ConfigureAwait(false);
     }
 
-    public Task<IdentityResult> UpdateAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException(nameof(UpdateAsync));
-    }
+    public Task<IdentityResult> UpdateAsync(AuthUser user, CancellationToken cancellationToken) => throw new NotSupportedException(nameof(UpdateAsync));
 
     public async Task<IdentityResult> DeleteAsync(AuthUser user, CancellationToken cancellationToken)
     {
@@ -90,10 +78,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
                 cancellationToken);
     }
 
-    public Task<string?> GetEmailAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<string?>(user.Email);
-    }
+    public Task<string?> GetEmailAsync(AuthUser user, CancellationToken cancellationToken) => Task.FromResult<string?>(user.Email);
 
     public Task SetEmailAsync(AuthUser user, string? email, CancellationToken cancellationToken)
     {
@@ -103,15 +88,9 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         return Task.CompletedTask;
     }
 
-    public Task<bool> GetEmailConfirmedAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(true);
-    }
+    public Task<bool> GetEmailConfirmedAsync(AuthUser user, CancellationToken cancellationToken) => Task.FromResult(true);
 
-    public Task SetEmailConfirmedAsync(AuthUser user, bool confirmed, CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
+    public Task SetEmailConfirmedAsync(AuthUser user, bool confirmed, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public async Task<AuthUser?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
     {
@@ -121,10 +100,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
             cancellationToken);
     }
 
-    public Task<string?> GetNormalizedEmailAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        return Task.FromResult<string?>(user.Email);
-    }
+    public Task<string?> GetNormalizedEmailAsync(AuthUser user, CancellationToken cancellationToken) => Task.FromResult<string?>(user.Email);
 
     public Task SetNormalizedEmailAsync(AuthUser user, string? normalizedEmail, CancellationToken cancellationToken)
     {
@@ -132,21 +108,13 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         return Task.CompletedTask;
     }
 
-    public Task AddLoginAsync(AuthUser user, UserLoginInfo login, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
+    public Task AddLoginAsync(AuthUser user, UserLoginInfo login, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task RemoveLoginAsync(AuthUser user, string loginProvider, string providerKey,
-        CancellationToken cancellationToken)
-    {
+        CancellationToken cancellationToken) =>
         throw new NotSupportedException();
-    }
 
-    public Task<IList<UserLoginInfo>> GetLoginsAsync(AuthUser user, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
+    public Task<IList<UserLoginInfo>> GetLoginsAsync(AuthUser user, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public async Task<AuthUser?> FindByLoginAsync(string loginProvider, string providerKey,
         CancellationToken cancellationToken)

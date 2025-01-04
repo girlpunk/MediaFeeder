@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Tree;
 
-public partial class TreeView
+public sealed partial class TreeView
 {
     [Inject] public IDbContextFactory<MediaFeederDataContext>? ContextFactory { get; set; }
 
