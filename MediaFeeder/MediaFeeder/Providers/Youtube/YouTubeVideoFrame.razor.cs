@@ -50,7 +50,7 @@ public sealed partial class YouTubeVideoFrame
     }
 
     [JSInvokable]
-    public Task OnError(IJSObjectReference target, JsonElement data)
+    public async Task OnError(IJSObjectReference target, JsonElement data)
     {
         Console.WriteLine($"Playback Error: {JsonSerializer.Serialize(data)}");
 
@@ -58,10 +58,11 @@ public sealed partial class YouTubeVideoFrame
         {
             // "This error is the same as 101. It's just a 101 error in disguise!" - from the YT API Documentation, not 100% this is true.
             // Skip to the next video after 10 seconds, do not mark as watched.
-            // setTimeout(goNextVideo, 10 * 1000);
-        }
+            await Task.Delay(TimeSpan.FromSeconds(10));
 
-        return Task.CompletedTask;
+            if (Page != null)
+                await Page.GoNext(false);
+        }
     }
 
     [JSInvokable]
@@ -80,15 +81,21 @@ public sealed partial class YouTubeVideoFrame
         var state = (PlayerState)
             data.GetInt32();
 
-        if (state == PlayerState.ENDED)
+        switch (state)
         {
-            // setWatchedStatus(1);
-            Console.WriteLine("Video finished!");
-        }
-        else if (state == PlayerState.UNSTARTED)
-        {
-            // player.playVideo();
-            await target.InvokeVoidAsync("playVideo");
+            case PlayerState.Ended:
+            {
+                // setWatchedStatus(1);
+                Console.WriteLine("Video finished!");
+
+                if (Page != null)
+                    await Page.GoNext(true);
+                break;
+            }
+            case PlayerState.Unstarted:
+                // player.playVideo();
+                await target.InvokeVoidAsync("playVideo");
+                break;
         }
     }
 
@@ -98,15 +105,5 @@ public sealed partial class YouTubeVideoFrame
         if (_player != null) await _player.DisposeAsync();
         if (_youtubeLibraryModule != null) await _youtubeLibraryModule.DisposeAsync();
         if (_youtubeCustomModule != null) await _youtubeCustomModule.DisposeAsync();
-    }
-
-    enum PlayerState
-    {
-        UNSTARTED = -1,
-        ENDED = 0,
-        PLAYING = 1,
-        PAUSED = 2,
-        BUFFERING = 3,
-        CUED = 5
     }
 }

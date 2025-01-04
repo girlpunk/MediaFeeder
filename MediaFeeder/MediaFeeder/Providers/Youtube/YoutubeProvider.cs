@@ -1,3 +1,4 @@
+using AntDesign;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
 
@@ -5,25 +6,18 @@ namespace MediaFeeder.Providers.Youtube;
 
 public class YoutubeProvider : IProvider
 {
-    public Task DownloadVideo(Video video)
-    {
-        throw new NotImplementedException();
-    }
+    public string Name => "YouTube";
+    public string Icon => IconType.Outline.Youtube;
 
-    public Task SynchroniseSubscription(Subscription subscription)
-    {
-        throw new NotImplementedException();
-    }
+    public string GetUrl(Video video) => $"https://www.youtube.com/watch?v={video.VideoId}";
 
-    public Task<bool> ProcessUrl(string url, Subscription subscription)
-    {
-        throw new NotImplementedException();
-    }
+    public Task DownloadVideo(Video video) => throw new NotImplementedException();
 
-    public Task<bool> IsUrlValid(string url)
-    {
-        throw new NotImplementedException();
-    }
+    public Task SynchroniseSubscription(Subscription subscription) => throw new NotImplementedException();
+
+    public Task<bool> ProcessUrl(string url, Subscription subscription) => throw new NotImplementedException();
+
+    public Task<bool> IsUrlValid(string url) => throw new NotImplementedException();
 
     public Provider Provider => Provider.YouTube;
 
@@ -31,5 +25,5 @@ public class YoutubeProvider : IProvider
 
     public string ProviderIdentifier => "Youtube";
 
-    public string MimeType { get; } = "Video/YouTube";
+    public string? StreamMimeType { get; } = "Video/YouTube";
 }
