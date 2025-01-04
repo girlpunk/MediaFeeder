@@ -23,7 +23,6 @@ public sealed partial class Video
     protected override async Task OnParametersSetAsync()
     {
         VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id);
-        Provider = null;
         StateHasChanged();
 
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
