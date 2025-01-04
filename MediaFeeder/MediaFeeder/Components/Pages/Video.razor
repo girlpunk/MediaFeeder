@@ -24,11 +24,11 @@
                 </div>
             </div>
             <div class="top-row px-4">
-                @if (VideoObject != null && Frame != null)
+                @if (VideoObject != null && Provider != null)
                 {
-                    <Tooltip Title="@($"Watch on {Frame.Name}")">
-                        <a href="@("https://youtube.com/watch?v=" + VideoObject.VideoId)">
-                            <Button Icon="@IconType.Outline.Youtube"></Button>
+                    <Tooltip Title="@($"Watch on {Provider.Name}")">
+                        <a href="@Provider.GetUrl(VideoObject)">
+                            <Button Icon="@Provider.Icon"></Button>
                         </a>
                     </Tooltip>
                 }
@@ -58,9 +58,15 @@
         </Flex>
     </Header>
     <Content>
-        @if (VideoObject != null && Frame != null)
+        @if (VideoObject != null && Provider != null)
         {
-            <DynamicComponent Type="@Frame" Parameters="@(new Dictionary<string, object>() { { "Video", VideoObject } })"/>
+            <DynamicComponent
+                Type="@Provider.VideoFrameView"
+                Parameters="@(new Dictionary<string, object>()
+                            {
+                                { "Video", VideoObject },
+                                { "Page", this },
+                            })"/>
 
             <AntDesign.Text Type="TextElementType.Secondary">
                 @if (VideoObject.Views > 0)

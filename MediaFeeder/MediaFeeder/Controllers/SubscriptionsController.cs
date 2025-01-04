@@ -12,10 +12,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
 {
     // GET: api/Subscriptions
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions()
-    {
-        return await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
-    }
+    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions() => await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
 
     // GET: api/Subscriptions/5
     [HttpGet("{id}")]

@@ -12,5 +12,8 @@ public interface IProvider
     public Task SynchroniseSubscription(Subscription subscription);
     public Task<bool> ProcessUrl(string url, Subscription subscription);
     public Task<bool> IsUrlValid(string url);
-    public string MimeType { get; }
+    public string? StreamMimeType { get; }
+    string Name { get; }
+    string Icon { get; }
+    string? GetUrl(Video video);
 }

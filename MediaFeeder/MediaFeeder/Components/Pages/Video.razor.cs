@@ -14,7 +14,7 @@ public sealed partial class Video
     [Inject] public required MessageService MessageService { get; set; }
 
     private Data.db.Video? VideoObject { get; set; }
-    private Type? Frame { get; set; }
+    private IProvider? Provider { get; set; }
     private string WatchButtonText => VideoObject?.Watched ?? false ? "Mark as not watched" : "Mark as watched";
 
     private string WatchButtonIcon =>
@@ -34,9 +34,8 @@ public sealed partial class Video
     {
         VideoObject = Context.Videos.Single(v => v.Id == Id);
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
-        Frame = ServiceProvider.GetServices<IProvider>()
-            .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider)
-            .VideoFrameView;
+        Provider = ServiceProvider.GetServices<IProvider>()
+            .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider);
 
         if (!string.IsNullOrWhiteSpace(Next))
         {
@@ -56,7 +55,15 @@ public sealed partial class Video
         GoNext();
     }
 
-    private void GoNext()
+    public async Task GoNext(bool watch)
+    {
+        if (watch)
+            await MarkWatched();
+
+        GoNext();
+    }
+
+    public void GoNext()
     {
         if (string.IsNullOrWhiteSpace(Next))
             return;

@@ -67,7 +67,7 @@ public sealed class MediaToadService(
             var videoProvider = serviceProvider.GetServices<IProvider>()
                 .Single(provider => provider.ProviderIdentifier == video.Subscription.Provider);
 
-            mimeType = videoProvider.MimeType;
+            mimeType = videoProvider.StreamMimeType;
         }
 
         var mediaItem = new MediaItem()
