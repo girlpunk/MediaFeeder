@@ -26,14 +26,11 @@ public sealed partial class YouTubeVideoFrame
 
     protected override async Task OnParametersSetAsync()
     {
-        Console.WriteLine("Parameters set, should this load a new video?");
-
         if (_player != null)
         {
             ArgumentNullException.ThrowIfNull(Video);
 
-            Console.WriteLine("Player is ready if it should");
-            //await _player.InvokeVoidAsync("loadVideoById", Video.VideoId);
+            await _player.InvokeVoidAsync("loadVideoById", Video.VideoId);
         }
     }
 
@@ -60,22 +57,6 @@ public sealed partial class YouTubeVideoFrame
     }
 
     [JSInvokable]
-    public Task OnPlaybackQualityChange(IJSObjectReference target, JsonElement data)
-    {
-        Console.WriteLine($"Quality change: {JsonSerializer.Serialize(data)}");
-
-        return Task.CompletedTask;
-    }
-
-    [JSInvokable]
-    public Task OnPlaybackRateChange(IJSObjectReference target, JsonElement data)
-    {
-        Console.WriteLine($"Playback rate change: {JsonSerializer.Serialize(data)}");
-
-        return Task.CompletedTask;
-    }
-
-    [JSInvokable]
     public async Task OnError(IJSObjectReference target, JsonElement data)
     {
         Console.WriteLine($"Playback Error: {JsonSerializer.Serialize(data)}");
@@ -89,14 +70,6 @@ public sealed partial class YouTubeVideoFrame
             if (Page != null)
                 await Page.GoNext(false);
         }
-    }
-
-    [JSInvokable]
-    public Task OnApiChange(IJSObjectReference target, JsonElement data)
-    {
-        Console.WriteLine($"API Change: {JsonSerializer.Serialize(data)}");
-
-        return Task.CompletedTask;
     }
 
     [JSInvokable]

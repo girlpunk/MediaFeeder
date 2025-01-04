@@ -37,10 +37,7 @@ export function initPlayer(videoId)
             events: {
                 'onReady': (event => helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data)),
                 'onStateChange': (event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onPlaybackQualityChange': (event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onPlaybackRateChange': (event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),
                 'onError': (event => helper.invokeMethodAsync('OnError', DotNet.createJSObjectReference(event.target), event.data)),
-                'onApiChange': (event => helper.invokeMethodAsync('OnApiChange', DotNet.createJSObjectReference(event.target), event.data)),
             }
         });
 }
