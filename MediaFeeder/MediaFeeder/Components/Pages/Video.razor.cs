@@ -38,6 +38,7 @@ public sealed partial class Video
         StateHasChanged();
 
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
+        await Context.Entry(VideoObject.Subscription).Reference(static v => v.ParentFolder).LoadAsync();
 
         Provider = ServiceProvider.GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider);

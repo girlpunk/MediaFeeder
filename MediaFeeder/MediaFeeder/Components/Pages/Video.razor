@@ -6,7 +6,7 @@
 @inject IServiceProvider ServiceProvider
 
 <Layout>
-    <PageHeader Class="site-page-header">
+    <PageHeader Class="site-page-header" Subtitle="@(VideoObject?.Subscription?.ParentFolder?.Name + " > " + VideoObject?.Subscription?.Name)">
         <TitleTemplate>
             <a class="navbar-brand" href="/">
                 <img src="/logo.png" alt="Logo image" height="30px"/>
