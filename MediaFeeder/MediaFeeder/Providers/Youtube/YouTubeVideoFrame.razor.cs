@@ -10,10 +10,12 @@ public sealed partial class YouTubeVideoFrame
     private IJSObjectReference? _player;
     private DotNetObjectReference<YouTubeVideoFrame>? _videoFrameRef;
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_player == null && Video != null)
+        if (firstRender) //_player == null && Video != null)
         {
+            ArgumentNullException.ThrowIfNull(Video);
+
             _youtubeLibraryModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/iframe_api.js");
             _youtubeCustomModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Providers/Youtube/YouTubeVideoFrame.razor.js");
 
@@ -81,6 +83,7 @@ public sealed partial class YouTubeVideoFrame
         var state = (PlayerState)
             data.GetInt32();
 
+        // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
         switch (state)
         {
             case PlayerState.Ended:
