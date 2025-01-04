@@ -1,7 +1,18 @@
-export function initPlayer(DotNetHelper, videoId)
+let helper;
+
+export function helperReady(DotNetHelper) {
+    "use strict";
+    helper = DotNetHelper;
+}
+
+window.onYouTubePlayerAPIReady = function() {
+    "use strict";
+    helper.invokeMethodAsync('OnLibraryLoaded');
+};
+
+export function initPlayer(videoId)
 {
     "use strict";
-    console.log("Starting player init");
 
     return new YT.Player(
         'ytplayer',
@@ -14,12 +25,12 @@ export function initPlayer(DotNetHelper, videoId)
                 autoplay: 1,
             },
             events: {
-                'onReady': (event => DotNetHelper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data)),
-                'onStateChange': (event => DotNetHelper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onPlaybackQualityChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onPlaybackRateChange': (event => DotNetHelper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onError': (event => DotNetHelper.invokeMethodAsync('OnError', DotNet.createJSObjectReference(event.target), event.data)),
-                'onApiChange': (event => DotNetHelper.invokeMethodAsync('OnApiChange', DotNet.createJSObjectReference(event.target), event.data)),
+                'onReady': (event => helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data)),
+                'onStateChange': (event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
+                'onPlaybackQualityChange': (event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
+                'onPlaybackRateChange': (event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),
+                'onError': (event => helper.invokeMethodAsync('OnError', DotNet.createJSObjectReference(event.target), event.data)),
+                'onApiChange': (event => helper.invokeMethodAsync('OnApiChange', DotNet.createJSObjectReference(event.target), event.data)),
             }
         });
 }
