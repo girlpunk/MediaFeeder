@@ -132,7 +132,8 @@ public sealed partial class Home
     {
         ArgumentNullException.ThrowIfNull(NavigationManager);
 
-        NavigationManager.NavigateTo(NavigationManager.Uri + "/shuffle");
+        var page = new Uri(new Uri(NavigationManager.Uri), "shuffle");
+        NavigationManager.NavigateTo(page.AbsolutePath);
     }
 
     private async Task MarkAllWatched()
