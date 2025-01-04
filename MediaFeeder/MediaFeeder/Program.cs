@@ -16,7 +16,7 @@ using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
-using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
@@ -53,6 +53,14 @@ builder.Services.AddAuthentication(static options =>
             options.Scope.Add("email");
         })
     .AddIdentityCookies();
+
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddDataProtection()
     .SetApplicationName("MediaFeeder")
@@ -152,12 +160,19 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
+var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
+
 var mediaRoot = app.Configuration.GetValue<string>("MediaRoot");
 if (mediaRoot != null)
     app.UseStaticFiles(new StaticFileOptions()
     {
         FileProvider = new PhysicalFileProvider(mediaRoot),
-        RequestPath = new PathString("/media")
+        RequestPath = new PathString("/media"),
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.Append(
+                "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
+        }
     });
 
 var tvRoot = app.Configuration.GetValue<string>("TVRoot");
@@ -165,7 +180,12 @@ if (tvRoot != null)
     app.UseStaticFiles(new StaticFileOptions()
     {
         FileProvider = new PhysicalFileProvider(tvRoot),
-        RequestPath = new PathString("/tv")
+        RequestPath = new PathString("/tv"),
+        OnPrepareResponse = ctx =>
+        {
+            ctx.Context.Response.Headers.Append(
+                "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
+        }
     });
 
 app.MapStaticAssets();
