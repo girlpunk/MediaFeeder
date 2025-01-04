@@ -7,23 +7,48 @@
 
 <Layout>
     <Header Style="background-color: white;">
-        <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.FlexStart">
-            <div class="top-row ps-3 navbar">
-                <div class="container-fluid">
-                    <Title>
-                        <a class="navbar-brand" href="/">MediaFeeder</a> 
+        <PageHeader Class="site-page-header">
+            <TitleTemplate>
+                <a class="navbar-brand" href="/">
+                    <img src="/logo.png" alt="Logo image" height="30px"/>
+                    MediaFeeder
+                </a>
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    @if (VideoObject != null)
+                    {
+                        @VideoObject?.Name
+                    }
+                    else
+                    {
+                        <Skeleton/>
+                    }
+                </span>
+            </TitleTemplate>
+            <PageHeaderBreadcrumb>
+                <Breadcrumb>
+                    <BreadcrumbItem>
                         @if (VideoObject != null)
                         {
-                            @VideoObject?.Name
+                            @VideoObject.Subscription.ParentFolder.Name
                         }
                         else
                         {
                             <Skeleton/>
                         }
-                    </Title>
-                </div>
-            </div>
-            <div class="top-row px-4">
+                    </BreadcrumbItem>
+                    <BreadcrumbItem>
+                        @if (VideoObject != null)
+                        {
+                            @VideoObject.Subscription.Name
+                        }
+                        else
+                        {
+                            <Skeleton/>
+                        }
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </PageHeaderBreadcrumb>
+            <PageHeaderExtra>
                 @if (VideoObject != null && Provider != null)
                 {
                     <Tooltip Title="@($"Watch on {Provider.Name}")">
@@ -36,7 +61,7 @@
                 <Tooltip Title="@WatchButtonText">
                     <Button Icon="@WatchButtonIcon" Color="@WatchButtonColour" OnClick="@MarkWatched"></Button>
                 </Tooltip>
-                
+
                 @if (Next != null)
                 {
                     <Tooltip Title="Go to next video">
@@ -44,7 +69,7 @@
                     </Tooltip>
                 }
 
-                <Tooltip Title="@DownloadButtonText" >
+                <Tooltip Title="@DownloadButtonText">
                     <Button Icon="@DownloadButtonIcon" Color="@DownloadButtonColour" OnClick="@Download"></Button>
                 </Tooltip>
 
@@ -54,35 +79,37 @@
                         <Button>@UpNextCount, @UpNextDuration.Humanize()</Button>
                     </Tooltip>
                 }
-            </div>
-        </Flex>
+            </PageHeaderExtra>
+        </PageHeader>
     </Header>
     <Content>
         @if (VideoObject != null && Provider != null)
         {
             <DynamicComponent
                 Type="@Provider.VideoFrameView"
-                Parameters="@(new Dictionary<string, object>()
+                Parameters="@(new Dictionary<string, object>
                             {
                                 { "Video", VideoObject },
-                                { "Page", this },
+                                { "Page", this }
                             })"/>
 
-            <AntDesign.Text Type="TextElementType.Secondary">
-                @if (VideoObject.Views > 0)
-                {
-                    <span>@VideoObject.Views.ToMetric() views &#x2022; </span>
-                }
-            
-                <span>@VideoObject.PublishDate.Humanize()</span>
+            <p style="padding: 24px;">
+                <AntDesign.Text Type="TextElementType.Secondary">
+                    @if (VideoObject.Views > 0)
+                    {
+                        <span>@VideoObject.Views.ToMetric() views &#x2022; </span>
+                    }
 
-                @if (VideoObject.Rating > 0)
-                {
-                    <span> &#x2022; @VideoObject.Rating </span>
-                }
-            </AntDesign.Text>
+                    <span>@VideoObject.PublishDate.Humanize()</span>
 
-            <Paragraph>@VideoObject.Description</Paragraph>
+                    @if (VideoObject.Rating > 0)
+                    {
+                        <span> &#x2022; @VideoObject.Rating </span>
+                    }
+                </AntDesign.Text>
+
+                <Paragraph>@VideoObject.Description</Paragraph>
+            </p>
         }
         else
         {
