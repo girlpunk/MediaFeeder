@@ -35,10 +35,7 @@ export function initPlayer(videoId)
                 autoplay: 1,
             },
             events: {
-                'onReady': (event => {
-                    event.target.playVideo();
-                    helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data);
-                }),
+                'onReady': (event => helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data)),
                 'onStateChange': (event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
                 'onPlaybackQualityChange': (event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
                 'onPlaybackRateChange': (event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),

@@ -24,6 +24,19 @@ public sealed partial class YouTubeVideoFrame
         }
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine("Parameters set, should this load a new video?");
+
+        if (_player != null)
+        {
+            ArgumentNullException.ThrowIfNull(Video);
+
+            Console.WriteLine("Player is ready if it should");
+            //await _player.InvokeVoidAsync("loadVideoById", Video.VideoId);
+        }
+    }
+
     [JSInvokable]
     public async Task OnLibraryLoaded()
     {
