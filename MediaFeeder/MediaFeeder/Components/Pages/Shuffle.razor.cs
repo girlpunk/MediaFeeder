@@ -1,6 +1,8 @@
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Pages;
@@ -13,6 +15,8 @@ public sealed partial class Shuffle
 
     [Inject] public MediaFeederDataContext? DataContext { get; set; }
     [Inject] public NavigationManager? NavigationManager { get; set; }
+    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
     private TimeSpan _timeRemaining = TimeSpan.FromHours(1);
     private readonly Queue<MediaFeeder.Data.db.Video> _videos = new();
@@ -23,14 +27,20 @@ public sealed partial class Shuffle
         ArgumentNullException.ThrowIfNull(DataContext);
         ArgumentNullException.ThrowIfNull(NavigationManager);
 
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+
+        ArgumentNullException.ThrowIfNull(user);
+
         if (FolderId != null)
             _subscriptions = await DataContext.Subscriptions
-                .Where(s => s.ParentFolderId == FolderId)
+                .Where(s => s.ParentFolderId == FolderId && s.UserId == user.Id)
                 .ToListAsync();
         else if (SubscriptionId != null)
-            _subscriptions = [await DataContext.Subscriptions.SingleAsync(s => s.Id == SubscriptionId)];
+            _subscriptions = [await DataContext.Subscriptions.SingleAsync(s => s.Id == SubscriptionId && s.UserId == user.Id)];
         else
             _subscriptions = await DataContext.Subscriptions
+                .Where(s => s.UserId == user.Id)
                 .ToListAsync();
 
         StateHasChanged();
@@ -41,7 +51,7 @@ public sealed partial class Shuffle
 
         _videos.Enqueue(
             await DataContext.Videos
-                .Where(v => v.Watched == false && _subscriptions.Select(s => s.Id).Contains(v.SubscriptionId))
+                .Where(v => v.Watched == false && _subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId))
                 .OrderBy(static v => v.PublishDate)
                 .FirstAsync()
         );

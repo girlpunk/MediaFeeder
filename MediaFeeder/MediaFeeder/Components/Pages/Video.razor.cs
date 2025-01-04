@@ -1,5 +1,8 @@
 ﻿using AntDesign;
+using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Pages;
@@ -14,6 +17,10 @@ public sealed partial class Video
 
     [Inject] public required MessageService MessageService { get; set; }
 
+    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+
+    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+
     private Data.db.Video? VideoObject { get; set; }
     private IProvider? Provider { get; set; }
 
@@ -22,7 +29,12 @@ public sealed partial class Video
 
     protected override async Task OnParametersSetAsync()
     {
-        VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id);
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+
+        ArgumentNullException.ThrowIfNull(user);
+
+        VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id && v.Subscription.UserId == user.Id);
         StateHasChanged();
 
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();

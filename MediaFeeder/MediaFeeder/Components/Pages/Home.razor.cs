@@ -1,12 +1,15 @@
 ﻿using AntDesign;
 using MediaFeeder.Data;
+using MediaFeeder.Data.db;
 using MediaFeeder.Filters;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Pages;
 
-public partial class Home
+public sealed partial class Home
 {
     [Parameter] public int? FolderId { get; set; }
 
@@ -16,6 +19,9 @@ public partial class Home
 
     [Inject] public MediaFeederDataContext? DataContext { get; set; }
     [Inject] public NavigationManager? NavigationManager { get; set; }
+    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+
+    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
     private string? SearchValue { get; set; } = string.Empty;
     private SortOrders SortOrder { get; set; } = SortOrders.Oldest;
@@ -56,6 +62,11 @@ public partial class Home
         if (!UpdateHash())
             return;
 
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+
+        ArgumentNullException.ThrowIfNull(user);
+
         try
         {
             await Updating.WaitAsync();
@@ -63,7 +74,9 @@ public partial class Home
             Videos = null;
             StateHasChanged();
 
-            var source = DataContext.Videos.AsQueryable();
+            var source = DataContext.Videos
+                .AsQueryable()
+                .Where(v => v.Subscription.UserId == user.Id);
 
             if (FolderId != null)
             {
