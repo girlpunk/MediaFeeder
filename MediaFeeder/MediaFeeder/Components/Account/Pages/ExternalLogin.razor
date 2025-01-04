@@ -9,6 +9,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @attribute [IgnoreAntiforgeryToken]
 @attribute [AllowAnonymous]
+@rendermode InteractiveServer
 
 @inject SignInManager<AuthUser> SignInManager
 @inject UserManager<AuthUser> UserManager
