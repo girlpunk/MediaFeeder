@@ -38,8 +38,10 @@ public sealed partial class YouTubeVideoFrame
     {
         Console.WriteLine($"Player Ready: {JsonSerializer.Serialize(data)}. Trying to play.");
 
-        // event.target.playVideo();
         target.InvokeVoidAsync("playVideo");
+
+        ArgumentNullException.ThrowIfNull(_player);
+        _player.InvokeVoidAsync("playVideo");
 
         return Task.CompletedTask;
     }
