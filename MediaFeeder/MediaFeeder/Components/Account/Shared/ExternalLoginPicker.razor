@@ -26,6 +26,11 @@
     protected override async Task OnInitializedAsync()
     {
         _externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();
-    }
 
+        if (_externalLogins.Length == 1)
+        {
+            var url = $"/PerformExternalLogin/{_externalLogins[0].Name}?returnUrl={ReturnUrl}";
+            RedirectManager.RedirectTo(url);
+        }
+    }
 }
