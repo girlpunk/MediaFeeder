@@ -15,6 +15,7 @@ public partial class Home
     private List<Data.db.Video>? Videos { get; set; }
 
     [Inject] public MediaFeederDataContext? DataContext { get; set; }
+    [Inject] public NavigationManager? NavigationManager { get; set; }
 
     private string? SearchValue { get; set; } = string.Empty;
     private SortOrders SortOrder { get; set; } = SortOrders.Oldest;
@@ -112,5 +113,34 @@ public partial class Home
         ResultsPerPage = paginationEventArgs.PageSize;
 
         return Update();
+    }
+
+    private void Shuffle()
+    {
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+
+        NavigationManager.NavigateTo(NavigationManager.Uri + "/shuffle");
+    }
+
+    private async Task MarkAllWatched()
+    {
+        ArgumentNullException.ThrowIfNull(DataContext);
+        ArgumentNullException.ThrowIfNull(Videos);
+
+        foreach (var video in Videos)
+            video.Watched = true;
+
+        await DataContext.SaveChangesAsync();
+    }
+
+    private void WatchAll()
+    {
+        ArgumentNullException.ThrowIfNull(Videos);
+        ArgumentNullException.ThrowIfNull(NavigationManager);
+
+        var videos = new Queue<MediaFeeder.Data.db.Video>(Videos);
+
+        var url = $"/video/{videos.Dequeue().Id}/{string.Join(',', videos.Select(static v => v.Id))}";
+        NavigationManager.NavigateTo(url);
     }
 }

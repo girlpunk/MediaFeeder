@@ -87,11 +87,11 @@
     <GridCol Class="gutter-row" Span="8">
         <Flex Justify="FlexJustify.SpaceEvenly">
             <Tooltip Title="Watch All Now">
-                <Button Icon="@(IconType.Outline.PlayCircle)"></Button>
+                <Button Icon="@(IconType.Outline.PlayCircle)" OnClick="WatchAll"></Button>
             </Tooltip>
 
             <Tooltip Title="Mark All as Watched">
-                <Button Icon="@(IconType.Outline.CheckCircle)"></Button>
+                <Button Icon="@(IconType.Outline.CheckCircle)" OnClick="MarkAllWatched"></Button>
             </Tooltip>
 
             <Button Icon="@(IconType.Outline.ClockCircle)">
@@ -99,7 +99,7 @@
             </Button>
 
             <Tooltip Title="Shuffle">
-                <Button Icon="@(IconType.Outline.Swap)"></Button>
+                <Button Icon="@(IconType.Outline.Swap)" OnClick="Shuffle"></Button>
             </Tooltip>
         </Flex>
     </GridCol>
