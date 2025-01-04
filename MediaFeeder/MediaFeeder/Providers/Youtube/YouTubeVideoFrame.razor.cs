@@ -20,7 +20,7 @@ public sealed partial class YouTubeVideoFrame
             _youtubeCustomModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Providers/Youtube/YouTubeVideoFrame.razor.js");
 
             _videoFrameRef ??= DotNetObjectReference.Create(this);
-            _player = await _youtubeCustomModule.InvokeAsync<IJSObjectReference>("helperReady", _videoFrameRef);
+            await _youtubeCustomModule.InvokeVoidAsync("helperReady", _videoFrameRef);
         }
     }
 
@@ -28,6 +28,8 @@ public sealed partial class YouTubeVideoFrame
     public async Task OnLibraryLoaded()
     {
         ArgumentNullException.ThrowIfNull(_youtubeCustomModule);
+        ArgumentNullException.ThrowIfNull(Video);
+
         _player = await _youtubeCustomModule.InvokeAsync<IJSObjectReference>("initPlayer", Video.VideoId);
     }
 
