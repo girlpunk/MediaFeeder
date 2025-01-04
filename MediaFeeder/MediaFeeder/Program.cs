@@ -16,6 +16,7 @@ using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
@@ -25,8 +26,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents()
+    .AddInteractiveServerComponents(options =>
+    {
+        if (builder.Environment.IsDevelopment())
+            options.DetailedErrors = true;
+    })
     .AddAuthenticationStateSerialization();
 
 builder.Services.AddGrpc();
@@ -52,7 +56,7 @@ builder.Services.AddAuthentication(static options =>
 
 builder.Services.AddDataProtection()
     .SetApplicationName("MediaFeeder")
-    .PersistKeysToFileSystem(new System.IO.DirectoryInfo(@"/media/dpkeys/"));
+    .PersistKeysToFileSystem(new DirectoryInfo(@"/media/dpkeys/"));
 
 builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 {
