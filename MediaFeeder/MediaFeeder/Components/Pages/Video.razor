@@ -6,82 +6,57 @@
 @inject IServiceProvider ServiceProvider
 
 <Layout>
-    <Header Style="background-color: white;">
-        <PageHeader Class="site-page-header">
-            <TitleTemplate>
-                <a class="navbar-brand" href="/">
-                    <img src="/logo.png" alt="Logo image" height="30px"/>
-                    MediaFeeder
-                </a>
-                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    @if (VideoObject != null)
-                    {
-                        @VideoObject?.Name
-                    }
-                    else
-                    {
-                        <Skeleton/>
-                    }
-                </span>
-            </TitleTemplate>
-            <PageHeaderBreadcrumb>
-                <Breadcrumb>
-                    <BreadcrumbItem>
-                        @if (VideoObject != null)
-                        {
-                            @VideoObject?.Subscription?.ParentFolder?.Name
-                        }
-                        else
-                        {
-                            <Skeleton/>
-                        }
-                    </BreadcrumbItem>
-                    <BreadcrumbItem>
-                        @if (VideoObject != null)
-                        {
-                            @VideoObject?.Subscription?.Name
-                        }
-                        else
-                        {
-                            <Skeleton/>
-                        }
-                    </BreadcrumbItem>
-                </Breadcrumb>
-            </PageHeaderBreadcrumb>
-            <PageHeaderExtra>
-                @if (VideoObject != null && Provider != null)
+    <PageHeader Class="site-page-header">
+        <TitleTemplate>
+            <a class="navbar-brand" href="/">
+                <img src="/logo.png" alt="Logo image" height="30px"/>
+                MediaFeeder
+            </a>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                @if (VideoObject != null)
                 {
-                    <Tooltip Title="@($"Watch on {Provider.Name}")">
-                        <a href="@Provider.GetUrl(VideoObject)">
-                            <Button Icon="@Provider.Icon"></Button>
-                        </a>
-                    </Tooltip>
+                    @VideoObject?.Name
                 }
+                else
+                {
+                    <Skeleton/>
+                }
+            </span>
+        </TitleTemplate>
 
-                <Tooltip Title="@WatchButtonText">
-                    <Button Icon="@WatchButtonIcon" Color="@WatchButtonColour" OnClick="@MarkWatched"></Button>
+        <PageHeaderExtra>
+            @if (VideoObject != null && Provider != null)
+            {
+                <Tooltip Title="@($"Watch on {Provider.Name}")">
+                    <a href="@Provider.GetUrl(VideoObject)">
+                        <Button Icon="@Provider.Icon"></Button>
+                    </a>
                 </Tooltip>
+            }
 
-                @if (Next != null)
-                {
-                    <Tooltip Title="Go to next video">
-                        <Button Icon="@IconType.Outline.FastForward" OnClick="@GoNext"></Button>
-                    </Tooltip>
-                }
+            <Tooltip Title="@WatchButtonText">
+                <Button Icon="@WatchButtonIcon" Color="@WatchButtonColour" OnClick="@MarkWatched"></Button>
+            </Tooltip>
 
-                <Tooltip Title="@DownloadButtonText">
-                    <Button Icon="@DownloadButtonIcon" Color="@DownloadButtonColour" OnClick="@Download"></Button>
+            @if (Next != null)
+            {
+                <Tooltip Title="Go to next video">
+                    <Button Icon="@IconType.Outline.FastForward" OnClick="@GoNext"></Button>
                 </Tooltip>
+            }
 
-                @if (Next != null)
-                {
-                    <Tooltip Title="Remaining">
-                        <Button>@UpNextCount, @UpNextDuration.Humanize()</Button>
-                    </Tooltip>
-                }
-            </PageHeaderExtra>
-        </PageHeader>
-    </Header>
+            <Tooltip Title="@DownloadButtonText">
+                <Button Icon="@DownloadButtonIcon" Color="@DownloadButtonColour" OnClick="@Download"></Button>
+            </Tooltip>
+
+            @if (Next != null)
+            {
+                <Tooltip Title="Remaining">
+                    <Button>@UpNextCount, @UpNextDuration.Humanize()</Button>
+                </Tooltip>
+            }
+        </PageHeaderExtra>
+    </PageHeader>
     <Content>
         @if (VideoObject != null && Provider != null)
         {
