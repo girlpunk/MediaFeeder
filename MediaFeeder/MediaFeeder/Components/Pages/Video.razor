@@ -34,9 +34,19 @@
                 </Tooltip>
             }
 
-            <Tooltip Title="@WatchButtonText">
-                <Button Icon="@WatchButtonIcon" Color="@WatchButtonColour" OnClick="@MarkWatched"></Button>
-            </Tooltip>
+            @if (VideoObject?.Watched ?? false)
+            {
+                <Tooltip Title="Mark as not watched">
+                    <Button Icon="@IconType.Outline.EyeInvisible" Color="@Color.Green10" OnClick="@MarkWatched"></Button>
+                </Tooltip>
+            }
+            else
+            {
+                <Tooltip Title="Mark as watched">
+                    <Button Icon="@IconType.Outline.Eye" OnClick="@MarkWatched"></Button>
+                </Tooltip>
+            }
+
 
             @if (Next != null)
             {
@@ -45,9 +55,18 @@
                 </Tooltip>
             }
 
-            <Tooltip Title="@DownloadButtonText">
-                <Button Icon="@DownloadButtonIcon" Color="@DownloadButtonColour" OnClick="@Download"></Button>
-            </Tooltip>
+            @if (VideoObject?.DownloadedPath == null)
+            {
+                <Tooltip Title="Download">
+                    <Button Icon="@IconType.Outline.Download" OnClick="@Download"></Button>
+                </Tooltip>
+            }
+            else
+            {
+                <Tooltip Title="Delete Download">
+                    <Button Icon="@IconType.Outline.Delete" Color="@Color.Green10" OnClick="@Download"></Button>
+                </Tooltip>
+            }
 
             @if (Next != null)
             {

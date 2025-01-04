@@ -16,18 +16,7 @@ public sealed partial class Video
 
     private Data.db.Video? VideoObject { get; set; }
     private IProvider? Provider { get; set; }
-    private string WatchButtonText => VideoObject?.Watched ?? false ? "Mark as not watched" : "Mark as watched";
 
-    private string WatchButtonIcon =>
-        VideoObject?.Watched ?? false ? IconType.Outline.EyeInvisible : IconType.Outline.Eye;
-
-    private Color WatchButtonColour => VideoObject?.Watched ?? false ? Color.Green10 : Color.None;
-    private string DownloadButtonText => VideoObject?.DownloadedPath == null ? "Download" : "Delete Download";
-
-    private string DownloadButtonIcon =>
-        VideoObject?.DownloadedPath == null ? IconType.Outline.Download : IconType.Outline.Delete;
-
-    private Color DownloadButtonColour => VideoObject?.DownloadedPath == null ? Color.None : Color.Green10;
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; }
 
