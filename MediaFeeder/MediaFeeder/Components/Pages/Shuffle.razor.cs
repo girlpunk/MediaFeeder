@@ -37,13 +37,7 @@ public sealed partial class Shuffle
 
         // Shuffle the order of the subscriptions
         var rng = new Random(unchecked(Environment.TickCount * 31 + Environment.CurrentManagedThreadId));
-
-        for (var i = 0; i < _subscriptions.Count; i++)
-        {
-            i--;
-            var k = rng.Next(i + 1);
-            (_subscriptions[k], _subscriptions[i]) = (_subscriptions[i], _subscriptions[k]);
-        }
+        _subscriptions = _subscriptions.OrderBy(_ => rng.Next()).ToList();
 
         _videos.Enqueue(
             await DataContext.Videos
