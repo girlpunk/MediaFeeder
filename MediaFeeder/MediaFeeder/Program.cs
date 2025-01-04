@@ -16,6 +16,7 @@ using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
@@ -45,17 +46,13 @@ builder.Services.AddAuthentication(static options =>
         "Authentik", options =>
         {
             builder.Configuration.GetSection("Auth").Bind(options);
-            //options.MetadataAddress =  "https://authentik.home.foxocube.xyz/application/o/mediafeeder/";
-            //options.ClientId = "bz2cp1KiWnFio7N7rGp3wtcuehbhWc17sSE9Nedk";
             options.Scope.Add("email");
         })
     .AddIdentityCookies();
 
-// builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//     .AddJwtBearer(options =>
-//     {
-//         builder.Configuration.GetSection("Auth").Bind(options);
-//     });
+builder.Services.AddDataProtection()
+    .SetApplicationName("MediaFeeder")
+    .PersistKeysToFileSystem(new System.IO.DirectoryInfo(@"/media/dpkeys/"));
 
 builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 {
@@ -114,11 +111,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
-
-// builder.Services.AddFluentUIComponents(options =>
-// {
-//     options.ValidateClassNames = false;
-// });
 
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
