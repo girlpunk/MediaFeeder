@@ -28,7 +28,13 @@ public class SynchroniseAllConsumer(
 
         foreach (var subscription in subscriptions)
         {
-            var providerType = providers[subscription.Item2].Single().GetType();
+            var providerType = providers[subscription.Item2].SingleOrDefault()?.GetType();
+
+            if (providerType == null)
+            {
+                logger.LogError("Could not find a provider for {}", subscription.Item2);
+                continue;
+            }
 
             var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(providerType);
             var contract = Activator.CreateInstance(contractType, new object[] { subscription.Item1 });
