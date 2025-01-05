@@ -1,6 +1,9 @@
+using System.Diagnostics;
 using System.Net;
+using System.Reflection;
 using Google.Apis.Services;
 using MassTransit;
+using MassTransit.Logging;
 using MediaFeeder;
 using MediaFeeder.Components;
 using MediaFeeder.Components.Account;
@@ -23,9 +26,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
+using OpenTelemetry.Resources;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
+using Quartz;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,7 +97,18 @@ builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
 
-builder.Services.AddMassTransit();
+builder.Services.AddQuartz();
+builder.Services.AddMassTransit(static config =>
+{
+    var schedulerEndpoint = new Uri("queue:scheduler");
+
+    config.AddMessageScheduler(schedulerEndpoint);
+    config.UsingInMemory((context, cfg) =>
+    {
+        cfg.UseMessageScheduler(schedulerEndpoint);
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -101,12 +117,30 @@ builder.Logging.AddOpenTelemetry(static logging =>
 });
 
 builder.Services.AddOpenTelemetry()
+    .ConfigureResource(static r =>
+    {
+        r.AddService("MediaFeeder",
+            serviceVersion: FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion,
+            serviceInstanceId: Environment.MachineName);
+        r.AddContainerDetector()
+            .AddEnvironmentVariableDetector()
+            .AddHostDetector()
+            .AddOperatingSystemDetector()
+            .AddProcessDetector()
+            .AddProcessRuntimeDetector()
+            .AddTelemetrySdk();
+    })
     .WithMetrics(static metrics =>
     {
         metrics.AddRuntimeInstrumentation()
+            .AddProcessInstrumentation()
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
-            .AddPrometheusExporter();
+            .AddNpgsqlInstrumentation()
+            .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
+            .AddMeter("MediaFeeder")
+            .AddPrometheusExporter()
+            .AddConsoleExporter();
     })
     .WithTracing(tracing =>
     {
@@ -115,8 +149,11 @@ builder.Services.AddOpenTelemetry()
 
         tracing.AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
+            .AddGrpcClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
-            .AddNpgsql();
+            .AddNpgsql()
+            .AddSource(DiagnosticHeaders.DefaultListenerName)
+            .AddConsoleExporter();
     });
 
 builder.Services.AddHealthChecks()

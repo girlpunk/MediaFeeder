@@ -49,7 +49,6 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
             VideosUnwatched = newUnwatched,
             Folders = folders,
             Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion,
-            AltVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
         });
     }
 }
