@@ -191,6 +191,15 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             }
             else
             {
+                var thumbnailUrl = entry.Element(YahooNamespace + "group")?
+                    .Element(YahooNamespace + "thumbnail")?
+                    .Attribute("url")?.Value;
+
+                var thumbnailPath = "";
+
+                if (thumbnailUrl != null)
+                    thumbnailPath = await utils.LoadUrlThumbnail(videoId, "video", thumbnailUrl, logger, cancellationToken);
+
                 var video = new Video
                 {
                     VideoId = videoId,
@@ -208,12 +217,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                         .Element(YahooNamespace + "community")?
                         .Element(YahooNamespace + "statistics")?
                         .Attribute("views")?.Value ?? "0"),
-                    Thumb = await utils.LoadUrlThumbnail(videoId, "video",
-                        entry.Element(YahooNamespace + "group")?
-                            .Element(YahooNamespace + "thumbnail")?
-                            .Attribute("url")?.Value ?? "",
-                        logger,
-                        cancellationToken)
+                    Thumb = thumbnailPath,
+                    Thumbnail = thumbnailPath,
+                    UploaderName = entry.Element(AtomNamespace + "author")?.Element(AtomNamespace + "name")?.Value ?? subscription.Name
                 };
 
                 db.Videos.Add(video);
@@ -253,6 +259,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 item.Snippet.Position = 1 + (highest ?? -1);
             }
 
+            var thumbnailPath = await utils.LoadResourceThumbnail(item.Snippet.ResourceId.VideoId, "video",
+                item.Snippet.Thumbnails, logger, cancellationToken);
+
             var video = new Video
             {
                 VideoId = item.Snippet.ResourceId.VideoId,
@@ -264,7 +273,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 Subscription = subscription,
                 PlaylistIndex = (int)(item.Snippet.Position ?? 0),
                 PublishDate = item.Snippet.PublishedAtDateTimeOffset,
-                Thumb = await utils.LoadResourceThumbnail(item.Snippet.ResourceId.VideoId, "video", item.Snippet.Thumbnails, logger, cancellationToken)
+                Thumb = thumbnailPath,
+                Thumbnail = thumbnailPath,
+                UploaderName = item.Snippet.VideoOwnerChannelTitle
             };
 
             db.Videos.Add(video);

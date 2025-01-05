@@ -7,10 +7,10 @@ public sealed class Utils(
     IConfiguration configuration,
     IHttpClientFactory httpClientFactory)
 {
-    internal async Task<string?> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken) =>
+    internal async Task<string> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken) =>
         await LoadUrlThumbnail(itemId, type, resource.Maxres.Url, logger, cancellationToken);
 
-    internal async Task<string?> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
+    internal async Task<string> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
     {
         var httpClient = httpClientFactory.CreateClient("retry");
 
