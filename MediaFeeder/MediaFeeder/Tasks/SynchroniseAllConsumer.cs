@@ -1,4 +1,5 @@
 using MassTransit;
+using MassTransit.Scheduling;
 using MediaFeeder.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,5 +35,13 @@ public class SynchroniseAllConsumer(
 
             await bus.Publish(contract, context.CancellationToken);
         }
+    }
+}
+
+public class SynchroniseAllSchedule : DefaultRecurringSchedule
+{
+    public SynchroniseAllSchedule()
+    {
+        CronExpression = "25 * * * *"; // this means every minute
     }
 }
