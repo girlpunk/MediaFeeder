@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MediaFeeder.Data.db;
 
@@ -6,19 +7,19 @@ public class Video
 {
     public int Id { get; set; }
 
-    [MaxLength(12)] public string VideoId { get; set; }
+    [MaxLength(12)] public required string VideoId { get; set; }
 
-    public string Name { get; set; }
-    public string Description { get; set; }
+    [MaxLength(1000000000)] public required string Name { get; set; }
+    [MaxLength(1000000000)] public required string Description { get; set; }
     public bool Watched { get; set; }
-    public string? DownloadedPath { get; set; }
+    [MaxLength(1000000000)] public string? DownloadedPath { get; set; }
     public int PlaylistIndex { get; set; }
     public DateTimeOffset? PublishDate { get; set; }
-    public string Thumbnail { get; set; }
+    [MaxLength(1000000000)] public required string Thumbnail { get; set; }
     public int SubscriptionId { get; set; }
     public double Rating { get; set; }
 
-    [MaxLength(255)] public string UploaderName { get; set; }
+    [MaxLength(255)] public required string UploaderName { get; set; }
 
     public int Views { get; set; }
     public bool New { get; set; }
@@ -26,6 +27,7 @@ public class Video
 
     [MaxLength(100)] public string? Thumb { get; set; }
 
+    [NotMapped]
     public TimeSpan DurationSpan
     {
         get => TimeSpan.FromSeconds(Duration);
