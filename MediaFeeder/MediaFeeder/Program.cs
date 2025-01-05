@@ -98,6 +98,7 @@ builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
 
 builder.Services.AddQuartz();
+builder.Services.AddQuartzHostedService();
 builder.Services.AddMassTransit(static config =>
 {
     config.AddOpenTelemetry();
@@ -110,6 +111,12 @@ builder.Services.AddMassTransit(static config =>
         cfg.UseMessageScheduler(schedulerEndpoint);
         cfg.ConfigureEndpoints(context);
     });
+
+    config.AddConsumer<SynchroniseAllConsumer>();
+
+    config.AddConsumer<YoutubeSubscriptionSynchroniseConsumer>();
+    config.AddConsumer<YoutubeVideoSynchroniseConsumer>();
+    config.AddConsumer<YoutubeActualVideoSynchroniseConsumer>();
 });
 
 builder.Logging.AddOpenTelemetry(static logging =>
@@ -153,8 +160,7 @@ builder.Services.AddOpenTelemetry()
             .AddGrpcClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
             .AddNpgsql()
-            .AddSource(DiagnosticHeaders.DefaultListenerName)
-            .AddConsoleExporter();
+            .AddSource(DiagnosticHeaders.DefaultListenerName);
     });
 
 builder.Services.AddHealthChecks()
@@ -185,13 +191,6 @@ builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
 
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
-
-builder.Services.AddScoped<IConsumer<SynchroniseAllContract>, SynchroniseAllConsumer>();
-
-builder.Services.AddScoped<IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>, YoutubeSubscriptionSynchroniseConsumer>();
-builder.Services.AddScoped<IConsumer<YoutubeVideoSynchroniseContract>, YoutubeVideoSynchroniseConsumer>();
-builder.Services.AddScoped<IConsumer<YoutubeActualVideoSynchroniseContract>, YoutubeActualVideoSynchroniseConsumer>();
-
 
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
