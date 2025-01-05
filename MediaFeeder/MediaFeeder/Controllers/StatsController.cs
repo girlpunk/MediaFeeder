@@ -59,7 +59,7 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
     {
         var contract = new SynchroniseAllContract();
 
-        await bus.Send(contract);
+        await bus.Publish(contract);
 
         return Ok();
     }

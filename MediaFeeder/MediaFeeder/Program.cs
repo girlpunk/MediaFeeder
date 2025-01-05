@@ -100,6 +100,8 @@ builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>()
 builder.Services.AddQuartz();
 builder.Services.AddMassTransit(static config =>
 {
+    config.AddOpenTelemetry();
+
     var schedulerEndpoint = new Uri("queue:scheduler");
 
     config.AddMessageScheduler(schedulerEndpoint);
@@ -139,8 +141,7 @@ builder.Services.AddOpenTelemetry()
             .AddNpgsqlInstrumentation()
             .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
             .AddMeter("MediaFeeder")
-            .AddPrometheusExporter()
-            .AddConsoleExporter();
+            .AddPrometheusExporter();
     })
     .WithTracing(tracing =>
     {

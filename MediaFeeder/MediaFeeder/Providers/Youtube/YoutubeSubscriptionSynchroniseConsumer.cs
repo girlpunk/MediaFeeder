@@ -225,7 +225,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 db.Videos.Add(video);
                 await db.SaveChangesAsync(cancellationToken);
 
-                await bus.Send(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+                await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
             }
         }
 
@@ -281,7 +281,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             db.Videos.Add(video);
             await db.SaveChangesAsync(cancellationToken);
 
-            await bus.Send(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
         }
     }
 }
