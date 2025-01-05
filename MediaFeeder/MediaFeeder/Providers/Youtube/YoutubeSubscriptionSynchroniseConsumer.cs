@@ -11,7 +11,7 @@ namespace MediaFeeder.Providers.Youtube;
 public sealed class YoutubeSubscriptionSynchroniseConsumer(
     ILogger<YoutubeSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    [FromKeyedServices("retry")] IHttpClientFactory httpClientFactory,
+    IHttpClientFactory httpClientFactory,
     IPublishEndpoint bus,
     Utils utils,
     YouTubeService youTubeService

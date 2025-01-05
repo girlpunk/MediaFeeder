@@ -26,7 +26,6 @@ using Microsoft.Extensions.FileProviders;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
-using IHttpClientFactory = Google.Apis.Http.IHttpClientFactory;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -143,7 +142,7 @@ builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
     {
         ApplicationName = "MediaFeeder",
         ApiKey = builder.Configuration.GetValue<string>("youtube_api_key"),
-        HttpClientFactory = sp.GetKeyedService<IHttpClientFactory>("retry"),
+        HttpClientFactory = sp.GetRequiredService<SystemNetClientFactory>(),
     }));
 
 builder.Services.AddScoped<IProvider, SonarrProvider>();

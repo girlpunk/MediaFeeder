@@ -11,10 +11,6 @@ public class YoutubeProvider : IProvider
 
     public string GetUrl(Video video) => $"https://www.youtube.com/watch?v={video.VideoId}";
 
-    public Task DownloadVideo(Video video) => throw new NotImplementedException();
-
-    public Task SynchroniseSubscription(Subscription subscription) => throw new NotImplementedException();
-
     public Task<bool> ProcessUrl(string url, Subscription subscription) => throw new NotImplementedException();
 
     public Task<bool> IsUrlValid(string url) => throw new NotImplementedException();
