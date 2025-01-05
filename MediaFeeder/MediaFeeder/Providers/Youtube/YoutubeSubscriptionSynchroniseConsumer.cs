@@ -12,7 +12,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     ILogger<YoutubeSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory,
-    IPublishEndpoint bus,
+    IBus bus,
     Utils utils,
     YouTubeService youTubeService
 ) : IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>
@@ -225,7 +225,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 db.Videos.Add(video);
                 await db.SaveChangesAsync(cancellationToken);
 
-                await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+                await bus.Send(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
             }
         }
 
@@ -281,7 +281,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             db.Videos.Add(video);
             await db.SaveChangesAsync(cancellationToken);
 
-            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+            await bus.Send(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
         }
     }
 }

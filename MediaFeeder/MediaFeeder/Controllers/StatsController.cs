@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Diagnostics;
+using MassTransit;
+using MediaFeeder.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -50,5 +52,15 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
             Folders = folders,
             Version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion,
         });
+    }
+
+    [HttpGet("sync")]
+    public async Task<IActionResult> Sync([FromServices] IBus bus)
+    {
+        var contract = new SynchroniseAllContract();
+
+        await bus.Send(contract);
+
+        return Ok();
     }
 }

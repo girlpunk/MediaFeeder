@@ -267,10 +267,4 @@ app.MapAdditionalIdentityEndpoints();
 app.MapGrpcService<MediaToadService>();
 app.MapGrpcHealthChecksService();
 
-
-// Regular sync
-var scheduler = app.Services.GetRequiredService<IRecurringMessageScheduler>();
-await scheduler.ScheduleRecurringPublish(new SynchroniseAllSchedule(), new SynchroniseAllContract());
-
-
 app.Run();

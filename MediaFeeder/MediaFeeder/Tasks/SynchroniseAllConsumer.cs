@@ -9,7 +9,7 @@ public class SynchroniseAllConsumer(
     ILogger<SynchroniseAllConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IServiceProvider serviceProvider,
-    IPublishEndpoint bus)
+    IBus bus)
     : IConsumer<SynchroniseAllContract>
 {
     public async Task Consume(ConsumeContext<SynchroniseAllContract> context)
@@ -33,7 +33,7 @@ public class SynchroniseAllConsumer(
             var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(providerType);
             var contract = Activator.CreateInstance(contractType, new object[] { subscription.Item1 });
 
-            await bus.Publish(contract, context.CancellationToken);
+            await bus.Send(contract, context.CancellationToken);
         }
     }
 }
