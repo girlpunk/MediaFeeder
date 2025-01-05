@@ -139,14 +139,12 @@ builder.Services.AddHttpClient("retry")
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<Utils>();
 builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
-{
-    return new Google.Apis.YouTube.v3.YouTubeService(new BaseClientService.Initializer()
+    new Google.Apis.YouTube.v3.YouTubeService(new BaseClientService.Initializer
     {
         ApplicationName = "MediaFeeder",
         ApiKey = builder.Configuration.GetValue<string>("youtube_api_key"),
         HttpClientFactory = sp.GetKeyedService<IHttpClientFactory>("retry"),
-    });
-});
+    }));
 
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();

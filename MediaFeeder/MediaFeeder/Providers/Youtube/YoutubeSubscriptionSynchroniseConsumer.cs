@@ -11,7 +11,7 @@ namespace MediaFeeder.Providers.Youtube;
 public sealed class YoutubeSubscriptionSynchroniseConsumer(
     ILogger<YoutubeSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    [FromKeyedServices("retry")] HttpClient httpClient,
+    [FromKeyedServices("retry")] IHttpClientFactory httpClientFactory,
     IPublishEndpoint bus,
     Utils utils,
     YouTubeService youTubeService
@@ -170,6 +170,8 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     private async Task CheckRssVideos(Subscription subscription, MediaFeederDataContext db, CancellationToken cancellationToken)
     {
         var foundExistingVideo = false;
+
+        var httpClient = httpClientFactory.CreateClient("retry");
 
         var rssRequest =
             await httpClient.GetAsync("https://www.youtube.com/feeds/videos.xml?channel_id=" + subscription.ChannelId, cancellationToken);

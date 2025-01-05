@@ -6,13 +6,14 @@ namespace MediaFeeder.Providers.Youtube;
 public sealed class Utils
 {
     private readonly IConfiguration _configuration;
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public Utils(
-        IConfiguration configuration, [FromKeyedServices("retry")] HttpClient httpClient)
+        IConfiguration configuration,
+        [FromKeyedServices("retry")] IHttpClientFactory httpClientFactory)
     {
         _configuration = configuration;
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
     }
 
     internal async Task<string?> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken) =>
@@ -20,7 +21,9 @@ public sealed class Utils
 
     internal async Task<string?> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
     {
-        var request = await _httpClient.GetAsync(url, cancellationToken);
+        var httpClient = _httpClientFactory.CreateClient("retry");
+
+        var request = await httpClient.GetAsync(url, cancellationToken);
         request.EnsureSuccessStatusCode();
 
         var ext = new FileExtensionContentTypeProvider().Mappings.SingleOrDefault(g => g.Value == request.Headers.GetValues("Content-Type").First()).Key;
