@@ -12,7 +12,7 @@ public class PlaybackSession : IDisposable
     private string? _quality;
     private Provider? _provider;
     private string? _state;
-    public event Action UpdateEvent;
+    public event Action? UpdateEvent;
 
     internal PlaybackSession(PlaybackSessionManager manager, AuthUser user)
     {
@@ -31,7 +31,7 @@ public class PlaybackSession : IDisposable
         set
         {
             _video = value;
-            UpdateEvent.Invoke();
+            UpdateEvent?.Invoke();
         }
     }
 
@@ -41,7 +41,7 @@ public class PlaybackSession : IDisposable
         set
         {
             _user = value;
-            UpdateEvent.Invoke();
+            UpdateEvent?.Invoke();
         }
     }
 
@@ -51,7 +51,7 @@ public class PlaybackSession : IDisposable
         set
         {
             _currentPosition = value;
-            UpdateEvent.Invoke();
+            UpdateEvent?.Invoke();
         }
     }
 
@@ -61,7 +61,7 @@ public class PlaybackSession : IDisposable
         set
         {
             _quality = value;
-            UpdateEvent.Invoke();
+            UpdateEvent?.Invoke();
         }
     }
 
@@ -71,7 +71,7 @@ public class PlaybackSession : IDisposable
         set
         {
             _provider = value;
-            UpdateEvent.Invoke();
+            UpdateEvent?.Invoke();
         }
     }
 
@@ -81,7 +81,7 @@ public class PlaybackSession : IDisposable
         set
         {
             _state = value;
-            UpdateEvent.Invoke();
+            UpdateEvent?.Invoke();
         }
     }
 }

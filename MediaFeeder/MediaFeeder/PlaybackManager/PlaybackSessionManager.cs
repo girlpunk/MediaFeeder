@@ -11,7 +11,7 @@ public sealed class PlaybackSessionManager
         var session = new PlaybackSession(this, user);
         PlaybackSessions.Add(session);
 
-        UpdateEvent.Invoke();
+        UpdateEvent?.Invoke();
 
         return session;
     }
@@ -19,8 +19,8 @@ public sealed class PlaybackSessionManager
     internal void RemoveSession(PlaybackSession playbackSession)
     {
         PlaybackSessions.Remove(playbackSession);
-        UpdateEvent.Invoke();
+        UpdateEvent?.Invoke();
     }
 
-    public event Action UpdateEvent;
+    public event Action? UpdateEvent;
 }
