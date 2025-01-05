@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Timers;
+using Humanizer;
 using Microsoft.JSInterop;
 
 namespace MediaFeeder.Providers.Youtube;
@@ -56,6 +58,12 @@ public sealed partial class YouTubeVideoFrame
         ArgumentNullException.ThrowIfNull(_player);
         _player.InvokeVoidAsync("playVideo");
 
+        Timer = new System.Timers.Timer();
+        Timer.AutoReset = true;
+        Timer.Elapsed += ProgressUpdate;
+        Timer.Interval = 10000; // in miliseconds
+        Timer.Start();
+
         return Task.CompletedTask;
     }
 
@@ -83,6 +91,9 @@ public sealed partial class YouTubeVideoFrame
         var state = (PlayerState)
             data.GetInt32();
 
+        if (PlaybackSession != null)
+            PlaybackSession.State = state.Humanize();
+
         // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
         switch (state)
         {
@@ -106,11 +117,49 @@ public sealed partial class YouTubeVideoFrame
         }
     }
 
+    [JSInvokable]
+    public async Task OnPlaybackQualityChange(IJSObjectReference target, JsonElement data)
+    {
+        Quality = data.ToString();
+    }
+
+    private string? Quality { get; set; }
+    private System.Timers.Timer? Timer { get; set; }
+
+    public void ProgressUpdate(object? sender, ElapsedEventArgs elapsedEventArgs)
+    {
+        Task.Run(async () =>
+        {
+            if (_player == null || PlaybackSession == null)
+                return;
+
+            var volume = await _player.InvokeAsync<int>("getVolume");
+            var rate = await _player.InvokeAsync<float>("getPlaybackRate");
+            var loaded = await _player.InvokeAsync<float>("getVideoLoadedFraction");
+
+            var status = new
+            {
+                volume, rate, loaded, Quality
+            };
+
+            var progress = await _player.InvokeAsync<int>("getCurrentTime");
+
+            PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
+            PlaybackSession.Quality = JsonSerializer.Serialize(status);
+        }).RunSynchronously();
+    }
+
     public async ValueTask DisposeAsync()
     {
         _videoFrameRef?.Dispose();
         if (_player != null) await _player.DisposeAsync();
         if (_youtubeLibraryModule != null) await _youtubeLibraryModule.DisposeAsync();
         if (_youtubeCustomModule != null) await _youtubeCustomModule.DisposeAsync();
+
+        if (Timer != null)
+        {
+            Timer.Stop();
+            Timer.Dispose();
+        }
     }
 }

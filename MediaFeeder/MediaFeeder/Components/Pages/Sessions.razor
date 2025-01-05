@@ -1,0 +1,22 @@
+@page "/Sessions"
+@using MediaFeeder.PlaybackManager
+
+<h3>Sessions</h3>
+
+@if (SessionManager != null)
+{
+    @foreach (var session in SessionManager.PlaybackSessions)
+    {
+        <SessionInfo session="@session"/>
+    }
+}
+
+@code {
+    [Inject] public PlaybackSessionManager? SessionManager { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (SessionManager != null)
+            SessionManager.UpdateEvent += StateHasChanged;
+    }
+}

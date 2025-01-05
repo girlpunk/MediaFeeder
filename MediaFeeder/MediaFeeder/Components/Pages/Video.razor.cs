@@ -1,5 +1,6 @@
 ﻿using AntDesign;
 using MediaFeeder.Data.db;
+using MediaFeeder.PlaybackManager;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Pages;
 
-public sealed partial class Video
+public sealed partial class Video : IDisposable
 {
     [Parameter] public int Id { get; set; }
 
@@ -21,8 +22,11 @@ public sealed partial class Video
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
+    [Inject] public required PlaybackSessionManager SessionManager { get; set; }
+
     private Data.db.Video? VideoObject { get; set; }
     private IProvider? Provider { get; set; }
+    private PlaybackSession? PlaybackSession { get; set; }
 
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; }
@@ -33,6 +37,8 @@ public sealed partial class Video
         var user = await UserManager.GetUserAsync(auth.User);
 
         ArgumentNullException.ThrowIfNull(user);
+
+        PlaybackSession ??= SessionManager.NewSession(user);
 
         VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id && v.Subscription.UserId == user.Id);
         StateHasChanged();
@@ -49,6 +55,9 @@ public sealed partial class Video
             UpNextCount = more.Count;
             UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
         }
+
+        PlaybackSession.Video = VideoObject;
+        PlaybackSession.Provider = Provider.Provider;
 
         StateHasChanged();
     }
@@ -92,5 +101,12 @@ public sealed partial class Video
     private async Task Download()
     {
         await MessageService.Info("Not Implemented");
+    }
+
+    public void Dispose()
+    {
+        UserManager.Dispose();
+        PlaybackSession?.Dispose();
+        Context?.Dispose();
     }
 }

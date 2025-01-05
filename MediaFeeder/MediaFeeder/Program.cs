@@ -10,6 +10,7 @@ using MediaFeeder.Components.Account;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
+using MediaFeeder.PlaybackManager;
 using MediaFeeder.Providers;
 using MediaFeeder.Providers.Youtube;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -191,6 +192,8 @@ builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
 
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
+
+builder.Services.AddSingleton<PlaybackSessionManager>();
 
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
