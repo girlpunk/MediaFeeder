@@ -131,9 +131,14 @@ public sealed partial class Home
     private void Shuffle()
     {
         ArgumentNullException.ThrowIfNull(NavigationManager);
+        var page = NavigationManager.Uri;
 
-        var page = new Uri(new Uri(NavigationManager.Uri), "shuffle");
-        NavigationManager.NavigateTo(page.AbsolutePath);
+        if (page.EndsWith('/'))
+            page += "shuffle";
+        else
+            page += "/shuffle";
+
+        NavigationManager.NavigateTo(page);
     }
 
     private async Task MarkAllWatched()
