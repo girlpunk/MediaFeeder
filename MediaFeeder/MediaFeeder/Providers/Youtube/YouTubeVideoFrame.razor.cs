@@ -76,9 +76,12 @@ public sealed partial class YouTubeVideoFrame
         {
             // "This error is the same as 101. It's just a 101 error in disguise!" - from the YT API Documentation, not 100% this is true.
             // Skip to the next video after 10 seconds, do not mark as watched.
+
+            var toSkip = _playingVideo;
+
             await Task.Delay(TimeSpan.FromSeconds(10));
 
-            if (Page != null)
+            if (Page != null && toSkip == _playingVideo)
                 await Page.GoNext(false);
         }
     }
