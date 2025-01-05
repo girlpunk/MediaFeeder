@@ -178,7 +178,7 @@ builder.Services.AddHttpClient("retry")
         HttpPolicyExtensions
             .HandleTransientHttpError()
             .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5)));
-
+builder.Services.AddSingleton<SystemNetClientFactory>();
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<Utils>();
 builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
