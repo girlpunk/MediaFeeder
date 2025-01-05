@@ -25,9 +25,9 @@
             </TitleTemplate>
             <SubtitleTemplate>
                 <span class="ant-page-header-heading-sub-title">
-                    <a href="@($"/folder/{VideoObject?.Subscription?.ParentFolder.Id}")">@VideoObject?.Subscription?.ParentFolder.Name</a>
+                    <a href="@($"/folder/{VideoObject?.Subscription?.ParentFolder?.Id}")">@VideoObject?.Subscription?.ParentFolder.Name</a>
                     &gt;
-                    <a href="@($"/folder/{VideoObject?.Subscription?.Id}")">@VideoObject?.Subscription?.Name</a>
+                    <a href="@($"/subscription/{VideoObject?.Subscription?.Id}")">@VideoObject?.Subscription?.Name</a>
                 </span>
             </SubtitleTemplate>
 
