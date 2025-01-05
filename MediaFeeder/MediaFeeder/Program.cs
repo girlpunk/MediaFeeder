@@ -219,7 +219,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 
 app.UseHealthChecks("/healthz");
-app.MapPrometheusScrapingEndpoint();
+app.MapPrometheusScrapingEndpoint()
+    .AllowAnonymous();
 
 app.UseHttpsRedirection();
 
