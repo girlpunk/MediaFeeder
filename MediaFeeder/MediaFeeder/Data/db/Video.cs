@@ -13,7 +13,7 @@ public class Video
     public bool Watched { get; set; }
     public string? DownloadedPath { get; set; }
     public int PlaylistIndex { get; set; }
-    public DateTime PublishDate { get; set; }
+    public DateTimeOffset? PublishDate { get; set; }
     public string Thumbnail { get; set; }
     public int SubscriptionId { get; set; }
     public double Rating { get; set; }
@@ -24,9 +24,13 @@ public class Video
     public bool New { get; set; }
     public int Duration { get; set; }
 
-    [MaxLength(100)] public string Thumb { get; set; }
+    [MaxLength(100)] public string? Thumb { get; set; }
 
-    public TimeSpan DurationSpan => TimeSpan.FromSeconds(Duration);
+    public TimeSpan DurationSpan
+    {
+        get => TimeSpan.FromSeconds(Duration);
+        set => Duration = (int)value.TotalSeconds;
+    }
 
     public virtual Subscription Subscription { get; set; }
 }

@@ -1,4 +1,6 @@
 using System.Net;
+using Google.Apis.Services;
+using MassTransit;
 using MediaFeeder;
 using MediaFeeder.Components;
 using MediaFeeder.Components.Account;
@@ -16,10 +18,15 @@ using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
+using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using Polly.Extensions.Http;
+using IHttpClientFactory = Google.Apis.Http.IHttpClientFactory;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,7 +62,7 @@ builder.Services.AddAuthentication(static options =>
     .AddIdentityCookies();
 
 
-builder.Services.AddAuthorization(options =>
+builder.Services.AddAuthorization(static options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
@@ -85,6 +92,8 @@ builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
+
+builder.Services.AddMassTransit();
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -120,9 +129,34 @@ builder.Services.AddGrpcHealthChecks()
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddHttpClient("retry")
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddPolicyHandler(
+        HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5)));
+
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
+builder.Services.AddScoped<Utils>();
+builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
+{
+    return new Google.Apis.YouTube.v3.YouTubeService(new BaseClientService.Initializer()
+    {
+        ApplicationName = "MediaFeeder",
+        ApiKey = builder.Configuration.GetValue<string>("youtube_api_key"),
+        HttpClientFactory = sp.GetKeyedService<IHttpClientFactory>("retry"),
+    });
+});
+
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
+
+builder.Services.AddScoped<IConsumer<SynchroniseAllContract>, SynchroniseAllConsumer>();
+
+builder.Services.AddScoped<IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>, YoutubeSubscriptionSynchroniseConsumer>();
+builder.Services.AddScoped<IConsumer<YoutubeVideoSynchroniseContract>, YoutubeVideoSynchroniseConsumer>();
+builder.Services.AddScoped<IConsumer<YoutubeActualVideoSynchroniseContract>, YoutubeActualVideoSynchroniseConsumer>();
+
 
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
