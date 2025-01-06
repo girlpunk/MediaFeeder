@@ -48,6 +48,14 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
                 var channelResult = channelResponse.Items.SingleOrDefault();
 
+                if (channelResult?.Snippet?.Title != null)
+                {
+                    if (subscription.Name == subscription.ChannelName)
+                        subscription.Name = channelResult.Snippet.Title;
+
+                    subscription.ChannelName = channelResult.Snippet.Title;
+                }
+
                 if (channelResult?.Snippet?.Thumbnails != null)
                     subscription.Thumb = await utils.LoadResourceThumbnail(
                         subscription.PlaylistId,
