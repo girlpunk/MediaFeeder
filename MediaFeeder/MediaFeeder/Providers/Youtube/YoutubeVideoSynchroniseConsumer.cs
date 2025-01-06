@@ -1,3 +1,4 @@
+using System.Xml;
 using Google.Apis.YouTube.v3;
 using MassTransit;
 using MediaFeeder.Data;
@@ -74,7 +75,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
                     video.Rating = (double?)(videoStats.Statistics.LikeCount / (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount)) ?? 0;
 
                 video.Views = (int?)videoStats.Statistics.ViewCount ?? 0;
-                video.DurationSpan = TimeSpan.Parse(videoStats.ContentDetails.Duration);
+                video.DurationSpan = XmlConvert.ToTimeSpan(videoStats.ContentDetails.Duration);
                 video.Description = videoStats.Snippet.Description;
             }
         }
