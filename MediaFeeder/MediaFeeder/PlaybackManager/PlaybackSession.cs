@@ -16,6 +16,13 @@ public class PlaybackSession : IDisposable
     private float? _rate;
     private float? _loaded;
     public event Action? UpdateEvent;
+    public event Action? PlayPauseEvent;
+    public event Action? WatchEvent;
+    public event Action? SkipEvent;
+
+    public void PlayPause() => PlayPauseEvent?.Invoke();
+    public void Watch() => WatchEvent?.Invoke();
+    public void Skip() => SkipEvent?.Invoke();
 
     internal PlaybackSession(PlaybackSessionManager manager, AuthUser user)
     {

@@ -38,7 +38,12 @@ public sealed partial class Video : IDisposable
 
         ArgumentNullException.ThrowIfNull(user);
 
-        PlaybackSession ??= SessionManager.NewSession(user);
+        if (PlaybackSession == null)
+        {
+            PlaybackSession = SessionManager.NewSession(user);
+            PlaybackSession.SkipEvent += async () => await InvokeAsync(() => GoNext(false));
+            PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
+        }
 
         VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id && v.Subscription.UserId == user.Id);
         StateHasChanged();

@@ -39,17 +39,20 @@
             </div>
         }
     </ChildContent>
-    @* <ActionTemplate> *@
-    @*     <CardAction> *@
-    @*         <Icon Type="@IconType.Outline.Eye" OnClick="@(() => Watch())"/> *@
-    @*         Mark Watched *@
-    @*     </CardAction> *@
-    @*     <CardAction> *@
-    @*         <Icon Type="@IconType.Outline.Delete" *@
-    @*               OnClick="@(() => Delete())"/> *@
-    @*         Delete Download *@
-    @*     </CardAction> *@
-    @* </ActionTemplate> *@
+    <ActionTemplate>
+        <CardAction>
+            <Icon Type="@IconType.Outline.Pause" OnClick="@() => Session?.PlayPause()"/>
+            Pause
+        </CardAction>
+        <CardAction>
+            <Icon Type="@IconType.Outline.Eye" OnClick="@() => Session?.Watch()"/>
+            Mark Watched
+        </CardAction>
+        <CardAction>
+            <Icon Type="@IconType.Outline.FastForward" OnClick="@() => Session?.Skip()"/>
+            Skip
+        </CardAction>
+    </ActionTemplate>
 </Card>
 
 @code {

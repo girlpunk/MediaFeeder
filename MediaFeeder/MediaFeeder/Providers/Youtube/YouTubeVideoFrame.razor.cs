@@ -37,7 +37,28 @@ public sealed partial class YouTubeVideoFrame
             _playingVideo = Video.Id;
 
             await _player.InvokeVoidAsync("loadVideoById", Video.VideoId);
+
+            if (PlaybackSession != null)
+                PlaybackSession.PlayPauseEvent += PlayPause;
         }
+    }
+
+    private async void PlayPause()
+    {
+        await InvokeAsync(async () =>
+        {
+            ArgumentNullException.ThrowIfNull(_player);
+
+            switch (_state)
+            {
+                case PlayerState.Paused:
+                    await _player.InvokeVoidAsync("playVideo");
+                    break;
+                case PlayerState.Playing:
+                    await _player.InvokeVoidAsync("pauseVideo");
+                    break;
+            }
+        });
     }
 
     [JSInvokable]
