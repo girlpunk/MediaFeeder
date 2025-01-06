@@ -41,7 +41,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         }
         else
         {
-            if (DateTime.UtcNow - subscription.LastSynchronised > TimeSpan.FromDays(1))
+            if (DateTime.UtcNow - subscription.LastSynchronised > TimeSpan.FromDays(7))
             {
                 var channelRequest = youTubeService.Channels.List("snippet");
                 channelRequest.Id = subscription.ChannelId;
