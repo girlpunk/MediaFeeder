@@ -135,7 +135,7 @@ public sealed partial class YouTubeVideoFrame
 
             var volume = await _player.InvokeAsync<int>("getVolume");
             var rate = await _player.InvokeAsync<float>("getPlaybackRate");
-            var loaded = await _player.InvokeAsync<float>("getVideoLoadedFraction");
+            var loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
 
             var status = new
             {
