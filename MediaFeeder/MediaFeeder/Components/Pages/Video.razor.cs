@@ -30,6 +30,7 @@ public sealed partial class Video : IDisposable
 
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; }
+    private TimeSpan TotalDuration { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -60,11 +61,25 @@ public sealed partial class Video : IDisposable
             UpNextCount = more.Count;
             UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
         }
+        else
+        {
+            UpNextDuration = TimeSpan.Zero;
+        }
 
         PlaybackSession.Video = VideoObject;
         PlaybackSession.Provider = Provider.Provider;
+        PlaybackSession.UpdateEvent += UpdateTimestamp;
 
+        UpdateTimestamp();
         StateHasChanged();
+    }
+
+    private void UpdateTimestamp()
+    {
+        var remaining = VideoObject?.DurationSpan - PlaybackSession?.CurrentPosition;
+        TotalDuration = UpNextDuration + (remaining ?? TimeSpan.Zero);
+
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task MarkWatched()
