@@ -146,7 +146,7 @@ public sealed partial class YouTubeVideoFrame
 
             PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
             PlaybackSession.Quality = JsonSerializer.Serialize(status);
-        }).RunSynchronously();
+        }).Wait();
     }
 
     public async ValueTask DisposeAsync()
