@@ -12,6 +12,9 @@ public class PlaybackSession : IDisposable
     private string? _quality;
     private Provider? _provider;
     private string? _state;
+    private int? _volume;
+    private float? _rate;
+    private float? _loaded;
     public event Action? UpdateEvent;
 
     internal PlaybackSession(PlaybackSessionManager manager, AuthUser user)
@@ -81,6 +84,36 @@ public class PlaybackSession : IDisposable
         set
         {
             _state = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public int? Volume
+    {
+        get => _volume;
+        set
+        {
+            _volume = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public float? Rate
+    {
+        get => _rate;
+        set
+        {
+            _rate = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public float? Loaded
+    {
+        get => _loaded;
+        set
+        {
+            _loaded = value;
             UpdateEvent?.Invoke();
         }
     }

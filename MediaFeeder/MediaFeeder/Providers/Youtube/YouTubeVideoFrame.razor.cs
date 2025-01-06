@@ -13,6 +13,7 @@ public sealed partial class YouTubeVideoFrame
     private DotNetObjectReference<YouTubeVideoFrame>? _videoFrameRef;
 
     private int? _playingVideo;
+    private PlayerState _state;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -60,6 +61,7 @@ public sealed partial class YouTubeVideoFrame
 
         var tsInterval = TimeSpan.FromSeconds(10);
         Timer = new Timer(ProgressUpdate, null, tsInterval, tsInterval);
+        ProgressUpdate(this);
 
         return Task.CompletedTask;
     }
@@ -68,6 +70,10 @@ public sealed partial class YouTubeVideoFrame
     public async Task OnError(IJSObjectReference target, JsonElement data)
     {
         Console.WriteLine($"Playback Error: {JsonSerializer.Serialize(data)}");
+
+        ProgressUpdate(this);
+        if (PlaybackSession != null)
+            PlaybackSession.State = $"Error {data.ToString()}";
 
         if (data.GetInt32() == 150)
         {
@@ -88,14 +94,16 @@ public sealed partial class YouTubeVideoFrame
     {
         Console.WriteLine($"State change: {JsonSerializer.Serialize(data)}");
 
-        var state = (PlayerState)
-            data.GetInt32();
+        _state = (PlayerState)data.GetInt32();
 
         if (PlaybackSession != null)
-            PlaybackSession.State = state.Humanize();
+        {
+            PlaybackSession.State = _state.Humanize();
+            ProgressUpdate(this);
+        }
 
         // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-        switch (state)
+        switch (_state)
         {
             case PlayerState.Ended:
             {
@@ -118,12 +126,15 @@ public sealed partial class YouTubeVideoFrame
     }
 
     [JSInvokable]
-    public async Task OnPlaybackQualityChange(IJSObjectReference target, JsonElement data)
+    public void OnPlaybackQualityChange(IJSObjectReference target, JsonElement data)
     {
-        Quality = data.ToString();
+        if (PlaybackSession == null)
+            return;
+
+        PlaybackSession.Quality = data.ToString();
+        ProgressUpdate(this);
     }
 
-    private string? Quality { get; set; }
     private Timer? Timer { get; set; }
 
     public void ProgressUpdate(object? sender)
@@ -133,24 +144,19 @@ public sealed partial class YouTubeVideoFrame
             if (_player == null || PlaybackSession == null)
                 return;
 
-            var volume = await _player.InvokeAsync<int>("getVolume");
-            var rate = await _player.InvokeAsync<float>("getPlaybackRate");
-            var loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
-
-            var status = new
-            {
-                volume, rate, loaded, Quality
-            };
+            PlaybackSession.Volume = await _player.InvokeAsync<int>("getVolume");
+            PlaybackSession.Rate = await _player.InvokeAsync<float>("getPlaybackRate");
+            PlaybackSession.Loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
 
             var progress = await _player.InvokeAsync<float>("getCurrentTime");
-
             PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
-            PlaybackSession.Quality = JsonSerializer.Serialize(status);
         }).Wait();
     }
 
     public async ValueTask DisposeAsync()
     {
+        ProgressUpdate(this);
+
         _videoFrameRef?.Dispose();
         if (_player != null) await _player.DisposeAsync();
         if (_youtubeLibraryModule != null) await _youtubeLibraryModule.DisposeAsync();

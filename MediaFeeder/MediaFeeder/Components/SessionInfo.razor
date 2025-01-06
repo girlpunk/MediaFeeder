@@ -22,16 +22,18 @@
         @if (Session?.CurrentPosition != null)
         {
             <Progress
-                Percent="@((Session.CurrentPosition.Value.TotalSeconds / Session.Video?.DurationSpan.TotalSeconds ?? 1) * 100)"></Progress>
+                SuccessPercent="@((Session.CurrentPosition.Value.TotalSeconds / Session.Video?.DurationSpan.TotalSeconds ?? 1) * 100)"
+                Percent="@((Session.Loaded * 100) ?? 0)"
+                ShowInfo="false"></Progress>
         }
         @if (Session?.Video != null)
         {
             <CardMeta
-                Title="@($"{Session?.Provider?.Humanize()} - {Session?.CurrentPosition?.ToString()}")"
-                Description="@($"{Session?.State} - {Session?.Quality}")"/>
+                Title="@($"{Session?.Provider?.Humanize()} - {Session?.CurrentPosition?.ToString()}/{Session?.Video?.DurationSpan.ToString()}")"
+                Description="@($"{Session?.State} - {Session?.Quality} - {Session?.Rate}x - {Session?.Volume}% volume")"/>
             <div>
-                <Avatar Style="@($"background-color: purple; vertical-align: middle;")" Size="AvatarSize.Large">
-                    @Session?.User.UserName
+                <Avatar Style="@("background-color: purple; vertical-align: middle;")" Size="AvatarSize.Large">
+                    @Session?.User.UserName[0]
                 </Avatar>
                 <span>@Session?.User.UserName</span>
             </div>

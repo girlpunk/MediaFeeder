@@ -7,7 +7,9 @@
 {
     @foreach (var session in SessionManager.PlaybackSessions)
     {
-        <SessionInfo session="@session"/>
+        <GridCol Md="6" Sm="12" Xs="12">
+            <SessionInfo session="@session"/>
+        </GridCol>
     }
 }
 
