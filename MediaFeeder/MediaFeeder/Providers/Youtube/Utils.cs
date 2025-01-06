@@ -17,10 +17,10 @@ public sealed class Utils(
         var request = await httpClient.GetAsync(url, cancellationToken);
         request.EnsureSuccessStatusCode();
 
-        var ext = new FileExtensionContentTypeProvider().Mappings
-            .SingleOrDefault(g => g.Value == request.Content.Headers.ContentType?.MediaType)
-            .Key ?? ".png";
-        var fileName = $"{itemId}{ext}";
+            var ext = new FileExtensionContentTypeProvider().Mappings
+                .FirstOrDefault(g => g.Value == request.Content.Headers.ContentType?.MediaType)
+                .Key ?? ".png";
+            var fileName = $"{itemId}{ext}";
 
         var path = configuration.GetValue<string>("MediaRoot");
         path = Path.Join(path, "thumbnails", type, fileName);
