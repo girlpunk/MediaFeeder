@@ -46,7 +46,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 var channelRequest = youTubeService.Channels.List("snippet");
                 channelRequest.Id = subscription.ChannelId;
                 var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
-                var channelResult = channelResponse.Items.SingleOrDefault();
+                var channelResult = channelResponse?.Items.SingleOrDefault();
+
+                if (channelResult == null)
+                    logger.LogError("Could not load channel details for {} (channel {})", subscription.Id, subscription.ChannelId);
 
                 if (channelResult?.Snippet?.Title != null)
                 {

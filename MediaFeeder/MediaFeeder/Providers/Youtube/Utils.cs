@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Google.Apis.YouTube.v3.Data;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -7,8 +8,16 @@ public sealed class Utils(
     IConfiguration configuration,
     IHttpClientFactory httpClientFactory)
 {
-    internal async Task<string> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken) =>
-        await LoadUrlThumbnail(itemId, type, resource.Maxres.Url, logger, cancellationToken);
+    internal async Task<string> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken)
+    {
+        if (resource?.Maxres?.Url == null)
+        {
+            logger.LogError("Could not finx maxres thumbnail: {}", JsonSerializer.Serialize(resource));
+            return "";
+        }
+
+        return await LoadUrlThumbnail(itemId, type, resource.Maxres.Url, logger, cancellationToken);
+    }
 
     internal async Task<string> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
     {

@@ -96,7 +96,7 @@ public class YoutubeVideoSynchroniseConsumer(
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await db.Videos.SingleAsync(v => v.Id == context.Message.VideoId, context.CancellationToken);
 
-        if (video.DownloadedPath != null || video.Duration == 0)
+        if (video.DownloadedPath != null || video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
             await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
 
         if (video.Thumb == null)
