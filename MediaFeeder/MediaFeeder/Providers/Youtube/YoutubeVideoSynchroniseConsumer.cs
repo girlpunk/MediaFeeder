@@ -76,8 +76,10 @@ public class YoutubeActualVideoSynchroniseConsumer(
 
                 video.Views = (int?)videoStats.Statistics.ViewCount ?? 0;
                 video.DurationSpan = XmlConvert.ToTimeSpan(videoStats.ContentDetails.Duration);
-                video.Description = videoStats.Snippet.Description;
             }
+
+            if (videoStats?.Snippet != null)
+                video.Description = videoStats.Snippet.Description;
         }
 
         await db.SaveChangesAsync(context.CancellationToken);
