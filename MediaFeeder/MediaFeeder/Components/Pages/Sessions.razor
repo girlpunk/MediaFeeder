@@ -17,6 +17,6 @@
     protected override void OnParametersSet()
     {
         if (SessionManager != null)
-            SessionManager.UpdateEvent += StateHasChanged;
+            SessionManager.UpdateEvent += () => InvokeAsync(StateHasChanged);
     }
 }
