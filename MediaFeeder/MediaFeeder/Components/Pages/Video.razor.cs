@@ -105,8 +105,6 @@ public sealed partial class Video : IDisposable
 
     public void Dispose()
     {
-        UserManager.Dispose();
         PlaybackSession?.Dispose();
-        Context?.Dispose();
     }
 }
