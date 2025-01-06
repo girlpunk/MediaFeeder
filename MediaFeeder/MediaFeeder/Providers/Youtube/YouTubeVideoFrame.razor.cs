@@ -1,7 +1,7 @@
 using System.Text.Json;
-using System.Timers;
 using Humanizer;
 using Microsoft.JSInterop;
+using Timer = System.Threading.Timer;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -58,11 +58,8 @@ public sealed partial class YouTubeVideoFrame
         ArgumentNullException.ThrowIfNull(_player);
         _player.InvokeVoidAsync("playVideo");
 
-        Timer = new System.Timers.Timer();
-        Timer.AutoReset = true;
-        Timer.Elapsed += ProgressUpdate;
-        Timer.Interval = 10000; // in miliseconds
-        Timer.Start();
+        var tsInterval = TimeSpan.FromSeconds(10);
+        Timer = new Timer(ProgressUpdate, null, tsInterval, tsInterval);
 
         return Task.CompletedTask;
     }
@@ -127,9 +124,9 @@ public sealed partial class YouTubeVideoFrame
     }
 
     private string? Quality { get; set; }
-    private System.Timers.Timer? Timer { get; set; }
+    private Timer? Timer { get; set; }
 
-    public void ProgressUpdate(object? sender, ElapsedEventArgs elapsedEventArgs)
+    public void ProgressUpdate(object? sender)
     {
         Task.Run(async () =>
         {
@@ -161,8 +158,8 @@ public sealed partial class YouTubeVideoFrame
 
         if (Timer != null)
         {
-            Timer.Stop();
-            Timer.Dispose();
+            Timer.Change(Timeout.Infinite, Timeout.Infinite);
+            await Timer.DisposeAsync();
         }
     }
 }

@@ -29,7 +29,7 @@
 
             <CardMeta
                 Title="@($"{Session?.Provider.Humanize()} - {Session?.CurrentPosition?.ToString()}")"
-                Description="@($"{Session?.Quality}")"/>
+                Description="@($"{Session?.State} - {Session?.Quality}")"/>
             <div>
                 <Avatar Style="@($"background-color: purple; vertical-align: middle;")" Size="AvatarSize.Large">
                     @Session?.User.UserName
