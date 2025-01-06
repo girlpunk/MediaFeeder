@@ -171,7 +171,7 @@ public sealed partial class YouTubeVideoFrame
 
             var progress = await _player.InvokeAsync<float>("getCurrentTime");
             PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
-        }).Wait();
+        });
     }
 
     public async ValueTask DisposeAsync()
