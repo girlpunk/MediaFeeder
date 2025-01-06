@@ -44,7 +44,7 @@ public sealed class Utils(
         catch (Exception e)
         {
             logger.LogError(e, "Error while downloading channel thumbnail");
-            return "";
+            return url;
         }
     }
 }
