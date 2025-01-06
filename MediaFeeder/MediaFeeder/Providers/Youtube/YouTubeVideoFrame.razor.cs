@@ -142,7 +142,7 @@ public sealed partial class YouTubeVideoFrame
                 volume, rate, loaded, Quality
             };
 
-            var progress = await _player.InvokeAsync<int>("getCurrentTime");
+            var progress = await _player.InvokeAsync<float>("getCurrentTime");
 
             PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
             PlaybackSession.Quality = JsonSerializer.Serialize(status);

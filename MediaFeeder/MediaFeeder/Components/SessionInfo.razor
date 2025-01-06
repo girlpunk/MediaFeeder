@@ -19,14 +19,13 @@
         </GridRow>
     </Cover>
     <ChildContent>
+        @if (Session?.CurrentPosition != null)
+        {
+            <Progress
+                Percent="@(Session.CurrentPosition.Value.TotalSeconds / Session.Video?.DurationSpan.TotalSeconds ?? 1)"></Progress>
+        }
         @if (Session?.Video != null)
         {
-            @if (Session?.CurrentPosition != null)
-            {
-                <Progress
-                    Percent="@(Session.CurrentPosition.Value.TotalSeconds / Session.Video.DurationSpan.TotalSeconds)"></Progress>
-            }
-
             <CardMeta
                 Title="@($"{Session?.Provider.Humanize()} - {Session?.CurrentPosition?.ToString()}")"
                 Description="@($"{Session?.State} - {Session?.Quality}")"/>
