@@ -6,7 +6,7 @@
         </Tooltip>
 
         <Tooltip Title="Add Folder">
-            <Button Icon="@(IconType.Outline.FolderAdd)"></Button>
+            <Button Icon="@(IconType.Outline.FolderAdd)" OnClick="() => EditFolder(null)"></Button>
         </Tooltip>
 
         <Tooltip Title="Import Subscriptions">
@@ -14,7 +14,7 @@
         </Tooltip>
 
         <Tooltip Title="Edit">
-            <Button Icon="@(IconType.Outline.Edit)"></Button>
+            <Button Icon="@(IconType.Outline.Edit)" OnClick="EditSelected"></Button>
         </Tooltip>
 
         <Tooltip Title="Delete">
@@ -33,7 +33,8 @@
                 ShowLeafIcon="true"
                 Selectable="true"
                 TItem="ITreeSelectable"
-                DefaultExpandAll="true">
+                DefaultExpandAll="true"
+                @ref="TreeRef">
                 @foreach (var folder in Folders)
                 {
                     <TreeFolder Folder="@folder"/>

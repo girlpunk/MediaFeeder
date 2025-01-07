@@ -1,4 +1,6 @@
-﻿using MediaFeeder.Data;
+﻿using AntDesign;
+using MediaFeeder.Components.Dialogs;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -17,9 +19,13 @@ public sealed partial class TreeView
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
+    [Inject] public required ModalService ModalService { get; set; }
+
+
     private List<Folder>? Folders { get; set; }
 
     private SemaphoreSlim Updating { get; } = new(1);
+    public Tree<ITreeSelectable>? TreeRef { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -51,5 +57,64 @@ public sealed partial class TreeView
             }
 
         await base.OnParametersSetAsync();
+    }
+
+    private void EditFolder(Folder? folder)
+    {
+        var modalConfig = new ModalOptions();
+        ModalRef? modalRef = null;
+
+        modalConfig.Title = "Basic Form";
+        modalConfig.OnCancel = async _ =>
+        {
+            Console.WriteLine("OnCancel");
+            await modalRef?.CloseAsync();
+        };
+
+        modalConfig.AfterClose = () =>
+        {
+            Console.WriteLine("AfterClose");
+            InvokeAsync(StateHasChanged);
+            return Task.CompletedTask;
+        };
+
+        modalRef = ModalService.CreateModal<EditFolder, Folder>(modalConfig, folder);
+
+        modalRef.OnOpen = static () =>
+        {
+            Console.WriteLine("ModalRef OnOpen");
+            return Task.CompletedTask;
+        };
+
+        modalRef.OnOk = static () =>
+        {
+            Console.WriteLine("ModalRef OnOk");
+            return Task.CompletedTask;
+        };
+
+        modalRef.OnCancel = static () =>
+        {
+            Console.WriteLine("ModalRef OnCancel");
+            return Task.CompletedTask;
+        };
+
+        modalRef.OnClose = static () =>
+        {
+            Console.WriteLine("ModalRef OnClose");
+            return Task.CompletedTask;
+        };
+    }
+
+    private void EditSelected()
+    {
+        switch (TreeRef?.SelectedData)
+        {
+            case Folder folder:
+                EditFolder(folder);
+                break;
+            case Subscription subscription:
+                Console.WriteLine($"Would open subscription dialog for {subscription}");
+                break;
+        }
     }
 }

@@ -1,0 +1,33 @@
+@inherits FeedbackComponent<MediaFeeder.Data.db.Folder>
+
+<Form Model="@Options"
+      LabelCol="new ColLayoutParam { Span = 8 }"
+      WrapperCol="new ColLayoutParam { Span = 16 }"
+      ValidateOnChange="true"
+      OnFinish="OnFinish">
+    <FormItem Label="Username" Required ShowFeedbackOnError="true">
+        <Input @bind-Value="@context.Name" required="required" />
+    </FormItem>
+    <FormItem Label="Parent" ShowFeedbackOnError="true">
+        <TreeSelect
+            DataSource="@ExistingFolders"
+            @bind-Value="@context.Parent"
+            Placeholder="Please select"
+            ItemValue="static item => item"
+            ItemLabel="static item => item.Name"
+            AllowClear
+            EnableSearch
+            MatchedStyle="font-weight: bold"
+            ChildrenExpression="static node => node.DataItem.Subfolders"
+            TitleExpression="static node => node.DataItem.Name"
+            TitleTemplate="static node => node.DataItem.Name.ToRenderFragment()"
+            KeyExpression="static node => node.DataItem.Id.ToString()"
+            IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"
+        />
+    </FormItem>
+    <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+        <Button Type="@ButtonType.Primary" HtmlType="submit">
+            Submit
+        </Button>
+    </FormItem>
+</Form>
