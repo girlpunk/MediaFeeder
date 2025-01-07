@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<AuthUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@attribute [AllowAnonymous]
 
 <form class="form-horizontal" action="Account/PerformExternalLogin" method="post">
     <div>

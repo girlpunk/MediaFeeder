@@ -20,7 +20,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         var accountGroup = endpoints.MapGroup("/Account");
 
-        accountGroup.MapGet("/PerformExternalLogin/{provider}", static (
+        accountGroup.MapGet("/PerformExternalLogin/{provider}", [AllowAnonymous] static (
             HttpContext context,
             [FromServices] SignInManager<AuthUser> signInManager,
             [FromRoute] string provider,
@@ -41,7 +41,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             return TypedResults.Challenge(properties, [provider]);
         });
 
-        accountGroup.MapPost("/PerformExternalLogin", static (
+        accountGroup.MapPost("/PerformExternalLogin", [AllowAnonymous] static (
             HttpContext context,
             [FromServices] SignInManager<AuthUser> signInManager,
             [FromForm] string provider,
