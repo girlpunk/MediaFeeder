@@ -28,7 +28,7 @@ public sealed partial class Video : IDisposable
     private IProvider? Provider { get; set; }
     private PlaybackSession? PlaybackSession { get; set; }
 
-    private int UpNextCount { get; set; }
+    private int UpNextCount { get; set; } = 0;
     private TimeSpan UpNextDuration { get; set; } = TimeSpan.Zero;
     private TimeSpan TotalDuration { get; set; } = TimeSpan.Zero;
 
@@ -63,6 +63,7 @@ public sealed partial class Video : IDisposable
         }
         else
         {
+            UpNextCount = 0;
             UpNextDuration = TimeSpan.Zero;
         }
 

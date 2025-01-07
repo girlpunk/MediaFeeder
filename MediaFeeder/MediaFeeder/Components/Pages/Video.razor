@@ -15,7 +15,7 @@
             <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
                 @if (VideoObject != null)
                 {
-                    @VideoObject?.Name
+                    @VideoObject.Name
                 }
                 else
                 {
@@ -25,9 +25,9 @@
             </TitleTemplate>
             <SubtitleTemplate>
                 <span class="ant-page-header-heading-sub-title">
-                    <a href="@($"/folder/{VideoObject?.Subscription.ParentFolder?.Id}")">@VideoObject?.Subscription.ParentFolder?.Name</a>
+                    <a href="@($"/folder/{VideoObject?.Subscription?.ParentFolder?.Id}")">@VideoObject?.Subscription?.ParentFolder?.Name</a>
                     &gt;
-                    <a href="@($"/subscription/{VideoObject?.Subscription.Id}")">@VideoObject?.Subscription.Name</a>
+                    <a href="@($"/subscription/{VideoObject?.Subscription?.Id}")">@VideoObject?.Subscription?.Name</a>
                 </span>
             </SubtitleTemplate>
 
