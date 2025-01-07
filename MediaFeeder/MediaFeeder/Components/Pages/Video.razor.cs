@@ -29,8 +29,8 @@ public sealed partial class Video : IDisposable
     private PlaybackSession? PlaybackSession { get; set; }
 
     private int UpNextCount { get; set; }
-    private TimeSpan UpNextDuration { get; set; }
-    private TimeSpan TotalDuration { get; set; }
+    private TimeSpan UpNextDuration { get; set; } = TimeSpan.Zero;
+    private TimeSpan TotalDuration { get; set; } = TimeSpan.Zero;
 
     protected override async Task OnParametersSetAsync()
     {
