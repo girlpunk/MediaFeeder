@@ -112,7 +112,7 @@
                     }
                 </AntDesign.Text>
 
-                <Paragraph>@VideoObject.Description</Paragraph>
+                <Paragraph>@(new MarkupString(VideoObject.Description))</Paragraph>
             </p>
         }
         else
