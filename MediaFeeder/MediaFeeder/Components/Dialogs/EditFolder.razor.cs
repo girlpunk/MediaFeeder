@@ -30,7 +30,7 @@ public partial class EditFolder
         }
         else
         {
-            Context.Attach(Options);
+            // Context.Attach(Options);
         }
 
         ExistingFolders = await Context.Folders.Where(f => f != Options).ToListAsync();
