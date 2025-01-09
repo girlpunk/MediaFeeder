@@ -12,6 +12,7 @@ using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
 using MediaFeeder.PlaybackManager;
 using MediaFeeder.Providers;
+using MediaFeeder.Providers.RSS;
 using MediaFeeder.Providers.Youtube;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -118,6 +119,8 @@ builder.Services.AddMassTransit(static config =>
     config.AddConsumer<YoutubeSubscriptionSynchroniseConsumer>();
     config.AddConsumer<YoutubeVideoSynchroniseConsumer>();
     config.AddConsumer<YoutubeActualVideoSynchroniseConsumer>();
+
+    config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();
 });
 
 builder.Logging.AddOpenTelemetry(static logging =>
