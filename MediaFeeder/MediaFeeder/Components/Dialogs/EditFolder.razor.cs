@@ -33,7 +33,10 @@ public partial class EditFolder
             // Context.Attach(Options);
         }
 
-        ExistingFolders = await Context.Folders.Where(f => f != Options).ToListAsync();
+        ExistingFolders = await Context.Folders
+            .Where(f => f != Options)
+            .Include(static f => f.Subfolders)
+            .ToListAsync();
 
         await base.OnInitializedAsync();
     }
