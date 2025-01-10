@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Xml;
 using Google.Apis.YouTube.v3;
 using MassTransit;
@@ -10,7 +11,8 @@ namespace MediaFeeder.Providers.Youtube;
 public class YoutubeActualVideoSynchroniseConsumer(
     ILogger<YoutubeActualVideoSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    YouTubeService youTubeService
+    YouTubeService youTubeService,
+    Utils utils
 ) : IConsumer<YoutubeActualVideoSynchroniseContract>
 {
     public async Task Consume(ConsumeContext<YoutubeActualVideoSynchroniseContract> context)
@@ -62,7 +64,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
             }
         }
 
-        if (video.Duration == 0)
+        if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
         {
             var videoRequest = youTubeService.Videos.List("id,statistics,contentDetails");
             videoRequest.Id = video.VideoId;
@@ -79,7 +81,15 @@ public class YoutubeActualVideoSynchroniseConsumer(
             }
 
             if (videoStats?.Snippet != null)
+            {
                 video.Description = videoStats.Snippet.Description;
+                video.Name = videoStats.Snippet.Title;
+            }
+
+            if (videoStats?.Snippet?.Thumbnails != null)
+                video.Thumb = await utils.LoadResourceThumbnail(video.VideoId, "video", videoStats.Snippet.Thumbnails, logger, context.CancellationToken);
+
+            logger.LogInformation("Got state for video from YT: {}", JsonSerializer.Serialize(videoStats));
         }
 
         await db.SaveChangesAsync(context.CancellationToken);
@@ -87,11 +97,8 @@ public class YoutubeActualVideoSynchroniseConsumer(
 }
 
 public class YoutubeVideoSynchroniseConsumer(
-    ILogger<YoutubeVideoSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    IBus bus,
-    Utils utils,
-    YouTubeService youTubeService
+    IBus bus
 ) : IConsumer<YoutubeVideoSynchroniseContract>
 {
     public async Task Consume(ConsumeContext<YoutubeVideoSynchroniseContract> context)
@@ -101,17 +108,6 @@ public class YoutubeVideoSynchroniseConsumer(
 
         if (video.DownloadedPath != null || video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
             await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
-
-        if (video.Thumb == null)
-        {
-            var videoRequest = youTubeService.Videos.List("snippet");
-            videoRequest.Id = video.VideoId;
-            var videoResponse = await videoRequest.ExecuteAsync(context.CancellationToken);
-            var videoStats = videoResponse.Items.SingleOrDefault();
-
-            if (videoStats != null)
-                video.Thumb = await utils.LoadResourceThumbnail(video.VideoId, "video", videoStats.Snippet.Thumbnails, logger, context.CancellationToken);
-        }
 
         await db.SaveChangesAsync(context.CancellationToken);
     }
