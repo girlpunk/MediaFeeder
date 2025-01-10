@@ -66,6 +66,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                         channelResult.Snippet.Thumbnails,
                         logger,
                         context.CancellationToken);
+
+                if (channelResult?.Snippet?.Description != null)
+                    subscription.Description = channelResult.Snippet.Description;
             }
 
             try
