@@ -77,7 +77,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Error while running RSS Sync, running full sync");
+                logger.LogError(e, "Error while running RSS Sync, running full sync ({})", subscription.Id);
                 await CheckAllVideos(subscription, db, context.CancellationToken);
             }
         }
