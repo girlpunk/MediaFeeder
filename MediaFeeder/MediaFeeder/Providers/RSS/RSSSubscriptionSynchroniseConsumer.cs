@@ -22,7 +22,7 @@ public class RSSSubscriptionSynchroniseConsumer(
         logger.LogInformation("Starting synchronize {}", subscription.Name);
 
         foreach (var video in await db.Videos
-                     .Where(v => v.SubscriptionId == subscription.Id && v.New && DateTimeOffset.Now - v.PublishDate <= TimeSpan.FromDays(1))
+                     .Where(v => v.SubscriptionId == subscription.Id && v.New && DateTimeOffset.UtcNow - v.PublishDate <= TimeSpan.FromDays(1))
                      .ToListAsync(context.CancellationToken)
                 )
             video.New = false;
@@ -60,7 +60,7 @@ public class RSSSubscriptionSynchroniseConsumer(
 
         video.VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault() ?? item.Id;
         video.Name = item.Title.Text;
-        video.New = DateTimeOffset.Now - item.PublishDate <= TimeSpan.FromDays(7);
+        video.New = DateTimeOffset.UtcNow - item.PublishDate <= TimeSpan.FromDays(7);
         video.PublishDate = item.PublishDate;
         //video.Thumb = "";
         video.Description = item.Summary.Text;

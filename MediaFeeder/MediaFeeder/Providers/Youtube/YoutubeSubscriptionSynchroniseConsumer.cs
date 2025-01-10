@@ -26,7 +26,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         logger.LogInformation("Starting synchronize {}", subscription.Name);
 
         foreach (var video in await db.Videos
-                     .Where(v => v.SubscriptionId == subscription.Id && v.New && DateTimeOffset.Now - v.PublishDate <= TimeSpan.FromDays(1))
+                     .Where(v => v.SubscriptionId == subscription.Id && v.New && DateTimeOffset.UtcNow - v.PublishDate <= TimeSpan.FromDays(1))
                      .ToListAsync(context.CancellationToken)
                 )
             video.New = false;
