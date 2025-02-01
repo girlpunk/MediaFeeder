@@ -16,7 +16,7 @@ public class Metrics
     private ObservableGauge<int> FolderUnwatchedGauge { get; }
     private ObservableGauge<int> FolderUnwatchedDurationGauge { get; }
 
-    public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory)
+    public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory, ILogger<Metrics> logger)
     {
         var meter = meterFactory.Create(MeterName);
 
@@ -55,7 +55,7 @@ public class Metrics
             },
             "Video");
         FoldersGauge = meter.CreateObservableGauge(
-            "total-folders",
+            "unwatched-videos",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
@@ -67,8 +67,11 @@ public class Metrics
             "folders-tracked",
             () =>
             {
+                logger.LogInformation("Started folders-tracked call");
+
                 using var context = contextFactory.CreateDbContext();
-                return context.Videos
+                logger.LogInformation("Started folders-tracked call 1");
+                var v = context.Videos
                     .GroupBy(static video => video.Subscription.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Count(),
@@ -77,8 +80,10 @@ public class Metrics
                             { "Key", group.Key },
                             { "Name", group.First().Subscription.ParentFolder.Name }
                         }));
+                logger.LogInformation("Started folders-tracked call 2");
+                return v;
             },
-            "Folder");
+            "Videos");
 
         FolderUnwatchedGauge = meter.CreateObservableGauge(
             "folders-unwatched",
@@ -95,7 +100,7 @@ public class Metrics
                             { "Name", group.First().Subscription.ParentFolder.Name }
                         }));
             },
-            "Folder");
+            "Videos");
 
         FolderUnwatchedDurationGauge = meter.CreateObservableGauge(
             "folders-unwatched-duration",
@@ -113,6 +118,6 @@ public class Metrics
                             { "Name", group.First().Subscription.ParentFolder.Name }
                         }));
             },
-            "Folder");
+            "Seconds");
     }
 }
