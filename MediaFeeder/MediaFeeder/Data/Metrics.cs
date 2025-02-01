@@ -64,7 +64,7 @@ public class Metrics
             "Folder");
 
         FolderTrackedGauge = meter.CreateObservableGauge(
-            "total-folders",
+            "folders-tracked",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
@@ -81,7 +81,7 @@ public class Metrics
             "Folder");
 
         FolderUnwatchedGauge = meter.CreateObservableGauge(
-            "total-folders",
+            "folders-unwatched",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
@@ -98,7 +98,7 @@ public class Metrics
             "Folder");
 
         FolderUnwatchedDurationGauge = meter.CreateObservableGauge(
-            "total-folders",
+            "folders-unwatched-duration",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
