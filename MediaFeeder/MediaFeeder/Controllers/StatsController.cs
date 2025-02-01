@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Diagnostics;
 using MassTransit;
 using MediaFeeder.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -55,6 +56,7 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
     }
 
     [HttpGet("sync")]
+    [AllowAnonymous]
     public async Task<IActionResult> Sync([FromServices] IBus bus)
     {
         var contract = new SynchroniseAllContract();
