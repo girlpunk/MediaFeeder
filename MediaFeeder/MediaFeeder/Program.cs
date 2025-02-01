@@ -129,6 +129,7 @@ builder.Logging.AddOpenTelemetry(static logging =>
     logging.IncludeScopes = true;
 });
 
+builder.Services.AddSingleton<Metrics>();
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(static r =>
     {
@@ -143,7 +144,7 @@ builder.Services.AddOpenTelemetry()
             .AddProcessRuntimeDetector()
             .AddTelemetrySdk();
     })
-    .WithMetrics(static metrics =>
+    .WithMetrics(static (metrics) =>
     {
         metrics.AddRuntimeInstrumentation()
             .AddProcessInstrumentation()
@@ -202,6 +203,8 @@ builder.Services.AddAntDesign();
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.Services.GetRequiredService<Metrics>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

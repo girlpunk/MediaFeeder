@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Data;
 
-internal class Metrics
+public class Metrics
 {
-    internal const string MeterName = "MediaFeeder";
+    public const string MeterName = "MediaFeeder";
 
     private ObservableGauge<int> PublishedGauge { get; }
     private ObservableGauge<int> SubscriptionsGauge { get; }
