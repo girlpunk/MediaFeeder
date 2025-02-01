@@ -82,6 +82,15 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             }
         }
 
+        foreach (var video in db.Videos.Where(v =>
+                     v.SubscriptionId == subscription.Id && (
+                         v.DownloadedPath != null ||
+                         v.Duration == 0 ||
+                         string.IsNullOrWhiteSpace(v.Thumb)
+                     )
+                 ))
+            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
+
         subscription.LastSynchronised = DateTime.UtcNow;
         await db.SaveChangesAsync(context.CancellationToken);
 
