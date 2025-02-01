@@ -71,8 +71,6 @@ public class YoutubeActualVideoSynchroniseConsumer(
             var videoResponse = await videoRequest.ExecuteAsync(context.CancellationToken);
             var videoStats = videoResponse.Items.SingleOrDefault();
 
-            logger.LogInformation("Got state for video from YT: {}", JsonSerializer.Serialize(videoStats));
-
             if (videoStats != null)
             {
                 if (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount > 0)
@@ -80,8 +78,11 @@ public class YoutubeActualVideoSynchroniseConsumer(
 
                 video.Views = (int?)videoStats.Statistics.ViewCount ?? 0;
 
-                //TODO: Find why this may be empty
-                video.DurationSpan = XmlConvert.ToTimeSpan(videoStats.ContentDetails.Duration);
+                // This can be null if the video "Premieres" in the future
+                if (!string.IsNullOrWhiteSpace(videoStats.ContentDetails.Duration))
+                    video.DurationSpan = XmlConvert.ToTimeSpan(videoStats.ContentDetails.Duration);
+                else
+                    video.Duration = 0;
             }
 
             if (videoStats?.Snippet != null)
