@@ -35,19 +35,17 @@ public sealed partial class Shuffle
         if (FolderId != null)
             _subscriptions = await DataContext.Subscriptions
                 .Where(s => s.ParentFolderId == FolderId && s.UserId == user.Id)
+                .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
         else if (SubscriptionId != null)
             _subscriptions = [await DataContext.Subscriptions.SingleAsync(s => s.Id == SubscriptionId && s.UserId == user.Id)];
         else
             _subscriptions = await DataContext.Subscriptions
                 .Where(s => s.UserId == user.Id)
+                .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
 
         StateHasChanged();
-
-        // Shuffle the order of the subscriptions
-        var rng = new Random(unchecked(Environment.TickCount * 31 + Environment.CurrentManagedThreadId));
-        _subscriptions = _subscriptions.OrderBy(_ => rng.Next()).ToList();
 
         _videos.Enqueue(
             await DataContext.Videos
