@@ -40,7 +40,7 @@ public sealed class Utils(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error while downloading channel thumbnail");
+            logger.LogError(e, "Error while downloading channel thumbnail for {} from {}", itemId, url);
             return null;
         }
     }
