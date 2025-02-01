@@ -61,7 +61,7 @@ public class Metrics
                 using var context = contextFactory.CreateDbContext();
                 return new Measurement<int>(context.Videos.Count(static video => !video.Watched));
             },
-            "Folder");
+            "Video");
 
         FolderTrackedGauge = meter.CreateObservableGauge(
             "folders-tracked",
@@ -79,7 +79,8 @@ public class Metrics
                         {
                             { "Key", group.Key },
                             { "Name", group.First().Subscription.ParentFolder.Name }
-                        }));
+                        }))
+                    .ToList();
                 logger.LogInformation("Started folders-tracked call 2");
                 return v;
             },
