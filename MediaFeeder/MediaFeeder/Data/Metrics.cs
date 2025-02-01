@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Data;
 
-public class Metrics
+public sealed class Metrics
 {
-    public const string MeterName = "MediaFeeder";
+    internal const string MeterName = "MediaFeeder";
 
     private ObservableGauge<int> PublishedGauge { get; }
     private ObservableGauge<int> SubscriptionsGauge { get; }
@@ -16,7 +16,7 @@ public class Metrics
     private ObservableGauge<int> FolderUnwatchedGauge { get; }
     private ObservableGauge<int> FolderUnwatchedDurationGauge { get; }
 
-    public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory, ILogger<Metrics> logger)
+    public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory)
     {
         var meter = meterFactory.Create(MeterName);
 
@@ -67,11 +67,8 @@ public class Metrics
             "folders-tracked",
             () =>
             {
-                logger.LogInformation("Started folders-tracked call");
-
                 using var context = contextFactory.CreateDbContext();
-                logger.LogInformation("Started folders-tracked call 1");
-                var v = context.Videos
+                return context.Videos
                     .GroupBy(static video => video.Subscription.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Count(),
@@ -81,8 +78,6 @@ public class Metrics
                             { "Name", group.First().Subscription.ParentFolder.Name }
                         }))
                     .ToList();
-                logger.LogInformation("Started folders-tracked call 2");
-                return v;
             },
             "Videos");
 
@@ -99,7 +94,8 @@ public class Metrics
                         {
                             { "Key", group.Key },
                             { "Name", group.First().Subscription.ParentFolder.Name }
-                        }));
+                        }))
+                    .ToList();
             },
             "Videos");
 
@@ -117,7 +113,8 @@ public class Metrics
                         {
                             { "Key", group.Key },
                             { "Name", group.First().Subscription.ParentFolder.Name }
-                        }));
+                        }))
+                    .ToList();
             },
             "Seconds");
     }
