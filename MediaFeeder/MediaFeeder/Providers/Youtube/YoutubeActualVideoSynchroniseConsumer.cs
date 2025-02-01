@@ -37,6 +37,9 @@ public class YoutubeActualVideoSynchroniseConsumer(
             catch (FileNotFoundException)
             {
             }
+            catch (DirectoryNotFoundException)
+            {
+            }
 
             // Try to find a valid video file
             var foundVideo = false;
