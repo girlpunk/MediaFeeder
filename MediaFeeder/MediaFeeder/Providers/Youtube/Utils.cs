@@ -8,18 +8,15 @@ public sealed class Utils(
     IConfiguration configuration,
     IHttpClientFactory httpClientFactory)
 {
-    internal async Task<string> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken)
+    internal async Task<string?> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken)
     {
         if (resource.Maxres?.Url == null && resource.High?.Url == null)
-        {
             logger.LogError("Could not find maxres thumbnail: {}", JsonSerializer.Serialize(resource));
-            return "";
-        }
 
         return await LoadUrlThumbnail(itemId, type, resource.Maxres?.Url ?? resource.High.Url, logger, cancellationToken);
     }
 
-    internal async Task<string> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
+    internal async Task<string?> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
     {
         try
         {
@@ -44,7 +41,7 @@ public sealed class Utils(
         catch (Exception e)
         {
             logger.LogError(e, "Error while downloading channel thumbnail");
-            return url;
+            return null;
         }
     }
 }

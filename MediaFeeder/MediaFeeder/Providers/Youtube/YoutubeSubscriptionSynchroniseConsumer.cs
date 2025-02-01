@@ -232,7 +232,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                         .Element(YahooNamespace + "statistics")?
                         .Attribute("views")?.Value ?? "0"),
                     Thumb = thumbnailPath,
-                    Thumbnail = thumbnailPath,
+                    Thumbnail = thumbnailPath ?? "",
                     UploaderName = entry.Element(AtomNamespace + "author")?.Element(AtomNamespace + "name")?.Value ?? subscription.Name
                 };
 
@@ -288,7 +288,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 PlaylistIndex = (int)(item.Snippet.Position ?? 0),
                 PublishDate = item.Snippet.PublishedAtDateTimeOffset,
                 Thumb = thumbnailPath,
-                Thumbnail = thumbnailPath,
+                Thumbnail = thumbnailPath ?? "",
                 UploaderName = item.Snippet.VideoOwnerChannelTitle
             };
 
