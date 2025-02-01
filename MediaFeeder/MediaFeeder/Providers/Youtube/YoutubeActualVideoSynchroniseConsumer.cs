@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Xml;
 using Google.Apis.YouTube.v3;
 using MassTransit;
@@ -92,7 +91,14 @@ public class YoutubeActualVideoSynchroniseConsumer(
             }
 
             if (videoStats?.Snippet?.Thumbnails != null)
+            {
+                logger.LogInformation("Thumbnails are NOT null while syncing {}", video.Id);
                 video.Thumb = await utils.LoadResourceThumbnail(video.VideoId, "video", videoStats.Snippet.Thumbnails, logger, context.CancellationToken);
+            }
+            else
+            {
+                logger.LogWarning("Thumbnails are null while syncing {}", video.Id);
+            }
         }
 
         await db.SaveChangesAsync(context.CancellationToken);
