@@ -43,8 +43,8 @@ public class RSSSubscriptionSynchroniseConsumer(
         subscription.ChannelName = feed.Title.Text;
 
         // Need to make absolute
-        subscription.Thumb = feed.ImageUrl.AbsoluteUri;
-        subscription.Thumbnail = feed.ImageUrl.AbsoluteUri;
+        subscription.Thumb = new Uri(new Uri(subscription.ChannelId), feed.ImageUrl).AbsoluteUri;
+        subscription.Thumbnail = new Uri(new Uri(subscription.ChannelId), feed.ImageUrl).AbsoluteUri;
 
         await db.SaveChangesAsync(context.CancellationToken);
 
