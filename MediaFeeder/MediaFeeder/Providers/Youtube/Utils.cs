@@ -12,7 +12,7 @@ public sealed class Utils(
     {
         if (resource.Maxres?.Url == null && resource.High?.Url == null)
         {
-            logger.LogError("Could not finx maxres thumbnail: {}", JsonSerializer.Serialize(resource));
+            logger.LogError("Could not find maxres thumbnail: {}", JsonSerializer.Serialize(resource));
             return "";
         }
 

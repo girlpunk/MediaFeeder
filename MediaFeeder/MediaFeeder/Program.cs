@@ -148,10 +148,10 @@ builder.Services.AddOpenTelemetry()
         metrics.AddRuntimeInstrumentation()
             .AddProcessInstrumentation()
             .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
+            // .AddHttpClientInstrumentation()
             .AddNpgsqlInstrumentation()
             .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
-            .AddMeter("MediaFeeder")
+            .AddMeter(Metrics.MeterName)
             .AddPrometheusExporter();
     })
     .WithTracing(tracing =>
