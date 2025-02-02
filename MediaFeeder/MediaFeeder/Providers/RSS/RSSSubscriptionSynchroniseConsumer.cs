@@ -84,6 +84,8 @@ public class RSSSubscriptionSynchroniseConsumer(
                                                ?? item.Authors.Select(static a => a.Name));
         video.DownloadedPath = item.Links.SingleOrDefault(static l => l.RelationshipType == "enclosure")?.Uri.ToString();
 
+        db.Videos.Add(video);
+
         await db.SaveChangesAsync(cancellationToken);
     }
 }
