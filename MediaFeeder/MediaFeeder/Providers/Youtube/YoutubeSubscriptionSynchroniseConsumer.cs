@@ -33,6 +33,15 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         await db.SaveChangesAsync(context.CancellationToken);
 
+        foreach (var video in db.Videos.Where(v =>
+                     v.SubscriptionId == subscription.Id && (
+                         v.DownloadedPath != null ||
+                         v.Duration == 0 ||
+                         string.IsNullOrWhiteSpace(v.Thumb)
+                     )
+                 ))
+            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
+
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
         if (subscription.LastSynchronised == null)
@@ -81,15 +90,6 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 await CheckAllVideos(subscription, db, context.CancellationToken);
             }
         }
-
-        foreach (var video in db.Videos.Where(v =>
-                     v.SubscriptionId == subscription.Id && (
-                         v.DownloadedPath != null ||
-                         v.Duration == 0 ||
-                         string.IsNullOrWhiteSpace(v.Thumb)
-                     )
-                 ))
-            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
 
         subscription.LastSynchronised = DateTime.UtcNow;
         await db.SaveChangesAsync(context.CancellationToken);
