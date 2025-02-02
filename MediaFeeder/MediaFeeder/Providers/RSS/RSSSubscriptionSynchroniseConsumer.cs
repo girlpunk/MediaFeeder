@@ -71,7 +71,7 @@ public class RSSSubscriptionSynchroniseConsumer(
         video.VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault() ?? item.Id;
         video.Name = item.Title.Text;
         video.New = DateTimeOffset.UtcNow - item.PublishDate <= TimeSpan.FromDays(7);
-        video.PublishDate = item.PublishDate;
+        video.PublishDate = item.PublishDate.UtcDateTime;
         //video.Thumb = "";
         video.Description = item.Summary.Text;
         var rawDuration = item.ElementExtensions
