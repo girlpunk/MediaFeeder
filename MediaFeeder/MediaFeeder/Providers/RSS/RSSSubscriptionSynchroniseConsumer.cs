@@ -4,6 +4,7 @@ using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.ServiceModel.Syndication;
 using System.Xml;
+using MediaFeeder.Data.db;
 
 namespace MediaFeeder.Providers.RSS;
 
@@ -56,7 +57,16 @@ public class RSSSubscriptionSynchroniseConsumer(
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscriptionId, cancellationToken) ?? db.Videos.CreateProxy();
+        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscriptionId, cancellationToken) ?? new Video()
+        {
+            VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault()
+                      ?? item.Id,
+            Name = item.Title.Text,
+            Description = item.Summary.Text,
+            Thumbnail = "",
+            UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
+                                             ?? item.Authors.Select(static a => a.Name)),
+        };
 
         video.VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault() ?? item.Id;
         video.Name = item.Title.Text;
