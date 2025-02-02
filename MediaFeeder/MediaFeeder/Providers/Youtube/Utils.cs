@@ -30,13 +30,13 @@ public sealed class Utils(
                 .Key ?? ".png";
             var fileName = $"{itemId}{ext}";
 
-            var path = configuration.GetValue<string>("MediaRoot");
-            path = Path.Join(path, "thumbnails", type, fileName);
+            var root = configuration.GetValue<string>("MediaRoot");
+            var path = Path.Join(root, "thumbnails", type, fileName);
 
             await using var file = File.OpenWrite(path);
             await request.Content.CopyToAsync(file, cancellationToken);
 
-            return path;
+            return path.Remove(0, root.Length);
         }
         catch (Exception e)
         {
