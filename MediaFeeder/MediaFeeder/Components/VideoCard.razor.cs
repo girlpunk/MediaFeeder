@@ -41,7 +41,7 @@ public sealed partial class VideoCard : ComponentBase
         get
         {
             if (Video == null)
-                return null;
+                return "#000000";
 
             if (Video.New)
                 return "#007bff";
@@ -52,7 +52,7 @@ public sealed partial class VideoCard : ComponentBase
             if (Video.Watched)
                 return "#444";
 
-            return null;
+            return "#000000";
         }
     }
 
