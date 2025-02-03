@@ -277,4 +277,9 @@ app.MapAdditionalIdentityEndpoints();
 app.MapGrpcService<MediaToadService>();
 app.MapGrpcHealthChecksService();
 
+using (var context = app.Services.GetRequiredService<MediaFeederDataContext>())
+{
+    await context.Database.MigrateAsync();
+}
+
 app.Run();
