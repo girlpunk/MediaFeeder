@@ -40,17 +40,23 @@
         }
     </ChildContent>
     <ActionTemplate>
-        <CardAction @onclick="@(() => Session?.PlayPause())">
-            <Icon Type="@IconType.Outline.Pause" />
-            Pause
+        <CardAction >
+            <div @onclick="@(() => Session?.PlayPause())">
+                <Icon Type="@IconType.Outline.Pause"/>
+                Pause
+            </div>
         </CardAction>
-        <CardAction @onclick="@(() => Session?.Watch())">
-            <Icon Type="@IconType.Outline.Eye" />
-            Mark Watched
+        <CardAction>
+            <div @onclick="@(() => Session?.Watch())">
+                <Icon Type="@IconType.Outline.Eye"/>
+                Mark Watched
+            </div>
         </CardAction>
-        <CardAction @onclick="@(() => Session?.Skip())">
-            <Icon Type="@IconType.Outline.FastForward" />
-            Skip
+        <CardAction>
+            <div @onclick="@(() => Session?.Skip())">
+                <Icon Type="@IconType.Outline.FastForward"/>
+                Skip
+            </div>
         </CardAction>
     </ActionTemplate>
 </Card>
