@@ -6,6 +6,5 @@ public enum Provider
     YouTube = 1,
     Sonarr = 3,
     RSS = 4,
-    
     // Twitch
 }

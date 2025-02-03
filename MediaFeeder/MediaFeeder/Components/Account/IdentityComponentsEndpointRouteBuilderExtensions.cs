@@ -3,7 +3,6 @@ using MediaFeeder.Components.Account.Pages;
 using MediaFeeder.Components.Account.Pages.Manage;
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
@@ -113,7 +112,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             var logins = await userManager.GetLoginsAsync(user);
             foreach (var l in logins) personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
 
-            personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user))!);
+            personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user)) ?? throw new InvalidOperationException());
             var fileBytes = JsonSerializer.SerializeToUtf8Bytes(personalData);
 
             context.Response.Headers.TryAdd("Content-Disposition", "attachment; filename=PersonalData.json");

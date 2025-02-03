@@ -69,13 +69,13 @@ public sealed class Metrics
             {
                 using var context = contextFactory.CreateDbContext();
                 return context.Videos
-                    .GroupBy(static video => video.Subscription.ParentFolderId)
+                    .GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Count(),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription.ParentFolder.Name }
+                            { "Name", group.First().Subscription!.ParentFolder!.Name }
                         }))
                     .ToList();
             },
@@ -87,13 +87,13 @@ public sealed class Metrics
             {
                 using var context = contextFactory.CreateDbContext();
                 return context.Videos
-                    .GroupBy(static video => video.Subscription.ParentFolderId)
+                    .GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Count(static video => !video.Watched),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription.ParentFolder.Name }
+                            { "Name", group.First().Subscription!.ParentFolder!.Name }
                         }))
                     .ToList();
             },
@@ -105,14 +105,14 @@ public sealed class Metrics
             {
                 using var context = contextFactory.CreateDbContext();
                 return context.Videos
-                    .GroupBy(static video => video.Subscription.ParentFolderId)
+                    .GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Where(static video => !video.Watched)
-                            .Sum(static video => video.Duration),
+                            .Sum(static video => video.Duration ?? 0),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription.ParentFolder.Name }
+                            { "Name", group.First().Subscription!.ParentFolder!.Name }
                         }))
                     .ToList();
             },

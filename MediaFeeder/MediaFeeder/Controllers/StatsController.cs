@@ -30,11 +30,11 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
         var newUnwatched = await Context.Videos.CountAsync(static video => !video.Watched);
 
         var folders = await Context.Videos
-            .GroupBy(static video => video.Subscription.ParentFolderId)
+            .GroupBy(static video => video.Subscription!.ParentFolderId)
             .Select(static group => new
             {
-                Key = group.Key ?? -1,
-                group.First().Subscription.ParentFolder.Name,
+                group.Key,
+                group.First().Subscription!.ParentFolder!.Name,
                 Tracked = group.Count(),
                 UnwatchedCount = group.Count(static video => !video.Watched),
                 UnwatchedDuration = group

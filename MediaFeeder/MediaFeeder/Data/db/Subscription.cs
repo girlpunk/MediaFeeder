@@ -12,7 +12,7 @@ public class Subscription : ITreeSelectable
 
     [MaxLength(1000000000)] public required string Description { get; set; }
 
-    [MaxLength(1024)] public required string Thumbnail { get; set; }
+    [MaxLength(1024)] public string? Thumbnail { get; set; }
 
     public bool? AutoDownload { get; set; }
     public int? DownloadLimit { get; set; }
@@ -20,8 +20,8 @@ public class Subscription : ITreeSelectable
     [MaxLength(128)] public string? DownloadOrder { get; set; }
 
     public bool? AutomaticallyDeleteWatched { get; set; }
-    public int? ParentFolderId { get; set; }
-    public int UserId { get; set; }
+    public required int ParentFolderId { get; set; }
+    public required int UserId { get; set; }
 
     [MaxLength(128)] public required string ChannelId { get; set; }
 
@@ -36,8 +36,8 @@ public class Subscription : ITreeSelectable
 
 
     public virtual Folder? ParentFolder { get; set; }
-    public virtual AuthUser User { get; set; } = null!;
-    public virtual ICollection<Video> Videos { get; init; } = null!;
+    public virtual AuthUser? User { get; set; }
+    public virtual ICollection<Video> Videos { get; init; } = [];
 
     public string OnSelectedNavigate => "/subscription/" + Id;
 }

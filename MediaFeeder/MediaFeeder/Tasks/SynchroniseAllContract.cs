@@ -1,3 +1,3 @@
 namespace MediaFeeder.Tasks;
 
-public record SynchroniseAllContract();
+public record SynchroniseAllContract;

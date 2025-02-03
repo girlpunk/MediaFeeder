@@ -38,6 +38,7 @@ public class SynchroniseAllConsumer(
 
             var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(providerType);
             var contract = Activator.CreateInstance(contractType, new object[] { subscription.Item1 });
+            ArgumentNullException.ThrowIfNull(contract);
 
             await bus.Publish(contract, context.CancellationToken);
         }

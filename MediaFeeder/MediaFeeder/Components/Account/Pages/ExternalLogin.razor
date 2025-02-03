@@ -48,7 +48,7 @@
 </div>
 
 @code {
-    public const string LoginCallbackAction = "LoginCallback";
+    internal const string LoginCallbackAction = "LoginCallback";
 
     private string? _message;
     private ExternalLoginInfo? _externalLoginInfo;
@@ -69,6 +69,7 @@
     {
         if (RemoteError is not null)
         {
+            ArgumentNullException.ThrowIfNull(HttpContext);
             RedirectManager.RedirectToWithStatus("Account/Login", $"Error from external provider: {RemoteError}", HttpContext);
         }
 
@@ -79,6 +80,7 @@
 
         _externalLoginInfo = info;
 
+        ArgumentNullException.ThrowIfNull(HttpContext);
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             if (Action == LoginCallbackAction)

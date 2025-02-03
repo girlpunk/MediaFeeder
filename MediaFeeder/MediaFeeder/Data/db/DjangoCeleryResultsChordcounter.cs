@@ -6,8 +6,8 @@ public class DjangoCeleryResultsChordcounter
 {
     public int Id { get; set; }
 
-    [MaxLength(255)] public string GroupId { get; set; }
+    [MaxLength(255)] public required string GroupId { get; set; }
 
-    public string SubTasks { get; set; }
+    [MaxLength(1000000000)] public required string SubTasks { get; set; }
     public int Count { get; set; }
 }

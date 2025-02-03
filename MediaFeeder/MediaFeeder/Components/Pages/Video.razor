@@ -99,9 +99,9 @@
 
             <p style="padding: 24px;">
                 <AntDesign.Text Type="TextElementType.Secondary">
-                    @if (VideoObject.Views > 0)
+                    @if (VideoObject.Views != null)
                     {
-                        <span>@VideoObject.Views.ToMetric() views &#x2022; </span>
+                        <span>@VideoObject.Views.Value.ToMetric() views &#x2022; </span>
                     }
 
                     <span>@VideoObject.PublishDate.Humanize()</span>

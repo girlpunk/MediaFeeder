@@ -232,16 +232,22 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                     Watched = false,
                     New = true,
                     DownloadedPath = null,
-                    Subscription = subscription,
+                    SubscriptionId = subscription.Id,
                     PlaylistIndex = 0,
-                    PublishDate = DateTime.Parse(entry.Element(AtomNamespace + "published")?.Value ?? "0"),
-                    Views = int.Parse(entry
+                    PublishDate = entry.Element(AtomNamespace + "published")?.Value != null ? DateTime.Parse(entry.Element(AtomNamespace + "published")!.Value) : null,
+                    Views = entry
                         .Element(YahooNamespace + "group")?
                         .Element(YahooNamespace + "community")?
                         .Element(YahooNamespace + "statistics")?
-                        .Attribute("views")?.Value ?? "0"),
+                        .Attribute("views")?.Value != null
+                        ? int.Parse(entry
+                            .Element(YahooNamespace + "group")!
+                            .Element(YahooNamespace + "community")!
+                            .Element(YahooNamespace + "statistics")!
+                            .Attribute("views")!.Value)
+                        : null,
                     Thumb = thumbnailPath,
-                    Thumbnail = thumbnailPath ?? "",
+                    Thumbnail = thumbnailPath,
                     UploaderName = entry.Element(AtomNamespace + "author")?.Element(AtomNamespace + "name")?.Value ?? subscription.Name
                 };
 
@@ -293,11 +299,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 Watched = false,
                 New = true,
                 DownloadedPath = null,
-                Subscription = subscription,
+                SubscriptionId = subscription.Id,
                 PlaylistIndex = (int)(item.Snippet.Position ?? 0),
                 PublishDate = item.Snippet.PublishedAtDateTimeOffset,
                 Thumb = thumbnailPath,
-                Thumbnail = thumbnailPath ?? "",
+                Thumbnail = thumbnailPath,
                 UploaderName = item.Snippet.VideoOwnerChannelTitle
             };
 

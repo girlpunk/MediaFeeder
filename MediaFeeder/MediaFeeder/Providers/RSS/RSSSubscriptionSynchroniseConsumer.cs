@@ -50,22 +50,22 @@ public class RSSSubscriptionSynchroniseConsumer(
         await db.SaveChangesAsync(context.CancellationToken);
 
         foreach (var item in feed.Items)
-            await SyncVideo(item, subscription.Id, context.CancellationToken);
+            await SyncVideo(item, subscription, context.CancellationToken);
     }
 
-    private async Task SyncVideo(SyndicationItem item, int subscriptionId, CancellationToken cancellationToken)
+    private async Task SyncVideo(SyndicationItem item, Subscription subscription, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscriptionId, cancellationToken) ?? new Video()
+        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken) ?? new Video()
         {
             VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault()
                       ?? item.Id,
             Name = item.Title.Text,
             Description = item.Summary.Text,
-            Thumbnail = "",
             UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
                                              ?? item.Authors.Select(static a => a.Name)),
+            SubscriptionId = subscription.Id,
         };
 
         video.VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault() ?? item.Id;
@@ -79,7 +79,6 @@ public class RSSSubscriptionSynchroniseConsumer(
             .FirstOrDefault();
         if (rawDuration != null)
             video.DurationSpan = TimeSpan.Parse(rawDuration);
-        video.SubscriptionId = subscriptionId;
         video.UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
                                                ?? item.Authors.Select(static a => a.Name));
         video.DownloadedPath = item.Links.SingleOrDefault(static l => l.RelationshipType == "enclosure")?.Uri.ToString();

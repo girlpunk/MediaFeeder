@@ -9,12 +9,12 @@ public class Folder : ITreeSelectable
     [MaxLength(250)] public required string Name { get; set; }
 
     public int? ParentId { get; set; }
-    public int UserId { get; set; }
+    public required int UserId { get; set; }
 
     public virtual Folder? Parent { get; set; }
-    public virtual required AuthUser User { get; set; }
-    public virtual required ICollection<Folder> Subfolders { get; init; }
-    public virtual required ICollection<Subscription> Subscriptions { get; init; }
+    public virtual AuthUser? User { get; set; }
+    public virtual ICollection<Folder> Subfolders { get; init; } = [];
+    public virtual ICollection<Subscription> Subscriptions { get; init; } = [];
 
     public string OnSelectedNavigate => "/folder/" + Id;
 }

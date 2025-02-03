@@ -27,6 +27,7 @@ public class PlaybackSession : IDisposable
     internal PlaybackSession(PlaybackSessionManager manager, AuthUser user)
     {
         _manager = manager;
+        _user = user;
         User = user;
     }
 

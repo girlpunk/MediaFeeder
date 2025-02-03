@@ -28,7 +28,7 @@ public sealed partial class Video : IDisposable
     private IProvider? Provider { get; set; }
     private PlaybackSession? PlaybackSession { get; set; }
 
-    private int UpNextCount { get; set; } = 0;
+    private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; } = TimeSpan.Zero;
     private TimeSpan TotalDuration { get; set; } = TimeSpan.Zero;
 
@@ -46,20 +46,20 @@ public sealed partial class Video : IDisposable
             PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
         }
 
-        VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id && v.Subscription.UserId == user.Id);
+        VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id && v.Subscription!.UserId == user.Id);
         StateHasChanged();
 
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
-        await Context.Entry(VideoObject.Subscription).Reference(static v => v.ParentFolder).LoadAsync();
+        await Context.Entry(VideoObject.Subscription).Reference(static v => v!.ParentFolder).LoadAsync();
 
         Provider = ServiceProvider.GetServices<IProvider>()
-            .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription.Provider);
+            .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription!.Provider);
 
         if (!string.IsNullOrWhiteSpace(Next))
         {
             var more = Next.Split(',').Select(int.Parse).ToList();
             UpNextCount = more.Count;
-            UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration));
+            UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration ?? 0));
         }
         else
         {
@@ -96,7 +96,7 @@ public sealed partial class Video : IDisposable
         GoNext();
     }
 
-    public async Task GoNext(bool watch)
+    internal async Task GoNext(bool watch)
     {
         if (watch)
             await MarkWatched();

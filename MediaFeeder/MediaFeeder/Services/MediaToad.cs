@@ -45,13 +45,13 @@ public sealed class MediaToadService(
         await using var dbContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await dbContext.Videos
             .Include(static v => v.Subscription)
-            .ThenInclude(static s => s.Provider)
+            .ThenInclude(static s => s!.Provider)
             .SingleOrDefaultAsync(v => v.Id == videoId, context.CancellationToken);
 
         if (video == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
-        if (video.Subscription.UserId != user.Id)
+        if (video.Subscription?.UserId != user.Id)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
         string? mimeType;
@@ -71,7 +71,7 @@ public sealed class MediaToadService(
         var mediaItem = new MediaItem()
         {
             Id = video.Id.ToString(),
-            DurationMillis = (long)video.DurationSpan.TotalMilliseconds,
+            DurationMillis = (long)(video.DurationSpan?.TotalMilliseconds ?? 0),
             Title = video.Name,
         };
 
@@ -103,13 +103,13 @@ public sealed class MediaToadService(
         await using var dbContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await dbContext.Videos
             .Include(static v => v.Subscription)
-            .ThenInclude(static s => s.Provider)
+            .ThenInclude(static s => s!.Provider)
             .SingleOrDefaultAsync(v => v.Id == videoId, context.CancellationToken);
 
         if (video == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
-        if (video.Subscription.UserId != user.Id)
+        if (video.Subscription?.UserId != user.Id)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
         if (video.DownloadedPath == null)
@@ -184,7 +184,7 @@ public sealed class MediaToadService(
                     new MediaItem()
                     {
                         Id = v.Id.ToString(),
-                        DurationMillis = (long)v.DurationSpan.TotalMilliseconds,
+                        DurationMillis = (long)(v.DurationSpan?.TotalMilliseconds ?? 0),
                         Title = v.Name
                     }
                 )

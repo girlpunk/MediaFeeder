@@ -21,15 +21,14 @@
 </div>
 
 @code {
-    private AuthUser _user = default!;
     private string? _username;
 
-    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        _user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        _username = await UserManager.GetUserNameAsync(_user);
+        ArgumentNullException.ThrowIfNull(HttpContext);
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        _username = await UserManager.GetUserNameAsync(user);
     }
-
 }

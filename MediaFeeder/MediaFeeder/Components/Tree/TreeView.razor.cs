@@ -25,7 +25,7 @@ public sealed partial class TreeView
     private List<Folder>? Folders { get; set; }
 
     private SemaphoreSlim Updating { get; } = new(1);
-    public Tree<ITreeSelectable>? TreeRef { get; set; }
+    private Tree<ITreeSelectable>? TreeRef { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -41,7 +41,7 @@ public sealed partial class TreeView
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.Videos
-                    .Where(v => !v.Watched && v.Subscription.UserId == user.Id)
+                    .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .Select(static g => new { Id = g.Key, Count = g.Count() })
                     .ToDictionary(static g => g.Id, static g => g.Count);
@@ -78,7 +78,7 @@ public sealed partial class TreeView
             return Task.CompletedTask;
         };
 
-        modalRef = ModalService.CreateModal<EditFolder, Folder>(modalConfig, folder);
+        modalRef = ModalService.CreateModal<EditFolder, Folder?>(modalConfig, folder);
 
         modalRef.OnOpen = static () =>
         {

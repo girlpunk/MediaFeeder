@@ -76,11 +76,11 @@ public sealed partial class Home
 
             var source = DataContext.Videos
                 .AsQueryable()
-                .Where(v => v.Subscription.UserId == user.Id);
+                .Where(v => v.Subscription!.UserId == user.Id);
 
             if (FolderId != null)
             {
-                source = source.Where(v => v.Subscription.ParentFolderId == FolderId);
+                source = source.Where(v => v.Subscription!.ParentFolderId == FolderId);
                 Title = (await DataContext.Folders.FindAsync(FolderId))?.Name ?? "";
             }
 
@@ -111,7 +111,7 @@ public sealed partial class Home
                 source = source.Where(v => v.Name.Contains(SearchValue) || v.Description.Contains(SearchValue));
 
             ItemsAvailable = await source.CountAsync();
-            Duration = TimeSpan.FromSeconds(await source.SumAsync(static v => v.Duration));
+            Duration = TimeSpan.FromSeconds(await source.SumAsync(static v => v.Duration ?? 0));
             Videos = await source.Skip((PageNumber - 1) * ResultsPerPage).Take(ResultsPerPage).ToListAsync();
         }
         finally

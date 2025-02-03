@@ -22,7 +22,7 @@
         @if (Session?.CurrentPosition != null)
         {
             <Progress
-                SuccessPercent="@((Session.CurrentPosition.Value.TotalSeconds / Session.Video?.DurationSpan.TotalSeconds ?? 1) * 100)"
+                SuccessPercent="@((Session.CurrentPosition.Value.TotalSeconds / Session.Video?.DurationSpan?.TotalSeconds ?? 1) * 100)"
                 Percent="@((Session.Loaded * 100) ?? 0)"
                 ShowInfo="false"></Progress>
         }

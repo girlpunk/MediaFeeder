@@ -7,5 +7,5 @@ public class EasyThumbnailsThumbnaildimension
     public int? Width { get; set; }
     public int? Height { get; set; }
 
-    public virtual EasyThumbnailsThumbnail Thumbnail { get; set; }
+    public virtual EasyThumbnailsThumbnail? Thumbnail { get; set; }
 }

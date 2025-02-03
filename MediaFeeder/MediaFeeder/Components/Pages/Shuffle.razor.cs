@@ -54,7 +54,7 @@ public sealed partial class Shuffle
                 .FirstAsync()
         );
 
-        _timeRemaining -= _videos.Peek().DurationSpan;
+        _timeRemaining -= _videos.Peek().DurationSpan ?? TimeSpan.Zero;
 
         StateHasChanged();
 
@@ -75,7 +75,7 @@ public sealed partial class Shuffle
                     continue;
 
                 _videos.Enqueue(video);
-                _timeRemaining -= video.DurationSpan;
+                _timeRemaining -= video.DurationSpan ?? TimeSpan.Zero;
                 addedVideo = true;
 
                 StateHasChanged();

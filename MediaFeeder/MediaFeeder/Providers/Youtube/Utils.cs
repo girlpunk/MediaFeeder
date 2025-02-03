@@ -13,7 +13,7 @@ public sealed class Utils(
         if (resource.Maxres?.Url == null && resource.High?.Url == null)
             logger.LogError("Could not find maxres thumbnail: {}", JsonSerializer.Serialize(resource));
 
-        return await LoadUrlThumbnail(itemId, type, resource.Maxres?.Url ?? resource.High.Url, logger, cancellationToken);
+        return await LoadUrlThumbnail(itemId, type, resource.Maxres?.Url ?? resource.High?.Url ?? resource.Medium?.Url ?? resource.Standard.Url, logger, cancellationToken);
     }
 
     internal async Task<string?> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
@@ -30,7 +30,7 @@ public sealed class Utils(
                 .Key ?? ".png";
             var fileName = $"{itemId}{ext}";
 
-            var root = configuration.GetValue<string>("MediaRoot");
+            var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
             var path = Path.Join(root, "thumbnails", type, fileName);
 
             await using var file = File.OpenWrite(path);

@@ -76,15 +76,13 @@ public class YoutubeActualVideoSynchroniseConsumer(
             if (videoStats != null)
             {
                 if (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount > 0)
-                    video.Rating = (double?)(videoStats.Statistics.LikeCount / (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount)) ?? 0;
+                    video.Rating = (videoStats.Statistics.LikeCount / (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount));
 
-                video.Views = (int?)videoStats.Statistics.ViewCount ?? 0;
+                video.Views = (int?)videoStats.Statistics.ViewCount;
 
                 // This can be null if the video "Premieres" in the future
                 if (!string.IsNullOrWhiteSpace(videoStats.ContentDetails.Duration))
                     video.DurationSpan = XmlConvert.ToTimeSpan(videoStats.ContentDetails.Duration);
-                else
-                    video.Duration = 0;
             }
 
             if (videoStats?.Snippet != null)
