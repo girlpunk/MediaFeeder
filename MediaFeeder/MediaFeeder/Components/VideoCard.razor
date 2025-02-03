@@ -12,17 +12,13 @@
             </a>
         </Cover>
         <ActionTemplate>
-            <CardAction>
-				<a OnClick="@(() => Watch())">
-                	<Icon Type="@IconType.Outline.Eye" />
-                	Mark Watched
-				</a>
+            <CardAction @onclick="@(Watch)">
+                <Icon Type="@IconType.Outline.Eye" />
+                Mark Watched
             </CardAction>
-            <CardAction>
-				<a OnClick="@(() => Delete())">
-                	<Icon Type="@IconType.Outline.Delete" />
-                	Delete Download
-				</a>
+            <CardAction @onclick="@(Delete)">
+               	<Icon Type="@IconType.Outline.Delete" />
+               	Delete Download
             </CardAction>
         </ActionTemplate>
         <ChildContent>
