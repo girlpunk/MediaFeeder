@@ -19,17 +19,21 @@ public sealed class YouTubeDownloadVideoConsumer(
         await using var dbContext = await contextFactory.CreateDbContextAsync();
         var video = await dbContext.Videos.SingleAsync(v => v.Id == context.Message.VideoId);
 
-        await YoutubeDLSharp.Utils.DownloadYtDlp();
-        await YoutubeDLSharp.Utils.DownloadFFmpeg();
-
-        var ytdl = new YoutubeDL();
+        await YoutubeDLSharp.Utils.DownloadYtDlp("/tmp");
+        await YoutubeDLSharp.Utils.DownloadFFmpeg("/tmp");
 
         var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
         var path = Path.Join(root, "downloads", video.UploaderName);
         Directory.CreateDirectory(path);
 
         logger.LogInformation("Will be saved to {}", path);
-        ytdl.OutputFolder = path;
+        var ytdl = new YoutubeDL
+        {
+            OutputFolder = path,
+            YoutubeDLPath = "/tmp/yt-dlp",
+            FFmpegPath = "/tmp/ffmpeg",
+            RestrictFilenames = true
+        };
 
         var res = await ytdl.RunVideoDownload(
             $"https://www.youtube.com/watch?v={video.VideoId}",
@@ -39,6 +43,8 @@ public sealed class YouTubeDownloadVideoConsumer(
             progress: new ProgressReporter(logger),
             overrideOptions: new OptionSet()
             {
+                FfmpegLocation = "/tmp",
+
                 SponsorblockMark = "chapter,filler,intro,music_offtopic,outro,poi_highlight,preview",
                 SponsorblockRemove = "interaction,selfpromo,sponsor",
                 EmbedSubs = true,
