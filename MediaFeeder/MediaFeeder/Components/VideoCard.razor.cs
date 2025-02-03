@@ -65,11 +65,14 @@ public sealed partial class VideoCard : ComponentBase
 
         if (video != null)
             video.Watched = !video.Watched;
+
         await context.SaveChangesAsync();
+        StateHasChanged();
     }
 
     private async Task Delete()
     {
         await MessageService.Error("This feature is not implemented");
+        StateHasChanged();
     }
 }

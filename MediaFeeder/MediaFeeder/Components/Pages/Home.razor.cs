@@ -55,11 +55,11 @@ public sealed partial class Home
             await Update();
     }
 
-    private async Task Update()
+    private async Task Update(bool force = false)
     {
         ArgumentNullException.ThrowIfNull(DataContext);
 
-        if (!UpdateHash())
+        if (force || !UpdateHash())
             return;
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -150,6 +150,7 @@ public sealed partial class Home
             video.Watched = true;
 
         await DataContext.SaveChangesAsync();
+        await Update(true);
     }
 
     private void WatchAll()
