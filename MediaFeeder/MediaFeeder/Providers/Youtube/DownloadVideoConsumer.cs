@@ -67,7 +67,6 @@ public sealed class YouTubeDownloadVideoConsumer(
         public void Report(DownloadProgress value)
         {
             logger.LogInformation("{}: {}% {}", value.State, value.Progress, value.Data);
-            throw new NotImplementedException();
         }
     }
 }
