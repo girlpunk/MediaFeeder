@@ -37,6 +37,7 @@
         <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
         <PackageReference Include="Polly.RateLimiting" Version="8.5.1" />
         <PackageReference Include="System.ServiceModel.Syndication" Version="9.0.1" />
+        <PackageReference Include="YoutubeDLSharp" Version="1.1.1" />
     </ItemGroup>
 
     <ItemGroup>

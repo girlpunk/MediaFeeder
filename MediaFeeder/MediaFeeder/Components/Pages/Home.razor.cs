@@ -112,7 +112,11 @@ public sealed partial class Home
 
             ItemsAvailable = await source.CountAsync();
             Duration = TimeSpan.FromSeconds(await source.SumAsync(static v => v.Duration ?? 0));
-            Videos = await source.Skip((PageNumber - 1) * ResultsPerPage).Take(ResultsPerPage).ToListAsync();
+            Videos = await source
+                .Skip((PageNumber - 1) * ResultsPerPage)
+                .Take(ResultsPerPage)
+                .Include(static v => v.Subscription)
+                .ToListAsync();
         }
         finally
         {
