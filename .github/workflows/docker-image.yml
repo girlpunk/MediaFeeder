@@ -131,7 +131,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    stages:
+    steps:
       - name: "Checkout Repository"
         uses: actions/checkout@v4
       - name: "Setup Docker"
@@ -149,7 +149,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-Downloader
       - name: "Build and Push"
-        uses: "docker/build-push-action@v6
+        uses: docker/build-push-action@v6
         with:
           context: "./YTDownloader"
           file: "./YTDownloader/Dockerfile"
