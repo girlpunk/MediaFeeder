@@ -1,0 +1,10 @@
+[project]
+name = "ytdownloader"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "grpcio-tools>=1.70.0",
+    "grpcio>=1.70.0",
+    "yt-dlp==2025.1.30.232843.dev0",
+]

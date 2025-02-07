@@ -79,7 +79,8 @@ jobs:
           commit_user_name: megalinter-bot
           commit_user_email: nicolas.vuillamy@ox.security
 
-  Docker:
+  Docker-main:
+    name: "Docker Main"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -116,6 +117,42 @@ jobs:
         with:
           context: "./"
           file: "./MediaFeeder/MediaFeeder/Dockerfile"
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            HASH=${{ github.sha }}
+
+  Docker-downloader:
+    name: "Docker Downloader"
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: read
+      packages: write
+    stages:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+      - name: "Setup Docker"
+        uses: docker/setup-buildx-action@v3
+      - name: "Log into Registry ${{ env.REGISTRY }}"
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Extract Docker Metadata"
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-Downloader
+      - name: "Build and Push"
+        uses: "docker/build-push-action@v6
+        with:
+          context: "./YTDownloader"
+          file: "./YTDownloader/Dockerfile"
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
