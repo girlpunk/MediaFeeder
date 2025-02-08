@@ -114,7 +114,13 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         CancellationToken cancellationToken) =>
         throw new NotSupportedException();
 
-    public Task<IList<UserLoginInfo>> GetLoginsAsync(AuthUser user, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public async Task<IList<UserLoginInfo>> GetLoginsAsync(AuthUser user, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.AuthProviders.Where(p => p.UserId == user.Id)
+            .Select(static provider => new UserLoginInfo(provider.LoginProvider, provider.ProviderKey, provider.ToString()))
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<AuthUser?> FindByLoginAsync(string loginProvider, string providerKey,
         CancellationToken cancellationToken)
