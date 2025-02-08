@@ -31,7 +31,6 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY --from=builder --chown=app:app /app /app
 
-USER app
 ENV PYTHONUNBUFFERED=1
 
 ENTRYPOINT ["uv", "run", "main.py"]
