@@ -1,0 +1,18 @@
+@page "/Account/Manage/AuthToken"
+@using Microsoft.AspNetCore.Authentication
+@inject IdentityUserAccessor UserAccessor
+
+<h3>AuthToken</h3>
+
+<pre>@Token</pre>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    public string Token { get; set; } = "Loading...";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        await HttpContext.SignInAsync(HttpContext.User);
+    }
+}

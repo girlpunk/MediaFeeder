@@ -71,6 +71,7 @@ builder.Services.AddAuthentication(static options =>
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
         })
+    .AddBearerToken()
     .AddIdentityCookies();
 
 
