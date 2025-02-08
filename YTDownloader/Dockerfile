@@ -11,6 +11,8 @@ RUN apk add --no-cache \
         python3-dev \
         linux-headers
 
+ENV UV_LINK_MODE=copy
+
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
@@ -19,7 +21,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Copy the project into the image
 ADD . /app
-ENV UV_LINK_MODE=copy
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --compile-bytecode

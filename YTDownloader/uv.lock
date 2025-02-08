@@ -73,6 +73,20 @@ wheels = [
 ]
 
 [[package]]
+name = "grpcio-health-checking"
+version = "1.70.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/37/33de60a6ee4c6cf67abbe781bc8c69e7f04610997874383eded02d4ab133/grpcio_health_checking-1.70.0.tar.gz", hash = "sha256:ca5fc86a7c609848c3877d11b5d2d2ed27e2923151e2bf61e47051c7d3c10d1b" }
+wheels = [{url = "https://files.pythonhosted.org/packages/d3/0f/402056b2ca3b575cdd5a3ae626daa18f410a77392ede0d66d3997ae507a6/grpcio_health_checking-1.70.0-py3-none-any.whl", hash = "sha256:a38c828749e58c4031f005bdb9cc3b84f538947a9a5ea4f1cf957d22f250f515"}]
+
+[[package]]
+name = "grpcio-reflection"
+version = "1.70.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/98/f76681980ec7e9813e010d2778f4109816650760f6839661ae378286b3b5/grpcio_reflection-1.70.0.tar.gz", hash = "sha256:af46ce13e57fd7602deaef5b1d1903f6644f8982cc00f62fa9fa5b928acf6a49" }
+wheels = [{url = "https://files.pythonhosted.org/packages/ca/78/81684827a247071eec55da35e5fcf047d595c210bfae33a88c99bd1b8056/grpcio_reflection-1.70.0-py3-none-any.whl", hash = "sha256:5b8730dbb316ebc0b592863f391a6effa8261be1b74022facfc2aa28639ddbfd"}]
+
+[[package]]
 name = "ytdownloader"
 version = "0.1.0"
 source = { virtual = "." }
@@ -80,13 +94,15 @@ dependencies = [
     { name = "grpcio" },
     { name = "grpcio-tools" },
     { name = "yt-dlp" },
-#    { name = "grpcio-health-checking" },
+    { name = "grpcio-health-checking" },
+    { name = "grpcio-reflection" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "grpcio", specifier = ">=1.70.0" },
     { name = "grpcio-tools", specifier = ">=1.70.0" },
-#    { name = "grpcio-health-checking", specifier = ">=1.70.0"},
+    { name = "grpcio-health-checking", specifier = ">=1.70.0" },
+    { name = "grpcio-reflection", specifier = ">=1.70.0" },
     { name = "yt-dlp", specifier = ">=2025.1.30" },
 ]

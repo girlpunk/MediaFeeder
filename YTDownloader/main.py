@@ -11,6 +11,7 @@ import downloadServer_pb2_grpc
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
+from grpc_reflection.v1alpha import reflection
 
 YDL_DOWNLOAD_OPTS = {
     # 'progress_hooks': [my_hook],
@@ -177,12 +178,33 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
 
 if __name__ == '__main__':
     logging.basicConfig()
-    bind_to = "0.0.0.0:30033"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
-    downloadServer_pb2_grpc.add_YTDownloaderServicer_to_server(Downloader(), server)
-    health_pb2_grpc.add_HealthServicer_to_server(health.HealthServicer(), server)
 
+    bind_to = "0.0.0.0:30033"
     server.add_insecure_port(bind_to)
+
+    # Create a health check servicer
+    health_servicer = health.HealthServicer(
+        experimental_non_blocking=True,
+        experimental_thread_pool=futures.ThreadPoolExecutor(
+            max_workers=2
+        ),
+    )
+
+    downloadServer_pb2_grpc.add_YTDownloaderServicer_to_server(Downloader(), server)
+
+    # Create a tuple of all of the services we want to export via reflection.
+    services = tuple(
+        service.full_name
+        for service in downloadServer_pb2.DESCRIPTOR.services_by_name.values()
+    ) + (reflection.SERVICE_NAME, health.SERVICE_NAME)
+
+    # Mark all services as healthy.
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+    for service in services:
+        health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
+    reflection.enable_server_reflection(services, server)
+
     server.start()
     print(f"Listening on {bind_to}")
     server.wait_for_termination()
