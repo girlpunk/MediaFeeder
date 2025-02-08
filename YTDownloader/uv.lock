@@ -80,11 +80,13 @@ dependencies = [
     { name = "grpcio" },
     { name = "grpcio-tools" },
     { name = "yt-dlp" },
+#    { name = "grpcio-health-checking" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "grpcio", specifier = ">=1.70.0" },
     { name = "grpcio-tools", specifier = ">=1.70.0" },
-    { name = "yt-dlp", specifier = "==2025.1.30.232843.dev0" },
+#    { name = "grpcio-health-checking", specifier = ">=1.70.0"},
+    { name = "yt-dlp", specifier = ">=2025.1.30" },
 ]

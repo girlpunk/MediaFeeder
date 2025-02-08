@@ -3,9 +3,14 @@ from concurrent import futures
 import grpc
 import datetime
 import glob
+import logging
 
 import downloadServer_pb2
 import downloadServer_pb2_grpc
+
+from grpc_health.v1 import health
+from grpc_health.v1 import health_pb2
+from grpc_health.v1 import health_pb2_grpc
 
 YDL_DOWNLOAD_OPTS = {
     # 'progress_hooks': [my_hook],
@@ -171,9 +176,12 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     bind_to = "0.0.0.0:30033"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
     downloadServer_pb2_grpc.add_YTDownloaderServicer_to_server(Downloader(), server)
+    health_pb2_grpc.add_HealthServicer_to_server(health.HealthServicer(), server)
+
     server.add_insecure_port(bind_to)
     server.start()
     print(f"Listening on {bind_to}")
