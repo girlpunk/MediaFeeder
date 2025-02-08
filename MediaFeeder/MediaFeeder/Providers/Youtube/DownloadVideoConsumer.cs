@@ -1,16 +1,16 @@
 using MassTransit;
+using Mediafeeder;
 using MediaFeeder.Data;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
-using YoutubeDLSharp;
-using YoutubeDLSharp.Options;
 
 namespace MediaFeeder.Providers.Youtube;
 
 public sealed class YouTubeDownloadVideoConsumer(
     ILogger<YouTubeDownloadVideoConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    IConfiguration configuration
+    IConfiguration configuration,
+    YTDownloader.YTDownloaderClient downloaderClient
 ) : IConsumer<DownloadVideoContract<YoutubeProvider>>
 {
     public async Task Consume(ConsumeContext<DownloadVideoContract<YoutubeProvider>> context)
@@ -19,60 +19,27 @@ public sealed class YouTubeDownloadVideoConsumer(
         await using var dbContext = await contextFactory.CreateDbContextAsync();
         var video = await dbContext.Videos.SingleAsync(v => v.Id == context.Message.VideoId);
 
-        await YoutubeDLSharp.Utils.DownloadYtDlp("/tmp");
-        await YoutubeDLSharp.Utils.DownloadFFmpeg("/tmp");
-
         var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
         var path = Path.Join(root, "downloads", video.UploaderName);
         Directory.CreateDirectory(path);
-
+        path = Path.Join(path, $"{video.Name} [${video.Id}]");
         logger.LogInformation("Will be saved to {}", path);
-        var ytdl = new YoutubeDL
+
+        var downloadResponse = await downloaderClient.DownloadAsync(new Mediafeeder.DownloadRequest
         {
-            OutputFolder = path,
-            YoutubeDLPath = "/tmp/yt-dlp",
-            FFmpegPath = "/tmp/ffmpeg",
-            RestrictFilenames = true
-        };
+            VideoUrl = $"https://www.youtube.com/watch?v={video.VideoId}",
+            OutputPath = path
+        }, cancellationToken: context.CancellationToken);
 
-        var res = await ytdl.RunVideoDownload(
-            $"https://www.youtube.com/watch?v={video.VideoId}",
-            mergeFormat: DownloadMergeFormat.Mp4,
-            recodeFormat: VideoRecodeFormat.Mp4,
-            ct: context.CancellationToken,
-            progress: new ProgressReporter(logger),
-            overrideOptions: new OptionSet()
-            {
-                FfmpegLocation = "/tmp",
-
-                SponsorblockMark = "chapter,filler,intro,music_offtopic,outro,poi_highlight,preview",
-                SponsorblockRemove = "interaction,selfpromo,sponsor",
-                EmbedSubs = true,
-                EmbedChapters = true,
-                EmbedThumbnail = true,
-                EmbedMetadata = true,
-                RestrictFilenames = true,
-                SubLangs = "en.*",
-                WriteAutoSubs = true
-            });
-
-        if (res.Success)
+        if (downloadResponse.Status == Status.Done)
         {
-            logger.LogInformation("Successfully downloaded {} to {}", context.Message.VideoId, res.Data);
-            video.DownloadedPath = res.Data;
+            logger.LogInformation("Successfully downloaded {} to {}", context.Message.VideoId, downloadResponse.Filename);
+            video.DownloadedPath = downloadResponse.Filename;
             await dbContext.SaveChangesAsync();
         }
         else
         {
-            logger.LogError("Problem while downloading {}:  {}", context.Message.VideoId, res.Data);
-        }
-    }
-
-    private sealed class ProgressReporter(ILogger logger) : IProgress<DownloadProgress>
-    {
-        public void Report(DownloadProgress value)
-        {
-            logger.LogInformation("{}: {}% {}", value.State, value.Progress, value.Data);
+            logger.LogError("Problem while downloading {}:  {}", context.Message.VideoId, downloadResponse.ExitCode);
         }
     }
 }

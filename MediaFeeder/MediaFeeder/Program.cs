@@ -4,6 +4,7 @@ using System.Reflection;
 using Google.Apis.Services;
 using MassTransit;
 using MassTransit.Logging;
+using Mediafeeder;
 using MediaFeeder;
 using MediaFeeder.Components;
 using MediaFeeder.Components.Account;
@@ -47,6 +48,11 @@ builder.Services.AddRazorComponents()
     .AddAuthenticationStateSerialization();
 
 builder.Services.AddGrpc();
+
+builder.Services.AddGrpcClient<YTDownloader.YTDownloaderClient>(o =>
+{
+    o.Address = builder.Configuration.GetValue<Uri>("youtube_downloader_address");
+});
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -276,6 +282,7 @@ app.MapRazorComponents<App>()
 app.MapAdditionalIdentityEndpoints();
 
 app.MapGrpcService<MediaToadService>();
+app.MapGrpcService<ApiService>();
 app.MapGrpcHealthChecksService();
 
 await using (var context = await app.Services.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContextAsync())

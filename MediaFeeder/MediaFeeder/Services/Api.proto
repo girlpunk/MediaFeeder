@@ -1,0 +1,89 @@
+// https://protobuf.dev/programming-guides/proto3/
+syntax = "proto3";
+
+option csharp_namespace = "MediaFeeder";
+package MediaFeeder;
+
+service API {
+  rpc ListFolder (ListFolderRequest) returns (stream FolderReply) {}
+  rpc Folder (FolderRequest) returns (FolderReply) {}
+  rpc ListSubscription (ListSubscriptionRequest) returns (stream SubscriptionReply) {}
+  rpc Subscription (SubscriptionRequest) returns (SubscriptionReply) {}
+  rpc Video (VideoRequest) returns (VideoReply) {}
+  rpc Download (DownloadRequest) returns (DownloadReply) {}
+  rpc Watched (WatchedRequest) returns (WatchedReply) {}
+  rpc Shuffle (ShuffleRequest) returns (ShuffleReply) {}
+}
+
+message ListFolderRequest {
+}
+
+message FolderRequest {
+  int32 Id = 1;
+}
+
+message FolderReply {
+  int32 Id = 1;
+  string Name = 2;
+  repeated int32 ChildFolders = 3;
+  repeated int32 ChildSubscriptions = 4;
+}
+
+message ListSubscriptionRequest {
+}
+
+message SubscriptionRequest {
+  int32 Id = 1;
+}
+
+message SubscriptionReply {
+  int32 Id = 1;
+  string Name = 2;
+  string Thumbnail = 3;
+  int32 Unwatched = 4;
+}
+
+message VideoRequest {
+  int32 Id = 1;
+}
+
+message VideoReply {
+  int32 Id = 1;
+  string Title = 2;
+  string Thumbnail = 3;
+  string Description = 4;
+  int32 Views = 5;
+  optional int64 Published = 6;
+  optional int32 Duration = 7;
+  optional string DownloadPath = 8;
+
+  bool New = 10;
+  bool Downloaded = 11;
+  bool Watched = 12;
+}
+
+message DownloadRequest {
+  int32 Id = 1;
+}
+
+message DownloadReply {
+}
+
+message WatchedRequest {
+  int32 Id = 1;
+  bool Watched = 2;
+}
+
+message WatchedReply {
+}
+
+message ShuffleRequest {
+  oneof target {
+    int32 FolderId = 1;
+    int32 SubscriptionId = 2;
+  }
+}
+
+message ShuffleReply {
+  repeated int32 Id = 1;
+}
