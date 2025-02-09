@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using System.Reflection;
 using Google.Apis.Services;
 using MassTransit;
@@ -34,7 +33,6 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Quartz;
-using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +44,11 @@ builder.Services.AddRazorComponents()
             options.DetailedErrors = true;
     })
     .AddAuthenticationStateSerialization();
+
+builder.Services.Configure<ForwardedHeadersOptions>(static options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.All;
+});
 
 builder.Services.AddGrpc(options =>
 {
@@ -234,11 +237,7 @@ else
     app.UseHsts();
 }
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.All,
-    KnownNetworks = { new IPNetwork(new IPAddress(0), 0) }
-});
+app.UseForwardedHeaders();
 
 app.UseHealthChecks("/healthz");
 app.MapPrometheusScrapingEndpoint()
