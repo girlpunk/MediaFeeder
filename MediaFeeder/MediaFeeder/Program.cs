@@ -250,6 +250,7 @@ app.UseForwardedHeaders();
 app.UseHealthChecks("/healthz");
 app.MapPrometheusScrapingEndpoint()
     .AllowAnonymous();
+app.MapGrpcHealthChecksService();
 
 app.UseHttpsRedirection();
 
@@ -296,7 +297,7 @@ app.MapAdditionalIdentityEndpoints();
 
 app.MapGrpcService<MediaToadService>();
 app.MapGrpcService<ApiService>();
-app.MapGrpcHealthChecksService();
+
 if (app.Environment.IsDevelopment())
     app.MapGrpcReflectionService();
 
