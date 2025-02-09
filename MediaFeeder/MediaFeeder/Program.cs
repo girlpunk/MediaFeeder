@@ -27,6 +27,7 @@ using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.FileProviders;
 using OpenTelemetry.Resources;
 using Polly;
@@ -35,6 +36,13 @@ using Polly.Extensions.Http;
 using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(static options =>
+{
+    // trying to use Http1AndHttp2 causes http2 connections to fail with invalid protocol error
+    // according to Microsoft dual http version mode not supported in unencrypted scenario: https://learn.microsoft.com/en-us/aspnet/core/grpc/troubleshoot?view=aspnetcore-3.0
+    options.ConfigureEndpointDefaults(static lo => lo.Protocols = HttpProtocols.Http2);
+});
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
