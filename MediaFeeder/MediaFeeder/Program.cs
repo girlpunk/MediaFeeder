@@ -47,7 +47,12 @@ builder.Services.AddRazorComponents()
     })
     .AddAuthenticationStateSerialization();
 
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+});
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddGrpcReflection();
 
 builder.Services.AddGrpcClient<YTDownloader.YTDownloaderClient>(o =>
 {
@@ -285,6 +290,8 @@ app.MapAdditionalIdentityEndpoints();
 app.MapGrpcService<MediaToadService>();
 app.MapGrpcService<ApiService>();
 app.MapGrpcHealthChecksService();
+if (app.Environment.IsDevelopment())
+    app.MapGrpcReflectionService();
 
 await using (var context = await app.Services.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContextAsync())
 {
