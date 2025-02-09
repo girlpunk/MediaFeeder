@@ -12,7 +12,15 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        await HttpContext.SignInAsync(HttpContext.User);
+        if (HttpContext != null)
+        {
+            var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+            await HttpContext.SignInAsync(HttpContext.User);
+            Token = "Set!";
+        }
+        else
+        {
+            Token = "Waiting for context";
+        }
     }
 }

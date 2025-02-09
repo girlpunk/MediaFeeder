@@ -25,10 +25,16 @@
 
     [CascadingParameter] private HttpContext? HttpContext { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        ArgumentNullException.ThrowIfNull(HttpContext);
-        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        _username = await UserManager.GetUserNameAsync(user);
+        if (HttpContext != null)
+        {
+            var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+            _username = await UserManager.GetUserNameAsync(user);
+        }
+        else
+        {
+            _username = "Waiting for context";
+        }
     }
 }
