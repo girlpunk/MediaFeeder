@@ -169,7 +169,7 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
             response.Filename = glob.glob(f"{glob.escape(request.OutputPath)}*")[0]
         else:
             response.Status = downloadServer_pb2.TEMPORARY_ERROR
-            response.Exitcode = status
+            response.ExitCode = status
 
         #response.Progress = 1
 
