@@ -158,7 +158,6 @@ public sealed class ApiService(
             Downloaded = video.Downloaded,
             New = video.New,
             Watched = video.Watched,
-            DownloadPath = video.DownloadedPath
         };
 
         if (video.Duration != null)
@@ -169,6 +168,9 @@ public sealed class ApiService(
 
         if (video.Views != null)
             reply.Views = video.Views.Value;
+
+        if (video.DownloadedPath != null)
+            reply.DownloadPath = video.DownloadedPath;
 
         return reply;
     }
