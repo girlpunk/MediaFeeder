@@ -71,7 +71,7 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services.AddGrpcClient<YTDownloader.YTDownloaderClient>(o =>
 {
-    o.Address = builder.Configuration.GetValue<Uri>("youtube_downloader_address");
+    o.Address = builder.Configuration.GetValue<Uri>("YTSM_DOWNLOADER_ADDRESS");
 });
 
 builder.Services.AddCascadingAuthenticationState();
