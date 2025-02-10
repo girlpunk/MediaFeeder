@@ -17,10 +17,12 @@ public sealed class YouTubeDownloadVideoConsumer(
     {
         logger.LogInformation("Starting video download for {}", context.Message.VideoId);
         await using var dbContext = await contextFactory.CreateDbContextAsync();
-        var video = await dbContext.Videos.SingleAsync(v => v.Id == context.Message.VideoId);
+        var video = await dbContext.Videos
+            .Include(static v => v.Subscription)
+            .SingleAsync(v => v.Id == context.Message.VideoId);
 
         var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
-        var path = Path.Join(root, "downloads", video.UploaderName);
+        var path = Path.Join(root, "downloads", video.Subscription?.Name);
         Directory.CreateDirectory(path);
         path = Path.Join(path, $"{video.Name} [${video.Id}]");
         logger.LogInformation("Will be saved to {}", path);
@@ -41,5 +43,7 @@ public sealed class YouTubeDownloadVideoConsumer(
         {
             logger.LogError("Problem while downloading {}:  {}", context.Message.VideoId, downloadResponse.ExitCode);
         }
+
+        await context.RespondAsync(downloadResponse);
     }
 }

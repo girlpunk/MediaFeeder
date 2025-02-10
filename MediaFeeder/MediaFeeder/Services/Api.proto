@@ -67,6 +67,18 @@ message DownloadRequest {
 }
 
 message DownloadReply {
+  DownloadStatus Status = 1;
+  // float Progress = 2;
+  optional string Filename = 3;
+  int32 ExitCode = 4;
+}
+
+enum DownloadStatus {
+  STARTING = 0;
+  IN_PROGRESS = 1;
+  DONE = 2;
+  TEMPORARY_ERROR = 3;
+  PERMANENT_ERROR = 4;
 }
 
 message WatchedRequest {

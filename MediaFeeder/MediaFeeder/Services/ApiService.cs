@@ -142,7 +142,8 @@ public sealed class ApiService(
                 v.New,
                 Published = v.PublishDate, //?.ToUnixTimeSeconds(),
                 v.Views,
-                v.Watched
+                v.Watched,
+                v.DownloadedPath
             })
             .SingleOrDefaultAsync(context.CancellationToken);
 
@@ -157,6 +158,7 @@ public sealed class ApiService(
             Downloaded = video.Downloaded,
             New = video.New,
             Watched = video.Watched,
+            DownloadPath = video.DownloadedPath
         };
 
         if (video.Duration != null)
@@ -193,8 +195,15 @@ public sealed class ApiService(
         var contract = Activator.CreateInstance(contractType, new object[] { video.Id });
         ArgumentNullException.ThrowIfNull(contract);
 
+        var client = bus.CreateRequestClient<dynamic>();
+        var response = await client.GetResponse<DownloadReply>(context, context.CancellationToken);
+
         await bus.Publish(contract, context.CancellationToken);
-        return new DownloadReply();
+        return response?.Message ?? new DownloadReply
+        {
+            Status = DownloadStatus.TemporaryError,
+            ExitCode = -1
+        };
     }
 
     public override async Task<WatchedReply> Watched(WatchedRequest request, ServerCallContext context)
