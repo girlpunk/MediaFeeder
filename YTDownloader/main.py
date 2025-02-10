@@ -152,7 +152,7 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
 
         #async def download():
         with (yt_dlp.YoutubeDL(YDL_DOWNLOAD_OPTS) as ydl):
-            status = ydl.download(f"https://www.youtube.com/watch?v={request.VideoUrl}")
+            status = ydl.download(request.VideoUrl)
 
         #loop = asyncio.new_event_loop()
         #task = loop.create_task(download())
