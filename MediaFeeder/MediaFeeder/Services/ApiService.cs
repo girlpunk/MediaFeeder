@@ -197,14 +197,19 @@ public sealed class ApiService(
         var contract = Activator.CreateInstance(contractType, new object[] { video.Id });
         ArgumentNullException.ThrowIfNull(contract);
 
-        var client = bus.CreateRequestClient<dynamic>();
-        var response = await client.GetResponse<DownloadReply>(context, context.CancellationToken);
+        // var client = bus.CreateRequestClient<dynamic>();
+        // var response = await client.GetResponse<DownloadReply>(context, context.CancellationToken);
 
         await bus.Publish(contract, context.CancellationToken);
-        return response?.Message ?? new DownloadReply
+        // return response?.Message ?? new DownloadReply
+        // {
+        //     Status = DownloadStatus.TemporaryError,
+        //     ExitCode = -1
+        // };
+
+        return new DownloadReply
         {
-            Status = DownloadStatus.TemporaryError,
-            ExitCode = -1
+            Status = DownloadStatus.InProgress,
         };
     }
 
