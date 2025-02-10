@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Google.Apis.Services;
 using MassTransit;
 using MassTransit.Logging;
@@ -27,7 +28,7 @@ using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.FileProviders;
 using OpenTelemetry.Resources;
 using Polly;
@@ -37,12 +38,15 @@ using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureKestrel(static options =>
-{
-    // trying to use Http1AndHttp2 causes http2 connections to fail with invalid protocol error
-    // according to Microsoft dual http version mode not supported in unencrypted scenario: https://learn.microsoft.com/en-us/aspnet/core/grpc/troubleshoot?view=aspnetcore-3.0
-    options.ConfigureEndpointDefaults(static lo => lo.Protocols = HttpProtocols.Http2);
-});
+var certificatePath = builder.Configuration.GetValue<string?>("CERTIFICATE_PATH");
+if (certificatePath != null)
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ConfigureEndpointDefaults(lo => lo.UseHttps(new HttpsConnectionAdapterOptions()
+        {
+            ServerCertificate = X509Certificate2.CreateFromPemFile(certificatePath, Path.ChangeExtension(certificatePath, "key")) //X509CertificateLoader.LoadCertificateFromFile(certificatePath)
+        }));
+    });
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
