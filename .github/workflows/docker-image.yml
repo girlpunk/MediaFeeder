@@ -148,6 +148,23 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-Downloader
+
+      - name: Cache
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            root-cache-uv
+          key: cache-${{ hashFiles('YTDownloader/Dockerfile') }}
+      - name: inject cache into docker
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.0
+        with:
+          cache-map: |
+            {
+              "root-cache-uv": "/root/.cache/uv"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+
       - name: "Build and Push"
         uses: docker/build-push-action@v6
         with:
