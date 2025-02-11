@@ -82,7 +82,7 @@ public sealed partial class VideoCard : ComponentBase
     {
         ArgumentNullException.ThrowIfNull(Video?.Subscription);
 
-        if (Video.DownloadedPath != null)
+        if (Video.DownloadedPath == null)
         {
             var providers = ServiceProvider.GetServices<IProvider>()
                 .ToLookup(static p => p.ProviderIdentifier);
