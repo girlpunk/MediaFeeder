@@ -41,15 +41,14 @@ public sealed partial class TreeView
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.Videos
-                    .Where(v => v.Watched && v.Subscription!.UserId == user.Id)
+                    .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .Select(static g => new
                     {
                         Id = g.Key,
-                        Unwatched = g.Count(static v => !v.Watched),
-                        Downloaded = 0 //g.Count(static v => v.DownloadedPath != null)
+                        Unwatched = g.Count(),
                     })
-                    .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: g.Downloaded));
+                    .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: 0));
 
                 Folders = context.Folders.Where(f => f.UserId == user.Id)
                     .Include(static f => f.Subfolders)
