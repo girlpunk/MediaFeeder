@@ -6,6 +6,7 @@ namespace MediaFeeder.Components.Tree;
 public sealed partial class TreeSubscription
 {
     private int Unwatched { get; set; }
+    private int Downloaded { get; set; }
 
     [Parameter]
     [EditorRequired]
@@ -16,7 +17,7 @@ public sealed partial class TreeSubscription
     public Subscription? Subscription { get; set; }
 
     [CascadingParameter(Name = nameof(UnwatchedCache))]
-    public Dictionary<int, int>? UnwatchedCache { get; set; }
+    public Dictionary<int, (int unwatched, int downloaded)>? UnwatchedCache { get; set; }
 
     [Inject] private NavigationManager? NavigationManager { get; set; }
 
@@ -30,7 +31,8 @@ public sealed partial class TreeSubscription
             Parent != null
         )
         {
-            Unwatched = unwatched;
+            Unwatched = unwatched.unwatched;
+            Downloaded = unwatched.downloaded;
             Parent.AddUnwatched(unwatched);
             StateHasChanged();
         }

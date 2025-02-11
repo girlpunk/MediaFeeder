@@ -6,6 +6,7 @@ namespace MediaFeeder.Components.Tree;
 public sealed partial class TreeFolder
 {
     private int Unwatched { get; set; } = 0;
+    private int Downloaded { get; set; } = 0;
 
     [Parameter]
     [EditorRequired]
@@ -15,9 +16,10 @@ public sealed partial class TreeFolder
 
     [Inject] private NavigationManager? NavigationManager { get; set; }
 
-    internal int AddUnwatched(int add)
+    internal int AddUnwatched((int unwatched, int downloaded) add)
     {
-        Unwatched += add;
+        Unwatched += add.unwatched;
+        Downloaded += add.downloaded;
         Parent?.AddUnwatched(add);
         StateHasChanged();
 

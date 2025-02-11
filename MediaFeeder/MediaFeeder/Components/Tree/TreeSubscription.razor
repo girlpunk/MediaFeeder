@@ -13,8 +13,13 @@
                 <CountTemplate>
                     @if (Unwatched > 0)
                     {
-                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px;">
+                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #007bff;">
                             @Unwatched.ToMetric()
+                        </sup>
+                    }
+                    @if (Downloaded > 0) {
+                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #59b352">
+                            @Downloaded.ToMetric()
                         </sup>
                     }
                 </CountTemplate>

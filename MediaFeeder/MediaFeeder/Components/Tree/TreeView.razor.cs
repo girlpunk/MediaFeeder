@@ -13,7 +13,7 @@ public sealed partial class TreeView
 {
     [Inject] public IDbContextFactory<MediaFeederDataContext>? ContextFactory { get; set; }
 
-    public Dictionary<int, int>? UnwatchedCache { get; set; }
+    public Dictionary<int, (int unwatched, int downloaded)>? UnwatchedCache { get; set; }
 
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
 
@@ -41,10 +41,15 @@ public sealed partial class TreeView
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.Videos
-                    .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
+                    .Where(v => v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
-                    .Select(static g => new { Id = g.Key, Count = g.Count() })
-                    .ToDictionary(static g => g.Id, static g => g.Count);
+                    .Select(static g => new
+                    {
+                        Id = g.Key,
+                        Unwatched = g.Count(static v => !v.Watched),
+                        Downloaded = g.Count(static v => v.DownloadedPath != null)
+                    })
+                    .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: g.Downloaded));
 
                 Folders = context.Folders.Where(f => f.UserId == user.Id)
                     .Include(static f => f.Subfolders)
