@@ -12,7 +12,7 @@ namespace MediaFeeder.Controllers;
 [Route("api/[controller]")]
 public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory) : ControllerBase
 {
-    [HttpGet("{id:int} play")]
+    [HttpGet("{id:int}/play")]
     [AllowAnonymous]
     public async Task<IActionResult> Play(int id)
     {
