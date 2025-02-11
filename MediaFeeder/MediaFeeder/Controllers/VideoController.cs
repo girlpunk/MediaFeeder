@@ -8,9 +8,9 @@ using Microsoft.Extensions.FileProviders.Physical;
 
 namespace MediaFeeder.Controllers;
 
-[Controller]
+[ApiController]
 [Route("api/[controller]")]
-public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory) : Controller
+public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory) : ControllerBase
 {
     [HttpGet("{id:int} play")]
     [AllowAnonymous]
