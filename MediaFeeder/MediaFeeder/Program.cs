@@ -258,11 +258,6 @@ app.MapGrpcHealthChecksService();
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.UseAntiforgery();
-
 var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
 
 var mediaRoot = app.Configuration.GetValue<string>("MediaRoot");
@@ -288,8 +283,13 @@ if (tvRoot != null)
         {
             ctx.Context.Response.Headers.Append(
                 "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
-        }
+        },
     });
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapControllers();
