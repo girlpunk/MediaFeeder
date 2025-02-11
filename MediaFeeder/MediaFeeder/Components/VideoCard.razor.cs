@@ -72,7 +72,7 @@ public sealed partial class VideoCard : ComponentBase
         {
             video.Watched = !video.Watched;
             await context.SaveChangesAsync();
-            await MessageService.Success("Marked Watched");
+            await MessageService.Success($"Marked {(video.Watched ? "Watched" : "Unwatched")}");
         }
 
         StateHasChanged();
@@ -82,23 +82,38 @@ public sealed partial class VideoCard : ComponentBase
     {
         ArgumentNullException.ThrowIfNull(Video?.Subscription);
 
-        var providers = ServiceProvider.GetServices<IProvider>()
-            .ToLookup(static p => p.ProviderIdentifier);
-
-        var providerType = providers[Video.Subscription.Provider].SingleOrDefault()?.GetType();
-
-        if (providerType == null)
+        if (Video.DownloadedPath != null)
         {
-            await MessageService.Error($"Could not find a provider for {Video.Subscription.Provider}");
-            return;
+            var providers = ServiceProvider.GetServices<IProvider>()
+                .ToLookup(static p => p.ProviderIdentifier);
+
+            var providerType = providers[Video.Subscription.Provider].SingleOrDefault()?.GetType();
+
+            if (providerType == null)
+            {
+                await MessageService.Error($"Could not find a provider for {Video.Subscription.Provider}");
+                return;
+            }
+
+            var contractType = typeof(DownloadVideoContract<>).MakeGenericType(providerType);
+            var contract = Activator.CreateInstance(contractType, new object[] { Video.Id });
+            ArgumentNullException.ThrowIfNull(contract);
+
+            await Bus.Publish(contract);
+            await MessageService.Info("Sent for download");
         }
+        else
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var video = await context.Videos.SingleAsync(v => v.Id == Video.Id);
+            ArgumentNullException.ThrowIfNull(video.DownloadedPath);
 
-        var contractType = typeof(DownloadVideoContract<>).MakeGenericType(providerType);
-        var contract = Activator.CreateInstance(contractType, new object[] { Video.Id });
-        ArgumentNullException.ThrowIfNull(contract);
+            File.Delete(video.DownloadedPath);
+            video.DownloadedPath = null;
 
-        await Bus.Publish(contract);
-        await MessageService.Info("Sent for download");
+            await context.SaveChangesAsync();
+            await MessageService.Success("Deleted Download");
+        }
 
         StateHasChanged();
     }
