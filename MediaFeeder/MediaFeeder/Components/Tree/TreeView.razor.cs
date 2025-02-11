@@ -47,7 +47,7 @@ public sealed partial class TreeView
                     {
                         Id = g.Key,
                         Unwatched = g.Count(static v => !v.Watched),
-                        Downloaded = g.Count(static v => v.DownloadedPath != null)
+                        Downloaded = 0 //g.Count(static v => v.DownloadedPath != null)
                     })
                     .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: g.Downloaded));
 
