@@ -41,7 +41,7 @@ public sealed partial class TreeView
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.Videos
-                    .Where(v => v.Subscription!.UserId == user.Id)
+                    .Where(v => v.Watched && v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .Select(static g => new
                     {
