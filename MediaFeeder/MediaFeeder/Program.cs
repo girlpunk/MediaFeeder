@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Google.Apis.Services;
@@ -25,11 +26,11 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using MediaFeeder.Services;
 using MediaFeeder.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
-using Microsoft.Extensions.FileProviders;
 using OpenTelemetry.Resources;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
@@ -91,7 +92,55 @@ builder.Services.AddAuthentication(static options =>
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
         })
-    .AddBearerToken()
+    .AddJwtBearer(options =>
+    {
+        // options.TokenValidationParameters = new TokenValidationParameters {
+        //     ValidIssuers = authentication["Issuer"],
+        //     ValidAudience = authentication["ClientId"],
+        //     IssuerSigningKey = new SymmetricSecurityKey(
+        //         Encoding.UTF8.GetBytes(authentication["ClientSecret"])
+        //     )
+        // };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = (context) =>
+            {
+                if (!context.Request.Query.TryGetValue("access_token", out var values))
+                {
+                    return Task.CompletedTask;
+                }
+
+                if (values.Count > 1)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    context.Fail(
+                        "Only one 'access_token' query string parameter can be defined. " +
+                        $"However, {values.Count:N0} were included in the request."
+                    );
+
+                    return Task.CompletedTask;
+                }
+
+                var token = values.Single();
+
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    context.Fail(
+                        "The 'access_token' query string parameter was defined, " +
+                        "but a value to represent the token was not included."
+                    );
+
+                    return Task.CompletedTask;
+                }
+
+                context.Token = token;
+
+                return Task.CompletedTask;
+            }
+        };
+    })
     .AddIdentityCookies();
 
 
@@ -257,34 +306,6 @@ app.MapPrometheusScrapingEndpoint()
 app.MapGrpcHealthChecksService();
 
 app.UseHttpsRedirection();
-
-var cacheMaxAgeOneWeek = (60 * 60 * 24 * 7).ToString();
-
-var mediaRoot = app.Configuration.GetValue<string>("MediaRoot");
-if (mediaRoot != null)
-    app.UseStaticFiles(new StaticFileOptions()
-    {
-        FileProvider = new PhysicalFileProvider(mediaRoot),
-        RequestPath = new PathString("/media"),
-        OnPrepareResponse = ctx =>
-        {
-            ctx.Context.Response.Headers.Append(
-                "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
-        }
-    });
-
-var tvRoot = app.Configuration.GetValue<string>("TVRoot");
-if (tvRoot != null)
-    app.UseStaticFiles(new StaticFileOptions()
-    {
-        FileProvider = new PhysicalFileProvider(tvRoot),
-        RequestPath = new PathString("/tv"),
-        OnPrepareResponse = ctx =>
-        {
-            ctx.Context.Response.Headers.Append(
-                "Cache-Control", $"public, max-age={cacheMaxAgeOneWeek}");
-        },
-    });
 
 app.UseAuthentication();
 app.UseAuthorization();

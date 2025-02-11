@@ -175,7 +175,6 @@ public sealed class ApiService(
         {
             var mediaRoot = configuration.GetValue<string>("MediaRoot");
             ArgumentNullException.ThrowIfNull(mediaRoot);
-            reply.DownloadPath = video.DownloadedPath.Replace(mediaRoot, "/media");
         }
 
         return reply;
