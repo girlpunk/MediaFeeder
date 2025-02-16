@@ -75,6 +75,8 @@ public sealed partial class VideoCard : ComponentBase
             await MessageService.Success($"Marked {(video.Watched ? "Watched" : "Unwatched")}");
         }
 
+        Video = video;
+
         StateHasChanged();
     }
 
