@@ -44,7 +44,7 @@ public sealed class Utils(
             await using var file = File.OpenWrite(path);
             await request.Content.CopyToAsync(file, cancellationToken);
 
-            return path.Remove(0, root.Length);
+            return path;
         }
         catch (Exception e)
         {

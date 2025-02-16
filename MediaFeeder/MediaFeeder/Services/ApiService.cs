@@ -12,8 +12,7 @@ public sealed class ApiService(
     IBus bus,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager<AuthUser> userManager,
-    IServiceProvider serviceProvider,
-    IConfiguration configuration
+    IServiceProvider serviceProvider
 ) : API.APIBase
 {
     public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
@@ -167,12 +166,6 @@ public sealed class ApiService(
 
         if (video.Views != null)
             reply.Views = video.Views.Value;
-
-        if (video.DownloadedPath != null)
-        {
-            var mediaRoot = configuration.GetValue<string>("MediaRoot");
-            ArgumentNullException.ThrowIfNull(mediaRoot);
-        }
 
         return reply;
     }

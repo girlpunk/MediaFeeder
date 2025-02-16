@@ -27,11 +27,10 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         if (video.DownloadedPath == null)
             return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
 
-        // var stream = (new PhysicalFileInfo(new FileInfo(video.DownloadedPath)))
-            // .CreateReadStream();
+        if (video.DownloadedPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            return Redirect(video.DownloadedPath);
 
         new FileExtensionContentTypeProvider().TryGetContentType(video.DownloadedPath, out var mimeType);
-
         return PhysicalFile(video.DownloadedPath, mimeType ?? "application/octet-stream", true);
     }
 

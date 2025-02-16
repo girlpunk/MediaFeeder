@@ -40,8 +40,6 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
         {
             subscription.Name,
             subscription.Id,
-            subscription.Thumb,
-            subscription.Thumbnail,
             Unwatched = subscription.Videos.Count(static v => !v.Watched)
         };
     }
