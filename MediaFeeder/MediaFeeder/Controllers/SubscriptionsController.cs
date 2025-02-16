@@ -1,8 +1,11 @@
-﻿using MediaFeeder.Data;
+﻿using System.Net;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders.Physical;
 
 namespace MediaFeeder.Controllers;
 
@@ -95,5 +98,40 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     private bool SubscriptionExists(int id)
     {
         return context.Subscriptions.Any(e => e.Id == id);
+    }
+
+    [HttpGet("{id:int}/thumbnail")]
+    public async Task<IActionResult> Thumbnail(int id)
+    {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        var subscription = await context.Subscriptions.SingleOrDefaultAsync(s => s.Id == id && s.UserId == user.Id, HttpContext.RequestAborted);
+
+        if (subscription == null)
+            return NotFound();
+
+        if (subscription.Thumb == null)
+            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+
+        if (subscription.Thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            return Redirect(subscription.Thumb);
+
+        try
+        {
+            var stream = (new PhysicalFileInfo(new FileInfo(subscription.Thumb))).CreateReadStream();
+            new FileExtensionContentTypeProvider().TryGetContentType(subscription.Thumb, out var mimeType);
+            return File(stream, mimeType ?? "application/octet-stream");
+        }
+        catch (IOException)
+        {
+            if (System.IO.File.Exists(subscription.Thumb))
+                System.IO.File.Delete(subscription.Thumb);
+
+            subscription.Thumb = null;
+            await context.SaveChangesAsync(HttpContext.RequestAborted);
+
+            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+        }
     }
 }

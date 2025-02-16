@@ -1,3 +1,4 @@
+using System.Net;
 using System.Xml;
 using Google.Apis.YouTube.v3;
 using JetBrains.Annotations;
@@ -56,7 +57,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
             await db.SaveChangesAsync(context.CancellationToken);
         }
 
-        if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
+        if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
         {
             var videoRequest = youTubeService.Videos.List("id,statistics,contentDetails,snippet");
             videoRequest.Id = video.VideoId;
@@ -95,24 +96,34 @@ public class YoutubeActualVideoSynchroniseConsumer(
             await db.SaveChangesAsync(context.CancellationToken);
         }
 
-        if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
+        if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
         {
             // Still no duration or thumbnail, see if dearrow has any metadata
             var httpClient = httpClientFactory.CreateClient("retry");
 
-            var dearrowInfo = await httpClient.GetFromJsonAsync<DearrowBrandingResponse>($"https://sponsor.ajay.app/api/branding?videoID={video.VideoId}");
+            try
+            {
+                var dearrowInfo =
+                    await httpClient.GetFromJsonAsync<DearrowBrandingResponse>(
+                        $"https://sponsor.ajay.app/api/branding?videoID={video.VideoId}");
 
-            if (dearrowInfo == null)
-                return;
+                if (dearrowInfo == null)
+                    return;
 
-            if (video.Duration == 0 && dearrowInfo.VideoDuration != null)
-                video.Duration = Convert.ToInt32(dearrowInfo.VideoDuration);
+                if (video.Duration is 0 or null && dearrowInfo.VideoDuration != null)
+                    video.Duration = Convert.ToInt32(dearrowInfo.VideoDuration);
 
-            if (string.IsNullOrWhiteSpace(video.Thumb) &&
-                dearrowInfo.Thumbnails.Any(static t => t.Locked || t.Votes > 0))
-                video.Thumb = $"https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID={video.VideoId}";
+                if (string.IsNullOrWhiteSpace(video.Thumb) &&
+                    dearrowInfo.Thumbnails.Any(static t => t.Locked || t.Votes > 0))
+                    video.Thumb = $"https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID={video.VideoId}";
 
-            await db.SaveChangesAsync(context.CancellationToken);
+                await db.SaveChangesAsync(context.CancellationToken);
+            }
+            catch (HttpRequestException e)
+            {
+                if (e.StatusCode != HttpStatusCode.NotFound)
+                    logger.LogError(e, "Error while loading fallback metadata from dearrow");
+            }
         }
 
         await db.SaveChangesAsync(context.CancellationToken);

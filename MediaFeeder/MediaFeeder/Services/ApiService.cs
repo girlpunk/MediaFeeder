@@ -92,7 +92,6 @@ public sealed class ApiService(
             {
                 Name = subscription.Name,
                 Id = subscription.Id,
-                Thumbnail = $"/media/{subscription.Thumb}",
                 Unwatched = subscription.Videos.Count(static v => !v.Watched)
             });
 
@@ -113,7 +112,6 @@ public sealed class ApiService(
             {
                 Name = subscription.Name,
                 Id = subscription.Id,
-                Thumbnail = $"/media/{subscription.Thumb}",
                 Unwatched = subscription.Videos.Count(static v => !v.Watched)
             })
             .SingleOrDefaultAsync(context.CancellationToken);
@@ -137,7 +135,6 @@ public sealed class ApiService(
             {
                 v.Id,
                 Title = v.Name,
-                Thumbnail = $"/media/{v.Thumb}",
                 v.Description,
                 Downloaded = v.DownloadedPath != null,
                 v.Duration,

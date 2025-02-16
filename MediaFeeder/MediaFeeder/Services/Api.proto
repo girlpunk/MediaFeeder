@@ -39,7 +39,6 @@ message SubscriptionRequest {
 message SubscriptionReply {
   int32 Id = 1;
   string Name = 2;
-  string Thumbnail = 3;
   int32 Unwatched = 4;
 }
 
@@ -50,7 +49,6 @@ message VideoRequest {
 message VideoReply {
   int32 Id = 1;
   string Title = 2;
-  string Thumbnail = 3;
   string Description = 4;
   int32 Views = 5;
   optional int64 Published = 6;

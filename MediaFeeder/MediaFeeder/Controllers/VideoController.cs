@@ -1,6 +1,6 @@
 using System.Net;
 using MediaFeeder.Data;
-using Microsoft.AspNetCore.Authorization;
+using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -10,17 +10,19 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory) : ControllerBase
+public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
-    [AllowAnonymous]
     public async Task<IActionResult> Play(int id)
     {
-        //TODO: Authentication
-        //TODO: Authorisation
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
 
         await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
-        var video = await context.Videos.SingleAsync(v => v.Id == id);
+        var video = await context.Videos.SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);
+
+        if (video == null)
+            return NotFound();
 
         if (video.DownloadedPath == null)
             return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
@@ -31,5 +33,41 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         new FileExtensionContentTypeProvider().TryGetContentType(video.DownloadedPath, out var mimeType);
 
         return PhysicalFile(video.DownloadedPath, mimeType ?? "application/octet-stream", true);
+    }
+
+    [HttpGet("{id:int}/thumbnail")]
+    public async Task<IActionResult> Thumbnail(int id)
+    {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        var video = await context.Videos.SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);
+
+        if (video == null)
+            return NotFound();
+
+        if (video.Thumb == null)
+            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+
+        if (video.Thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            return Redirect(video.Thumb);
+
+        try
+        {
+            var stream = (new PhysicalFileInfo(new FileInfo(video.Thumb))).CreateReadStream();
+            new FileExtensionContentTypeProvider().TryGetContentType(video.Thumb, out var mimeType);
+            return File(stream, mimeType ?? "application/octet-stream");
+        }
+        catch (IOException)
+        {
+            if (System.IO.File.Exists(video.Thumb))
+                System.IO.File.Delete(video.Thumb);
+
+            video.Thumb = null;
+            await context.SaveChangesAsync(HttpContext.RequestAborted);
+
+            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+        }
     }
 }
