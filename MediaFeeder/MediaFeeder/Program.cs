@@ -186,6 +186,7 @@ builder.Services.AddMassTransit(static config =>
     {
         cfg.UseMessageScheduler(schedulerEndpoint);
         cfg.ConfigureEndpoints(context);
+        cfg.UseConcurrencyLimit(1);
     });
 
     config.AddConsumer<SynchroniseAllConsumer>();
