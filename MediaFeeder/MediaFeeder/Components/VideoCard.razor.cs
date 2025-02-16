@@ -41,7 +41,7 @@ public sealed partial class VideoCard : ComponentBase
         }
     }
 
-    private string? BadgeColour
+    private string BadgeColour
     {
         get
         {

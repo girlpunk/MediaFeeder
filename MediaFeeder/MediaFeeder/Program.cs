@@ -104,12 +104,10 @@ builder.Services.AddAuthentication(static options =>
 
         options.Events = new JwtBearerEvents
         {
-            OnMessageReceived = (context) =>
+            OnMessageReceived = static (context) =>
             {
                 if (!context.Request.Query.TryGetValue("access_token", out var values))
-                {
                     return Task.CompletedTask;
-                }
 
                 if (values.Count > 1)
                 {

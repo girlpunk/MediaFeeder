@@ -99,7 +99,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
         if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
         {
             // Still no duration or thumbnail, see if dearrow has any metadata
-            var httpClient = httpClientFactory.CreateClient("retry");
+            using var httpClient = httpClientFactory.CreateClient("retry");
 
             try
             {

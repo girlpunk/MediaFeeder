@@ -196,9 +196,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     {
         var foundExistingVideo = false;
 
-        var httpClient = httpClientFactory.CreateClient("retry");
+        using var httpClient = httpClientFactory.CreateClient("retry");
 
-        var rssRequest =
+        using var rssRequest =
             await httpClient.GetAsync("https://www.youtube.com/feeds/videos.xml?channel_id=" + subscription.ChannelId, cancellationToken);
         rssRequest.EnsureSuccessStatusCode();
 
