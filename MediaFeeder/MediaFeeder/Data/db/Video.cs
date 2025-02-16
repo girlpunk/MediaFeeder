@@ -15,7 +15,11 @@ public class Video
     [MaxLength(1000000000)] public string? DownloadedPath { get; set; }
     public int? PlaylistIndex { get; set; }
     public DateTimeOffset? PublishDate { get; set; }
-    [MaxLength(1000000000)] public string? Thumbnail { get; set; }
+
+    [Obsolete]
+    [MaxLength(1000000000)]
+    public string? Thumbnail { get; set; }
+
     public required int SubscriptionId { get; set; }
     public double? Rating { get; set; }
 

@@ -1,5 +1,6 @@
 using System.Xml;
 using Google.Apis.YouTube.v3;
+using JetBrains.Annotations;
 using MassTransit;
 using MediaFeeder.Data;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using Newtonsoft.Json;
 
 namespace MediaFeeder.Providers.Youtube;
 
+[UsedImplicitly]
 public class YoutubeActualVideoSynchroniseConsumer(
     ILogger<YoutubeActualVideoSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
@@ -69,7 +71,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
 
         if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
         {
-            var videoRequest = youTubeService.Videos.List("id,statistics,contentDetails,Snippet");
+            var videoRequest = youTubeService.Videos.List("id,statistics,contentDetails,snippet");
             videoRequest.Id = video.VideoId;
             var videoResponse = await videoRequest.ExecuteAsync(context.CancellationToken);
             var videoStats = videoResponse.Items.SingleOrDefault();
@@ -94,13 +96,16 @@ public class YoutubeActualVideoSynchroniseConsumer(
 
             if (videoStats?.Snippet?.Thumbnails != null)
             {
-                logger.LogInformation("Thumbnails are NOT null while syncing {}", video.Id);
-                video.Thumb = await utils.LoadResourceThumbnail(video.VideoId, "video", videoStats.Snippet.Thumbnails, logger, context.CancellationToken);
+                var newThumb = await utils.LoadResourceThumbnail(video.VideoId, "video", videoStats.Snippet.Thumbnails, logger, context.CancellationToken);
+                if (!string.IsNullOrWhiteSpace(newThumb))
+                    video.Thumb = newThumb;
             }
             else
             {
                 logger.LogWarning("Thumbnails are null while syncing {}", video.Id);
             }
+
+            await db.SaveChangesAsync(context.CancellationToken);
         }
 
         if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))

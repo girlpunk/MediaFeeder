@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Google.Apis.YouTube.v3;
+using JetBrains.Annotations;
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Providers.Youtube;
 
+[UsedImplicitly]
 public sealed class YoutubeSubscriptionSynchroniseConsumer(
     ILogger<YoutubeSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
@@ -35,8 +37,8 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         foreach (var video in db.Videos.Where(v =>
                      v.SubscriptionId == subscription.Id && (
-                         v.DownloadedPath != null ||
-                         v.Duration == 0 ||
+                         string.IsNullOrWhiteSpace(v.DownloadedPath) ||
+                         v.Duration == 0 || v.Duration == null ||
                          string.IsNullOrWhiteSpace(v.Thumb)
                      )
                  ))
@@ -50,35 +52,35 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         }
         else
         {
-            if (DateTime.UtcNow - subscription.LastSynchronised > TimeSpan.FromDays(7))
+            //if (DateTime.UtcNow - subscription.LastSynchronised > TimeSpan.FromDays(7))
+            //{
+            var channelRequest = youTubeService.Channels.List("snippet");
+            channelRequest.Id = subscription.ChannelId;
+            var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
+            var channelResult = channelResponse?.Items?.SingleOrDefault();
+
+            if (channelResult == null)
+                logger.LogError("Could not load channel details for {} (channel {})", subscription.Id, subscription.ChannelId);
+
+            if (channelResult?.Snippet?.Title != null)
             {
-                var channelRequest = youTubeService.Channels.List("snippet");
-                channelRequest.Id = subscription.ChannelId;
-                var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
-                var channelResult = channelResponse?.Items?.SingleOrDefault();
+                if (subscription.Name == subscription.ChannelName)
+                    subscription.Name = channelResult.Snippet.Title;
 
-                if (channelResult == null)
-                    logger.LogError("Could not load channel details for {} (channel {})", subscription.Id, subscription.ChannelId);
-
-                if (channelResult?.Snippet?.Title != null)
-                {
-                    if (subscription.Name == subscription.ChannelName)
-                        subscription.Name = channelResult.Snippet.Title;
-
-                    subscription.ChannelName = channelResult.Snippet.Title;
-                }
-
-                if (channelResult?.Snippet?.Thumbnails != null)
-                    subscription.Thumb = await utils.LoadResourceThumbnail(
-                        subscription.PlaylistId,
-                        "sub",
-                        channelResult.Snippet.Thumbnails,
-                        logger,
-                        context.CancellationToken);
-
-                if (channelResult?.Snippet?.Description != null)
-                    subscription.Description = channelResult.Snippet.Description;
+                subscription.ChannelName = channelResult.Snippet.Title;
             }
+
+            if (channelResult?.Snippet?.Thumbnails != null)
+                subscription.Thumb = await utils.LoadResourceThumbnail(
+                    subscription.PlaylistId,
+                    "sub",
+                    channelResult.Snippet.Thumbnails,
+                    logger,
+                    context.CancellationToken);
+
+            if (channelResult?.Snippet?.Description != null)
+                subscription.Description = channelResult.Snippet.Description;
+            //}
 
             try
             {

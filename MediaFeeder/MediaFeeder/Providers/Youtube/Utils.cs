@@ -22,8 +22,16 @@ public sealed class Utils(
         {
             var httpClient = httpClientFactory.CreateClient("retry");
 
-            var request = await httpClient.GetAsync(url, cancellationToken);
-            request.EnsureSuccessStatusCode();
+            var request = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            try
+            {
+                request.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException)
+            {
+                if (!request.Content.Headers.ContentType?.MediaType?.StartsWith("image", StringComparison.OrdinalIgnoreCase) ?? false)
+                    throw;
+            }
 
             var ext = new FileExtensionContentTypeProvider().Mappings
                 .FirstOrDefault(g => g.Value == request.Content.Headers.ContentType?.MediaType)
