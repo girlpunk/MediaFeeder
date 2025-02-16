@@ -37,7 +37,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         foreach (var video in db.Videos.Where(v =>
                      v.SubscriptionId == subscription.Id && (
-                         string.IsNullOrWhiteSpace(v.DownloadedPath) ||
+                         !string.IsNullOrWhiteSpace(v.DownloadedPath) ||
                          v.Duration == 0 || v.Duration == null ||
                          string.IsNullOrWhiteSpace(v.Thumb)
                      )
