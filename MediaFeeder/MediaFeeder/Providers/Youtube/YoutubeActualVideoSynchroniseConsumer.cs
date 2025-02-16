@@ -2,8 +2,8 @@ using System.Xml;
 using Google.Apis.YouTube.v3;
 using MassTransit;
 using MediaFeeder.Data;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -11,7 +11,8 @@ public class YoutubeActualVideoSynchroniseConsumer(
     ILogger<YoutubeActualVideoSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     YouTubeService youTubeService,
-    Utils utils
+    Utils utils,
+    IHttpClientFactory httpClientFactory
 ) : IConsumer<YoutubeActualVideoSynchroniseContract>
 {
     public async Task Consume(ConsumeContext<YoutubeActualVideoSynchroniseContract> context)
@@ -102,6 +103,80 @@ public class YoutubeActualVideoSynchroniseConsumer(
             }
         }
 
+        if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
+        {
+            // Still no duration or thumbnail, see if dearrow has any metadata
+            var httpClient = httpClientFactory.CreateClient("retry");
+
+            var dearrowInfo = await httpClient.GetFromJsonAsync<DearrowBrandingResponse>($"https://sponsor.ajay.app/api/branding?videoID={video.VideoId}");
+
+            if (dearrowInfo == null)
+                return;
+
+            if (video.Duration == 0 && dearrowInfo.VideoDuration != null)
+                video.Duration = Convert.ToInt32(dearrowInfo.VideoDuration);
+
+            if (string.IsNullOrWhiteSpace(video.Thumb) &&
+                dearrowInfo.Thumbnails.Any(static t => t.Locked || t.Votes > 0))
+                video.Thumb = $"https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID={video.VideoId}";
+
+            await db.SaveChangesAsync(context.CancellationToken);
+        }
+
         await db.SaveChangesAsync(context.CancellationToken);
+    }
+
+    private sealed record DearrowBrandingResponse
+    {
+        [JsonProperty("titles")] public List<DearrowBrandingTitle> Titles { get; set; } = [];
+
+        [JsonProperty("titles")] public List<DearrowBrandingThumbnail> Thumbnails { get; set; } = [];
+
+        [JsonProperty("randomTime")]
+        public decimal RandomTime { get; set; }
+
+        [JsonProperty("videoDuration")]
+        public decimal? VideoDuration { get; set; }
+    }
+
+    private sealed record DearrowBrandingTitle
+    {
+        // Note: Titles will sometimes contain > before a word. This tells the auto-formatter to not format a word. If you have no auto-formatter, you can ignore this and replace it with an empty string
+        [JsonProperty("title")]
+        public required string Title { get; set; }
+
+        [JsonProperty("original")]
+        public bool Original { get; set; }
+
+        [JsonProperty("votes")]
+        public int Votes { get; set; }
+
+        [JsonProperty("locked")]
+        public bool Locked { get; set; }
+
+        [JsonProperty("UUID")]
+        public required Guid Uuid { get; set; }
+
+        [JsonProperty("userID")]
+        public string? UserId { get; set; }
+    }
+
+    private sealed record DearrowBrandingThumbnail
+    {
+        [JsonProperty("timestamp")]
+        public decimal? Timestamp { get; set; }
+
+        [JsonProperty("original")] public bool Original { get; set; }
+
+        [JsonProperty("votes")]
+        public int Votes { get; set; }
+
+        [JsonProperty("locked")] public bool Locked { get; set; }
+
+        [JsonProperty("UUID")]
+        public Guid Uuid { get; set; }
+
+        [JsonProperty("userID")]
+        public string? UserId { get; set; }
     }
 }
