@@ -21,45 +21,19 @@ public class YoutubeActualVideoSynchroniseConsumer(
     {
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var video = await db.Videos.SingleAsync(v => v.Id == context.Message.VideoId, context.CancellationToken);
+        var video = await db.Videos
+            .Include(static v => v.Subscription)
+            .SingleAsync(v => v.Id == context.Message.VideoId, context.CancellationToken);
 
         logger.LogInformation("Starting synchronize video {}", video.Id);
 
         if (video.DownloadedPath != null)
         {
-            var files = new List<string>();
-            try
+            if (!File.Exists(video.DownloadedPath))
             {
-                var directory = Path.GetDirectoryName(video.DownloadedPath);
-                var filePattern = Path.GetFileNameWithoutExtension(video.DownloadedPath);
+                // Video not found, we can safely assume that the video was deleted.
 
-                if (directory != null)
-                    files.AddRange(Directory.EnumerateFiles(directory)
-                        .Where(file => file.StartsWith(filePattern, StringComparison.Ordinal)));
-            }
-            catch (FileNotFoundException)
-            {
-            }
-            catch (DirectoryNotFoundException)
-            {
-            }
-
-            // Try to find a valid video file
-            var foundVideo = false;
-            foreach (var file in files)
-            {
-                new FileExtensionContentTypeProvider().TryGetContentType(file, out var mime);
-                if (mime != null && mime.StartsWith("video", StringComparison.Ordinal))
-                    foundVideo = true;
-            }
-
-            // Video not found, we can safely assume that the video was deleted.
-            if (!foundVideo)
-            {
-                // Clean up
-                foreach (var file in files)
-                    File.Delete(file);
-
+                logger.LogInformation($"File for {video.Id} not found, assuming deleted");
                 video.DownloadedPath = null;
 
                 // Mark watched?
@@ -67,6 +41,19 @@ public class YoutubeActualVideoSynchroniseConsumer(
                 // if user.preferences['mark_deleted_as_watched']:
                 //     video.watched = True
             }
+            else
+            {
+                if (video.Watched && (video.Subscription!.AutomaticallyDeleteWatched ?? false))
+                {
+                    // Video is watched and subscription is set to automatically delete watched videos
+                    logger.LogInformation($"Deleting file {video.DownloadedPath} for {video.Id}, as video has been watched");
+
+                    File.Delete(video.DownloadedPath);
+                    video.DownloadedPath = null;
+                }
+            }
+
+            await db.SaveChangesAsync(context.CancellationToken);
         }
 
         if (video.Duration == 0 || string.IsNullOrWhiteSpace(video.Thumb))
