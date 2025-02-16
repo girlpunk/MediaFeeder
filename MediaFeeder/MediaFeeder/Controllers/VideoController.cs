@@ -48,7 +48,7 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
             return NotFound();
 
         if (video.Thumb == null)
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded - no path saved");
 
         if (video.Thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return Redirect(video.Thumb);
@@ -59,7 +59,7 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
             new FileExtensionContentTypeProvider().TryGetContentType(video.Thumb, out var mimeType);
             return File(stream, mimeType ?? "application/octet-stream");
         }
-        catch (IOException)
+        catch (IOException e)
         {
             if (System.IO.File.Exists(video.Thumb))
                 System.IO.File.Delete(video.Thumb);
@@ -67,7 +67,7 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
             video.Thumb = null;
             await context.SaveChangesAsync(HttpContext.RequestAborted);
 
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+            return StatusCode((int)HttpStatusCode.PreconditionFailed, $"Not Downloaded - {e.Message}");
         }
     }
 }
