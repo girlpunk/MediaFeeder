@@ -22,9 +22,9 @@ public sealed class YouTubeDownloadVideoConsumer(
             .SingleAsync(v => v.Id == context.Message.VideoId);
 
         var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
-        var path = Path.Join(root, "downloads", video.Subscription?.Name);
+        var path = Path.Join(root, "downloads", string.Join("", video.Subscription?.Name.Split(Path.GetInvalidFileNameChars())));
         Directory.CreateDirectory(path);
-        path = Path.Join(path, $"{video.Name} [{video.Id}]");
+        path = Path.Join(path, $"{string.Join("", video.Name.Split(Path.GetInvalidFileNameChars()))} [{video.Id}]");
         logger.LogInformation("Will be saved to {}", path);
 
         var downloadResponse = await downloaderClient.DownloadAsync(new Mediafeeder.DownloadRequest
