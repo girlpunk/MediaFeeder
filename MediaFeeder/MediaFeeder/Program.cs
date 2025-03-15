@@ -282,6 +282,8 @@ var app = builder.Build();
 
 app.Services.GetRequiredService<Metrics>();
 
+app.UsePathBase(app.Configuration.GetValue<string>("base_path", "/"));
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
