@@ -151,7 +151,7 @@ builder.Services.AddAuthorization(static options =>
 
 builder.Services.AddDataProtection()
     .SetApplicationName("MediaFeeder")
-    .PersistKeysToFileSystem(new DirectoryInfo(@"/media/dpkeys/"));
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Join(builder.Configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException(), "dpkeys")));
 
 builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>(options =>
 {
