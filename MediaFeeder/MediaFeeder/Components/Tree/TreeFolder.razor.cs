@@ -29,6 +29,6 @@ public sealed partial class TreeFolder
     private void OnSelectedChanged(bool arg)
     {
         if (arg && NavigationManager != null && Folder != null)
-            NavigationManager.NavigateTo("/folder/" + Folder.Id);
+            NavigationManager.NavigateTo("folder/" + Folder.Id);
     }
 }

@@ -85,7 +85,7 @@ public sealed partial class Shuffle
                 idleLoops++;
         }
 
-        var url = $"/video/{_videos.Dequeue().Id}/{string.Join(',', _videos.Select(static v => v.Id))}";
+        var url = $"video/{_videos.Dequeue().Id}/{string.Join(',', _videos.Select(static v => v.Id))}";
 
         NavigationManager.NavigateTo(url);
     }

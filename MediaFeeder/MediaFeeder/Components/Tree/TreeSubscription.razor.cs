@@ -43,6 +43,6 @@ public sealed partial class TreeSubscription
     private void OnSelectedChanged(bool obj)
     {
         if (obj && NavigationManager != null && Subscription != null)
-            NavigationManager.NavigateTo("/subscription/" + Subscription.Id);
+            NavigationManager.NavigateTo("subscription/" + Subscription.Id);
     }
 }

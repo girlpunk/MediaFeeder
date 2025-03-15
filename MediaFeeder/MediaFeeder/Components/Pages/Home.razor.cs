@@ -164,7 +164,7 @@ public sealed partial class Home
 
         var videos = new Queue<MediaFeeder.Data.db.Video>(Videos);
 
-        var url = $"/video/{videos.Dequeue().Id}/{string.Join(',', videos.Select(static v => v.Id))}";
+        var url = $"video/{videos.Dequeue().Id}/{string.Join(',', videos.Select(static v => v.Id))}";
         NavigationManager.NavigateTo(url);
     }
 }

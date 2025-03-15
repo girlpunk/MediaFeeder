@@ -116,7 +116,7 @@ public sealed partial class Video : IDisposable
 
         var more = Next.Split(",");
 
-        NavigationManager.NavigateTo($"/video/{more[0]}/{string.Join(',', more[1..])}");
+        NavigationManager.NavigateTo($"video/{more[0]}/{string.Join(',', more[1..])}");
     }
 
     private async Task Download()
