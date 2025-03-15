@@ -1,5 +1,6 @@
 ﻿using MediaFeeder.Data.db;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace MediaFeeder.Data;
 
@@ -594,5 +595,16 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_video_subscription_id_720d4227_fk_YtManager");
         });
+    }
+}
+
+public class BloggingContextFactory : IDesignTimeDbContextFactory<MediaFeederDataContext>
+{
+    public MediaFeederDataContext CreateDbContext(string[] args)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<MediaFeederDataContext>();
+        optionsBuilder.UseNpgsql("", static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+
+        return new MediaFeederDataContext(optionsBuilder.Options);
     }
 }

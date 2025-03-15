@@ -7,7 +7,7 @@ public class AuthUser : IdentityUser<int>
 {
     public override int Id { get; set; }
 
-    [MaxLength(128)] public required string Password { get; set; }
+    [MaxLength(128)] public string? Password { get; set; }
 
     public DateTime? LastLogin { get; set; }
     public bool IsSuperuser { get; set; }
