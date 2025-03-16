@@ -113,18 +113,18 @@
 
         if (result.Succeeded)
         {
-            var user = await UserManager.FindByLoginAsync(_externalLoginInfo.LoginProvider, _externalLoginInfo.ProviderKey);
+            // var user = await UserManager.FindByLoginAsync(_externalLoginInfo.LoginProvider, _externalLoginInfo.ProviderKey);
 
-            if (user != null)
-            {
-                await SignInManager.SignInAsync(user, true, _externalLoginInfo.LoginProvider);
+            // if (user != null)
+            // {
+                // await SignInManager.SignInAsync(user, true, _externalLoginInfo.LoginProvider);
 
                 Logger.LogInformation(
                     "{Name} logged in with {LoginProvider} provider.",
                     _externalLoginInfo.Principal.Identity?.Name,
                     _externalLoginInfo.LoginProvider);
                 RedirectManager.RedirectTo(ReturnUrl);
-            }
+            // }
         }
         else if (result.IsLockedOut)
         {
@@ -165,8 +165,6 @@
 
             if (result != IdentityResult.Success)
                 return;
-
-            user = await UserManager.GetUserAsync(_externalLoginInfo.Principal) ?? throw new InvalidOperationException("Created user is null");
         }
 
         var result2 = await UserManager.AddLoginAsync(user, _externalLoginInfo);
