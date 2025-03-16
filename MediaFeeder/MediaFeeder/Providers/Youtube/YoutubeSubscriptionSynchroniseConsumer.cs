@@ -275,7 +275,19 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             playlistRequest.MaxResults = 50;
             playlistRequest.PageToken = nextPageToken;
 
-            var playlistResponse = await playlistRequest.ExecuteAsync(cancellationToken);
+            PlaylistItemListResponse? playlistResponse;
+            // var playlistResponse = await playlistRequest.ExecuteAsync(cancellationToken);
+            using (var request = playlistRequest.CreateRequest())
+            {
+                using (var response = await youTubeService.HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
+                {
+                    logger.LogInformation("Got response: {}", await response.Content.ReadAsStringAsync());
+                    response.EnsureSuccessStatusCode();
+
+                    playlistResponse = await youTubeService.DeserializeResponse<PlaylistItemListResponse>(response).ConfigureAwait(false);
+                }
+            }
+
             var playlistItems = playlistResponse.Items ?? [];
 
             playlistItems = subscription.RewritePlaylistIndices
