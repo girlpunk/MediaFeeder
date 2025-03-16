@@ -1,11 +1,14 @@
 using System.Xml.Linq;
 using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
 using JetBrains.Annotations;
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Subscription = MediaFeeder.Data.db.Subscription;
+using Video = MediaFeeder.Data.db.Video;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -48,12 +51,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         if (subscription.LastSynchronised == null)
         {
+            logger.LogInformation("New subscription, forcing full sync for {}", subscription.Name);
             await CheckAllVideos(subscription, db, context.CancellationToken);
         }
         else
         {
-            //if (DateTime.UtcNow - subscription.LastSynchronised > TimeSpan.FromDays(7))
-            //{
             var channelRequest = youTubeService.Channels.List("snippet");
             channelRequest.Id = subscription.ChannelId;
             var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
@@ -80,7 +82,6 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
             if (channelResult?.Snippet?.Description != null)
                 subscription.Description = channelResult.Snippet.Description;
-            //}
 
             try
             {
@@ -266,53 +267,66 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
     private async Task CheckAllVideos(Subscription subscription, MediaFeederDataContext db, CancellationToken cancellationToken)
     {
-        var playlistRequest = youTubeService.PlaylistItems.List("snippet");
-        playlistRequest.Id = subscription.PlaylistId;
-        var playlistResponse = await playlistRequest.ExecuteAsync(cancellationToken);
-        var playlistItems = playlistResponse.Items ?? [];
-
-        playlistItems = subscription.RewritePlaylistIndices
-            ? playlistItems.OrderBy(static i => i.Snippet.PublishedAtDateTimeOffset).ToList()
-            : playlistItems.OrderBy(static i => i.Snippet.Position).ToList();
-
-        foreach (var item in playlistItems)
+        var nextPageToken = "";
+        while (nextPageToken != null)
         {
-            var results = await db.Videos.SingleOrDefaultAsync(v =>
-                v.VideoId == item.Snippet.ResourceId.VideoId && v.SubscriptionId == subscription.Id, cancellationToken);
+            var playlistRequest = youTubeService.PlaylistItems.List("snippet");
+            playlistRequest.Id = subscription.PlaylistId;
+            playlistRequest.MaxResults = 50;
+            playlistRequest.PageToken = nextPageToken;
 
-            if (results != null)
-                continue;
+            var playlistResponse = await playlistRequest.ExecuteAsync(cancellationToken);
+            var playlistItems = playlistResponse.Items ?? [];
 
-            // fix playlist index if necessary
-            if (subscription.RewritePlaylistIndices || await db.Videos.AnyAsync(v => v.SubscriptionId == subscription.Id && v.PlaylistIndex == item.Snippet.Position, cancellationToken))
-            {
-                var highest = db.Videos.Where(v => v.SubscriptionId == subscription.Id).MaxBy(static v => v.PlaylistIndex)?.PlaylistIndex;
-                item.Snippet.Position = 1 + (highest ?? -1);
-            }
+            playlistItems = subscription.RewritePlaylistIndices
+                ? playlistItems.OrderBy(static i => i.Snippet.PublishedAtDateTimeOffset).ToList()
+                : playlistItems.OrderBy(static i => i.Snippet.Position).ToList();
 
-            var thumbnailPath = await utils.LoadResourceThumbnail(item.Snippet.ResourceId.VideoId, "video",
-                item.Snippet.Thumbnails, logger, cancellationToken);
+            foreach (var item in playlistItems)
+                await AddVideoFromApi(subscription, db, cancellationToken, item);
 
-            var video = new Video
-            {
-                VideoId = item.Snippet.ResourceId.VideoId,
-                Name = item.Snippet.Title,
-                Description = item.Snippet.Description,
-                Watched = false,
-                New = true,
-                DownloadedPath = null,
-                SubscriptionId = subscription.Id,
-                PlaylistIndex = (int)(item.Snippet.Position ?? 0),
-                PublishDate = item.Snippet.PublishedAtDateTimeOffset,
-                Thumb = thumbnailPath,
-                Thumbnail = thumbnailPath,
-                UploaderName = item.Snippet.VideoOwnerChannelTitle
-            };
-
-            db.Videos.Add(video);
-            await db.SaveChangesAsync(cancellationToken);
-
-            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+            nextPageToken = playlistResponse.NextPageToken;
         }
+    }
+
+    private async Task AddVideoFromApi(Subscription subscription, MediaFeederDataContext db,
+        CancellationToken cancellationToken, PlaylistItem item)
+    {
+        var results = await db.Videos.SingleOrDefaultAsync(v =>
+            v.VideoId == item.Snippet.ResourceId.VideoId && v.SubscriptionId == subscription.Id, cancellationToken);
+
+        if (results != null)
+            return;
+
+        // fix playlist index if necessary
+        if (subscription.RewritePlaylistIndices || await db.Videos.AnyAsync(v => v.SubscriptionId == subscription.Id && v.PlaylistIndex == item.Snippet.Position, cancellationToken))
+        {
+            var highest = db.Videos.Where(v => v.SubscriptionId == subscription.Id).MaxBy(static v => v.PlaylistIndex)?.PlaylistIndex;
+            item.Snippet.Position = 1 + (highest ?? -1);
+        }
+
+        var thumbnailPath = await utils.LoadResourceThumbnail(item.Snippet.ResourceId.VideoId, "video",
+            item.Snippet.Thumbnails, logger, cancellationToken);
+
+        var video = new Video
+        {
+            VideoId = item.Snippet.ResourceId.VideoId,
+            Name = item.Snippet.Title,
+            Description = item.Snippet.Description,
+            Watched = false,
+            New = true,
+            DownloadedPath = null,
+            SubscriptionId = subscription.Id,
+            PlaylistIndex = (int)(item.Snippet.Position ?? 0),
+            PublishDate = item.Snippet.PublishedAtDateTimeOffset,
+            Thumb = thumbnailPath,
+            Thumbnail = thumbnailPath,
+            UploaderName = item.Snippet.VideoOwnerChannelTitle
+        };
+
+        db.Videos.Add(video);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
     }
 }
