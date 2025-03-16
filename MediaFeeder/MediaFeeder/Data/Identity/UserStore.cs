@@ -35,6 +35,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
     public async Task<IdentityResult> CreateAsync(AuthUser user, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        user.DateJoined = DateTime.Now;
         db.Add(user);
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -108,7 +109,20 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         return Task.CompletedTask;
     }
 
-    public Task AddLoginAsync(AuthUser user, UserLoginInfo login, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public async Task AddLoginAsync(AuthUser user, UserLoginInfo login, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var provider = new AuthProvider()
+        {
+            LoginProvider = login.LoginProvider,
+            ProviderKey = login.ProviderKey,
+            User = user,
+        };
+
+        db.AuthProviders.Add(provider);
+        await db.SaveChangesAsync(cancellationToken);
+    }
 
     public Task RemoveLoginAsync(AuthUser user, string loginProvider, string providerKey,
         CancellationToken cancellationToken) =>

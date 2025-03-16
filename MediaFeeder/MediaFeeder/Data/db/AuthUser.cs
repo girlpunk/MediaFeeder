@@ -10,18 +10,18 @@ public class AuthUser : IdentityUser<int>
     [MaxLength(128)] public string? Password { get; set; }
 
     public DateTime? LastLogin { get; set; }
-    public bool IsSuperuser { get; set; }
+    public bool IsSuperuser { get; set; } = false;
 
     [MaxLength(150)] public required string Username { get; set; }
 
-    [MaxLength(150)] public required string FirstName { get; set; }
+    [MaxLength(150)] public string? FirstName { get; set; }
 
-    [MaxLength(150)] public required string LastName { get; set; }
+    [MaxLength(150)] public string? LastName { get; set; }
 
     [MaxLength(254)] public override required string Email { get; set; }
 
-    public bool IsStaff { get; set; }
-    public bool IsActive { get; set; }
+    public bool IsStaff { get; set; } = false;
+    public bool IsActive { get; set; } = true;
 
     public override bool LockoutEnabled
     {

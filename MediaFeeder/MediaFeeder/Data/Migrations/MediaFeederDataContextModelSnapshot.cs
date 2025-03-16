@@ -178,7 +178,6 @@ namespace MediaFeeder.Data.Migrations
                         .HasColumnName("email");
 
                     b.Property<string>("FirstName")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("first_name");
@@ -200,7 +199,6 @@ namespace MediaFeeder.Data.Migrations
                         .HasColumnName("last_login");
 
                     b.Property<string>("LastName")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("last_name");
