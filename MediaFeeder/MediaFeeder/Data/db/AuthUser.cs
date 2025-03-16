@@ -47,7 +47,7 @@ public class AuthUser : IdentityUser<int>
         set => Username = value;
     }
 
-    public DateTime DateJoined { get; set; }
+    public DateTimeOffset DateJoined { get; set; }
 
     public virtual ICollection<AuthUserGroup>? AuthUserGroups { get; init; }
     public virtual ICollection<AuthUserUserPermission>? AuthUserUserPermissions { get; init; }

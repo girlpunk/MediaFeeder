@@ -299,6 +299,7 @@ else
     app.UseHsts();
 }
 
+app.UseRouting();
 app.UseForwardedHeaders();
 
 app.UseHealthChecks("/healthz");

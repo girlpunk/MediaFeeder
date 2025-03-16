@@ -35,7 +35,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
     public async Task<IdentityResult> CreateAsync(AuthUser user, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-        user.DateJoined = DateTime.Now;
+        user.DateJoined = DateTimeOffset.Now;
         db.Add(user);
 
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
