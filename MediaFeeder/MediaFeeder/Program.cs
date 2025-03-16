@@ -308,13 +308,12 @@ app.MapPrometheusScrapingEndpoint()
 app.MapGrpcHealthChecksService();
 
 app.UseHttpsRedirection();
+app.MapStaticAssets();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
-
-app.MapStaticAssets();
 app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
