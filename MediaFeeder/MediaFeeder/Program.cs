@@ -92,7 +92,7 @@ builder.Services.AddAuthentication(static options =>
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
         })
-    .AddJwtBearer(options =>
+    .AddJwtBearer(static options =>
     {
         // options.TokenValidationParameters = new TokenValidationParameters {
         //     ValidIssuers = authentication["Issuer"],
@@ -141,7 +141,6 @@ builder.Services.AddAuthentication(static options =>
     })
     .AddIdentityCookies();
 
-
 builder.Services.AddAuthorization(static options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -157,6 +156,7 @@ builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connectionString, static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+    options.UseChangeTrackingProxies();
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
