@@ -1,3 +1,4 @@
+using Google.Protobuf;
 using Grpc.Core;
 using MassTransit;
 using MediaFeeder.Data;
@@ -170,7 +171,7 @@ public sealed class ApiService(
         return reply;
     }
 
-    public override async Task<DownloadReply> Download(DownloadRequest request, ServerCallContext context)
+    public override async Task<DownloadReply> StartDownload(DownloadRequest request, ServerCallContext context)
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
@@ -285,5 +286,100 @@ public sealed class ApiService(
         }
 
         return reply;
+    }
+
+    public override async Task GetSubscriptionThumbnail(GetSubscriptionThumbnailRequest request, IServerStreamWriter<GetSubscriptionThumbnailReply> responseStream,
+        ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+
+        var subscription = await db.Subscriptions
+            .Where(subscription => subscription.UserId == user.Id && subscription.Id == request.Id)
+            .SingleOrDefaultAsync(context.CancellationToken);
+
+        if (subscription == null)
+            throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+
+        if (subscription.Thumb == null)
+            throw new RpcException(context.Status = new Status(StatusCode.Unavailable, "Not Downloaded"));
+
+        await using var file = File.OpenRead(subscription.Thumb);
+
+        var buffer = new byte[8 * 1024];
+        int bytesRead;
+        while ((bytesRead = await file.ReadAsync(buffer)) > 0)
+        {
+            var reply = new GetSubscriptionThumbnailReply()
+            {
+                Data = ByteString.CopyFrom(buffer, 0, bytesRead)
+            };
+
+            await responseStream.WriteAsync(reply);
+        }
+    }
+
+    public override async Task GetVideoThumbnail(GetVideoThumbnailRequest request, IServerStreamWriter<GetVideoThumbnailReply> responseStream, ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+
+        var video = await db.Videos
+            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id);
+
+        if (video == null)
+            throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+
+        if (video.Thumb == null)
+            throw new RpcException(context.Status = new Status(StatusCode.Unavailable, "Not Downloaded"));
+
+        await using var file = File.OpenRead(video.Thumb);
+
+        var buffer = new byte[8 * 1024];
+        int bytesRead;
+        while ((bytesRead = await file.ReadAsync(buffer)) > 0)
+        {
+            var reply = new GetVideoThumbnailReply()
+            {
+                Data = ByteString.CopyFrom(buffer, 0, bytesRead)
+            };
+
+            await responseStream.WriteAsync(reply);
+        }
+    }
+
+    public override async Task GetVideo(GetVideoRequest request, IServerStreamWriter<GetVideoReply> responseStream, ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+
+        var video = await db.Videos
+            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id);
+
+        if (video == null)
+            throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+
+        if (video.DownloadedPath == null)
+            throw new RpcException(context.Status = new Status(StatusCode.Unavailable, "Not Downloaded"));
+
+        await using var file = File.OpenRead(video.DownloadedPath);
+
+        var buffer = new byte[8 * 1024];
+        int bytesRead;
+        while ((bytesRead = await file.ReadAsync(buffer)) > 0)
+        {
+            var reply = new GetVideoReply()
+            {
+                Data = ByteString.CopyFrom(buffer, 0, bytesRead)
+            };
+
+            await responseStream.WriteAsync(reply);
+        }
     }
 }

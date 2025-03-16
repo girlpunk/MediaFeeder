@@ -9,8 +9,11 @@ service API {
   rpc Folder (FolderRequest) returns (FolderReply) {}
   rpc ListSubscription (ListSubscriptionRequest) returns (stream SubscriptionReply) {}
   rpc Subscription (SubscriptionRequest) returns (SubscriptionReply) {}
+  rpc GetSubscriptionThumbnail (GetSubscriptionThumbnailRequest) returns (stream GetSubscriptionThumbnailReply) {}
   rpc Video (VideoRequest) returns (VideoReply) {}
-  rpc Download (DownloadRequest) returns (DownloadReply) {}
+  rpc StartDownload (DownloadRequest) returns (DownloadReply) {}
+  rpc GetVideo (GetVideoRequest) returns (stream GetVideoReply) {}
+  rpc GetVideoThumbnail (GetVideoThumbnailRequest) returns (stream GetVideoThumbnailReply) {}
   rpc Watched (WatchedRequest) returns (WatchedReply) {}
   rpc Shuffle (ShuffleRequest) returns (ShuffleReply) {}
 }
@@ -33,6 +36,14 @@ message ListSubscriptionRequest {
 }
 
 message SubscriptionRequest {
+  int32 Id = 1;
+}
+
+message GetSubscriptionThumbnailReply {
+  bytes Data = 1;
+}
+
+message GetSubscriptionThumbnailRequest {
   int32 Id = 1;
 }
 
@@ -61,6 +72,22 @@ message VideoReply {
 
 message DownloadRequest {
   int32 Id = 1;
+}
+
+message GetVideoRequest {
+  int32 Id = 1;
+}
+
+message GetVideoReply {
+  bytes Data = 1;
+}
+
+message GetVideoThumbnailRequest {
+  int32 Id = 1;
+}
+
+message GetVideoThumbnailReply {
+  bytes Data = 1;
 }
 
 message DownloadReply {
