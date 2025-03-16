@@ -17,9 +17,9 @@ public sealed partial class Home
 
     private List<Data.db.Video>? Videos { get; set; }
 
-    [Inject] public MediaFeederDataContext? DataContext { get; set; }
-    [Inject] public NavigationManager? NavigationManager { get; set; }
-    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+    [Inject] public MediaFeederDataContext DataContext { get; init; } = null!;
+    [Inject] public NavigationManager NavigationManager { get; init; } = null!;
+    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; } = null!;
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 

@@ -153,7 +153,7 @@ builder.Services.AddDataProtection()
     .SetApplicationName("MediaFeeder")
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Join(builder.Configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException(), "dpkeys")));
 
-builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>(options =>
+builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connectionString, static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
