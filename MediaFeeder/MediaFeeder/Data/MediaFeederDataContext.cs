@@ -1,4 +1,5 @@
 ﻿using MediaFeeder.Data.db;
+using MediaFeeder.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -520,7 +521,11 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.Property(static e => e.ChannelName).HasColumnName("channel_name");
             entity.Property(static e => e.Description).HasColumnName("description");
             entity.Property(static e => e.DownloadLimit).HasColumnName("download_limit");
-            entity.Property(static e => e.DownloadOrder).HasColumnName("download_order");
+            entity.Property(static e => e.DownloadOrder).HasColumnName("download_order")
+                .HasConversion(
+                    static v => v.ToString(),
+                    static v => v != null ? Enum.Parse<DownloadOrder>(v) : null
+                );
             entity.Property(static e => e.LastSynchronised).HasColumnName("last_synchronised");
             entity.Property(static e => e.Name).HasColumnName("name");
             entity.Property(static e => e.ParentFolderId).HasColumnName("parent_folder_id");

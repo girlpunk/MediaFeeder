@@ -33,10 +33,10 @@ public class RSSSubscriptionSynchroniseConsumer(
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
         using var client = httpClientFactory.CreateClient("retry");
-        var feedResponse = await client.GetAsync(subscription.ChannelId, context.CancellationToken);
+        using var feedResponse = await client.GetAsync(subscription.ChannelId, context.CancellationToken);
         feedResponse.EnsureSuccessStatusCode();
 
-        var feedReader = XmlReader.Create(await feedResponse.Content.ReadAsStreamAsync(context.CancellationToken));
+        using var feedReader = XmlReader.Create(await feedResponse.Content.ReadAsStreamAsync(context.CancellationToken));
         var feed = SyndicationFeed.Load(feedReader);
 
         if (subscription.Name == subscription.ChannelName)

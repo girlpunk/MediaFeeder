@@ -20,9 +20,9 @@ public sealed class Utils(
     {
         try
         {
-            var httpClient = httpClientFactory.CreateClient("retry");
+            using var httpClient = httpClientFactory.CreateClient("retry");
 
-            var request = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var request = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             try
             {
                 request.EnsureSuccessStatusCode();

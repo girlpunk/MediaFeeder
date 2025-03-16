@@ -81,6 +81,7 @@ public sealed partial class YouTubeVideoFrame
         _player.InvokeVoidAsync("playVideo");
 
         var tsInterval = TimeSpan.FromSeconds(10);
+        Timer?.Dispose();
         Timer = new Timer(ProgressUpdate, null, tsInterval, tsInterval);
         ProgressUpdate(this);
 

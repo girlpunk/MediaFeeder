@@ -3,7 +3,7 @@ using MediaFeeder.Data.Enums;
 
 namespace MediaFeeder.PlaybackManager;
 
-public class PlaybackSession : IDisposable
+public sealed class PlaybackSession : IDisposable
 {
     private readonly PlaybackSessionManager _manager;
     private Video? _video;

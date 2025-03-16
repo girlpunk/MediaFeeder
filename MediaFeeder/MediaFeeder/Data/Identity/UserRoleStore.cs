@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace MediaFeeder.Data.Identity;
 
-public class UserRoleStore : IUserRoleStore<AuthUser>
+public sealed class UserRoleStore : IUserRoleStore<AuthUser>
 {
     public void Dispose()
     {

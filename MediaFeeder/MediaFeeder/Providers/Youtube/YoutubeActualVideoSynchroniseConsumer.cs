@@ -44,7 +44,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
             }
             else
             {
-                if (video.Watched && (video.Subscription!.AutomaticallyDeleteWatched ?? false))
+                if (video.Watched && (video.Subscription!.AutomaticallyDeleteWatched))
                 {
                     // Video is watched and subscription is set to automatically delete watched videos
                     logger.LogInformation($"Deleting file {video.DownloadedPath} for {video.Id}, as video has been watched");
