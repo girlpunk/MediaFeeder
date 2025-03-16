@@ -279,9 +279,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             // var playlistResponse = await playlistRequest.ExecuteAsync(cancellationToken);
             using (var request = playlistRequest.CreateRequest())
             {
+                logger.LogInformation("Got request URL: {}", request.RequestUri);
                 using (var response = await youTubeService.HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false))
                 {
-                    logger.LogInformation("Got response: {}", await response.Content.ReadAsStringAsync());
+                    logger.LogInformation("Got response: {}", await response.Content.ReadAsStringAsync(cancellationToken));
                     response.EnsureSuccessStatusCode();
 
                     playlistResponse = await youTubeService.DeserializeResponse<PlaylistItemListResponse>(response).ConfigureAwait(false);
