@@ -1,4 +1,79 @@
-<h3>EditSubscription</h3>
+@inherits FeedbackComponent<MediaFeeder.Data.db.Subscription?>
+@using Humanizer
+@using MediaFeeder.Data.Enums
+@inject IServiceProvider ServiceProvider
 
-@code {
-}
+<Form Model="@Options"
+      LabelCol="new ColLayoutParam { Span = 8 }"
+      WrapperCol="new ColLayoutParam { Span = 16 }"
+      ValidateOnChange="true"
+      OnFinish="OnFinish">
+    <FormItem Label="Name" Required ShowFeedbackOnError="true">
+        <Input @bind-Value="@  context.Name" required="required" />
+    </FormItem>
+    <FormItem Label="Parent" ShowFeedbackOnError="true">
+        <TreeSelect
+            DataSource="@ExistingFolders"
+            @bind-Value="@context.ParentFolder"
+            Placeholder="Please select"
+            ItemValue="static item => item"
+            ItemLabel="static item => item.Name"
+            AllowClear
+            EnableSearch
+            MatchedStyle="font-weight: bold"
+            ChildrenExpression="static node => node.DataItem.Subfolders"
+            TitleExpression="static node => node.DataItem.Name"
+            TitleTemplate="static node => node.DataItem.Name.ToRenderFragment()"
+            KeyExpression="static node => node.DataItem.Id.ToString()"
+            IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"
+        />
+    </FormItem>
+    <FormItem Label="Channel or Playlist ID" Required="true">
+        <Input @bind-Value="@context.PlaylistId" required="required" maxlength="128" name="PlaylistId"/>
+    </FormItem>
+    <FormItem Label="Channel ID" Required="true">
+        <Input @bind-Value="@context.ChannelId" required="required" maxlength="128" name="ChannelId"/>
+    </FormItem>
+    <FormItem Label="Channel Name" Required="true">
+        <Input @bind-Value="@context.ChannelName" required="required" maxlength="1024" name="ChannelName"/>
+    </FormItem>
+
+    <FormItem Label="Automatically download videos">
+        <Switch @bind-Checked="@context.AutoDownload"/>
+    </FormItem>
+
+    @if (context.AutoDownload)
+    {
+        <FormItem Label="Number of videos to download">
+            <AntDesign.InputNumber @bind-Value="@context.DownloadLimit" Min="0"/>
+        </FormItem>
+        <FormItem Label="Download Order">
+            <Select @bind-Value="@context.DownloadOrder"
+                    DefaultValue="@DownloadOrder.Oldest"
+                    DataSource="@(Enum.GetValues<DownloadOrder>())"
+                    ItemValue="@(static c => c)"
+                    ItemLabel="@(static c => c.Humanize())"></Select>
+        </FormItem>
+    }
+
+    <FormItem Label="Automatically delete watched">
+        <Switch @bind-Checked="@context.AutomaticallyDeleteWatched"/>
+    </FormItem>
+
+    <FormItem Label="Rewrite playlist order to when videos were uploaded">
+        <Switch @bind-Checked="@context.RewritePlaylistIndices"/>
+    </FormItem>
+
+    <FormItem Label="Provider">
+        <Select @bind-Value="@context.Provider"
+                DataSource="@(ServiceProvider.GetServices<IProvider>())"
+                ItemValue="@(static c => c.ProviderIdentifier)"
+                ItemLabel="@(static c => c.Name)"></Select>
+    </FormItem>
+
+    <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+        <Button Type="@ButtonType.Primary" HtmlType="submit">
+            Submit
+        </Button>
+    </FormItem>
+</Form>

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MediaFeeder.Data.Enums;
 
 namespace MediaFeeder.Data.db;
 
@@ -14,12 +15,12 @@ public class Subscription : ITreeSelectable
 
     [MaxLength(1024)] public string? Thumbnail { get; set; }
 
-    public bool? AutoDownload { get; set; }
+    public bool AutoDownload { get; set; } = false;
     public int? DownloadLimit { get; set; }
 
-    [MaxLength(128)] public string? DownloadOrder { get; set; }
+    public DownloadOrder? DownloadOrder { get; set; }
 
-    public bool? AutomaticallyDeleteWatched { get; set; }
+    public bool AutomaticallyDeleteWatched { get; set; } = false;
     public required int ParentFolderId { get; set; }
     public required int UserId { get; set; }
 

@@ -2,7 +2,7 @@
 <Flex Direction="FlexDirection.Vertical">
     <Flex Justify="FlexJustify.SpaceEvenly">
         <Tooltip Title="Add Subscription">
-            <Button Icon="@(IconType.Outline.AppstoreAdd)"></Button>
+            <Button Icon="@(IconType.Outline.AppstoreAdd)" OnClick="() => EditSubscription(null)"></Button>
         </Tooltip>
 
         <Tooltip Title="Add Folder">

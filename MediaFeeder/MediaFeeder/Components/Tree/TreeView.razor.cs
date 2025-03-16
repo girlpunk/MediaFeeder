@@ -109,6 +109,52 @@ public sealed partial class TreeView
         };
     }
 
+    private void EditSubscription(Subscription? subscription)
+    {
+        var modalConfig = new ModalOptions();
+        ModalRef? modalRef = null;
+
+        modalConfig.Title = "Basic Form";
+        modalConfig.OnCancel = async _ =>
+        {
+            Console.WriteLine("OnCancel");
+            await modalRef?.CloseAsync();
+        };
+
+        modalConfig.AfterClose = () =>
+        {
+            Console.WriteLine("AfterClose");
+            InvokeAsync(StateHasChanged);
+            return Task.CompletedTask;
+        };
+
+        modalRef = ModalService.CreateModal<EditSubscription, Subscription?>(modalConfig, subscription);
+
+        modalRef.OnOpen = static () =>
+        {
+            Console.WriteLine("ModalRef OnOpen");
+            return Task.CompletedTask;
+        };
+
+        modalRef.OnOk = static () =>
+        {
+            Console.WriteLine("ModalRef OnOk");
+            return Task.CompletedTask;
+        };
+
+        modalRef.OnCancel = static () =>
+        {
+            Console.WriteLine("ModalRef OnCancel");
+            return Task.CompletedTask;
+        };
+
+        modalRef.OnClose = static () =>
+        {
+            Console.WriteLine("ModalRef OnClose");
+            return Task.CompletedTask;
+        };
+    }
+
     private void EditSelected()
     {
         switch (TreeRef?.SelectedData)
@@ -117,7 +163,7 @@ public sealed partial class TreeView
                 EditFolder(folder);
                 break;
             case Subscription subscription:
-                Console.WriteLine($"Would open subscription dialog for {subscription}");
+                EditSubscription(subscription);
                 break;
         }
     }
