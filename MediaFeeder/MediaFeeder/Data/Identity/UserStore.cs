@@ -117,7 +117,7 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         {
             LoginProvider = login.LoginProvider,
             ProviderKey = login.ProviderKey,
-            User = user,
+            UserId = user.Id,
         };
 
         db.AuthProviders.Add(provider);
