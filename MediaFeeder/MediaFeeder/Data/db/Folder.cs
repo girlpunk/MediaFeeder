@@ -16,5 +16,5 @@ public class Folder : ITreeSelectable
     public virtual ICollection<Folder> Subfolders { get; init; } = [];
     public virtual ICollection<Subscription> Subscriptions { get; init; } = [];
 
-    public string OnSelectedNavigate => "/folder/" + Id;
+    public string OnSelectedNavigate => "folder/" + Id;
 }

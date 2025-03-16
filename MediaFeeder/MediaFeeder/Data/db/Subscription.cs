@@ -39,5 +39,5 @@ public class Subscription : ITreeSelectable
     public virtual AuthUser? User { get; set; }
     public virtual ICollection<Video> Videos { get; init; } = [];
 
-    public string OnSelectedNavigate => "/subscription/" + Id;
+    public string OnSelectedNavigate => "subscription/" + Id;
 }

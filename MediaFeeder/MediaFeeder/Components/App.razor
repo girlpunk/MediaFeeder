@@ -6,11 +6,11 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <base href="@(Configuration.GetValue<string>("base_path", "/"))" />
+    <base href="@(Configuration.GetValue<string>("base_path", "~/"))" />
     <link rel="stylesheet" href="@Assets["app.css"]"/>
     <link rel="stylesheet" href="@Assets["MediaFeeder.styles.css"]"/>
     <ImportMap/>
-    <link rel="icon" type="image/png" href="logo.png"/>
+    <link rel="icon" type="image/png" href="@Assets["logo.png"]" />
     <HeadOutlet/>
 </head>
 
