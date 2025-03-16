@@ -156,7 +156,7 @@ builder.Services.AddDbContextFactory<MediaFeederDataContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connectionString, static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-    options.UseChangeTrackingProxies();
+    options.UseLazyLoadingProxies();
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
