@@ -57,10 +57,12 @@ public class RSSSubscriptionSynchroniseConsumer(
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
+        item.Id = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/")
+            .FirstOrDefault() ?? item.Id;
+
         var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken) ?? new Video()
         {
-            VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault()
-                      ?? item.Id,
+            VideoId = item.Id,
             Name = item.Title.Text,
             Description = item.Summary.Text,
             UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
