@@ -21,7 +21,7 @@ public sealed partial class YouTubeVideoFrame
         {
             ArgumentNullException.ThrowIfNull(Video);
 
-            _youtubeCustomModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "Providers/Youtube/YouTubeVideoFrame.razor.js");
+            _youtubeCustomModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Providers/Youtube/YouTubeVideoFrame.razor.js");
             _youtubeLibraryModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", Assets["/iframe_api.js"]);
 
             _videoFrameRef ??= DotNetObjectReference.Create(this);
