@@ -161,10 +161,12 @@
 
             var result = await UserManager.CreateAsync(user);
 
-            _message = $"Error: {string.Join(",", result.Errors.Select(static error => error.Description))}";
+            _message = $"Error creating user: {string.Join(",", result.Errors.Select(static error => error.Description))}";
 
             if (result != IdentityResult.Success)
                 return;
+
+            user = await UserManager.GetUserAsync(_externalLoginInfo.Principal) ?? throw new InvalidOperationException("Created user is null");
         }
 
         var result2 = await UserManager.AddLoginAsync(user, _externalLoginInfo);
@@ -185,7 +187,7 @@
             RedirectManager.RedirectTo(ReturnUrl);
         }
 
-        _message = $"Error: {string.Join(",", result2.Errors.Select(static error => error.Description))}";
+        _message = $"Error adding login to user: {string.Join(",", result2.Errors.Select(static error => error.Description))}";
     }
 
     private static AuthUser CreateUser()
