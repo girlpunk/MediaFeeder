@@ -271,7 +271,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         while (nextPageToken != null)
         {
             var playlistRequest = youTubeService.PlaylistItems.List("snippet");
-            playlistRequest.Id = subscription.PlaylistId;
+            playlistRequest.PlaylistId = subscription.PlaylistId;
             playlistRequest.MaxResults = 50;
             playlistRequest.PageToken = nextPageToken;
 
