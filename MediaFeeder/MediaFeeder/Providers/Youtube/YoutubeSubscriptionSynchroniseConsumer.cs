@@ -316,7 +316,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         // fix playlist index if necessary
         if (subscription.RewritePlaylistIndices || await db.Videos.AnyAsync(v => v.SubscriptionId == subscription.Id && v.PlaylistIndex == item.Snippet.Position, cancellationToken))
         {
-            var highest = db.Videos.Where(v => v.SubscriptionId == subscription.Id).MaxBy(static v => v.PlaylistIndex)?.PlaylistIndex;
+            var highest = (await db.Videos
+                    .Where(v => v.SubscriptionId == subscription.Id)
+                    .OrderByDescending(static v => v.PlaylistIndex)
+                    .FirstOrDefaultAsync(cancellationToken: cancellationToken))
+                ?.PlaylistIndex;
             item.Snippet.Position = 1 + (highest ?? -1);
         }
 
