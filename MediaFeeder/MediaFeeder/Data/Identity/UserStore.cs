@@ -43,7 +43,16 @@ public sealed class UserStore(IDbContextFactory<MediaFeederDataContext> contextF
         return await Task.FromResult(IdentityResult.Success).ConfigureAwait(false);
     }
 
-    public Task<IdentityResult> UpdateAsync(AuthUser user, CancellationToken cancellationToken) => throw new NotSupportedException(nameof(UpdateAsync));
+    public async Task<IdentityResult> UpdateAsync(AuthUser user, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        db.AuthUsers.Update(user);
+
+        await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return await Task.FromResult(IdentityResult.Success).ConfigureAwait(false);
+    }
 
     public async Task<IdentityResult> DeleteAsync(AuthUser user, CancellationToken cancellationToken)
     {
