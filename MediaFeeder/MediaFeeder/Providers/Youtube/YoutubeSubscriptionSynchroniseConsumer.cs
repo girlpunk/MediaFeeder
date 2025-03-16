@@ -282,7 +282,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 ? playlistItems.OrderBy(static i => i.Snippet.PublishedAtDateTimeOffset).ToList()
                 : playlistItems.OrderBy(static i => i.Snippet.Position).ToList();
 
-            logger.LogInformation("Got page of {} videos for {}, next page will be {}", playlistResponse.Items, subscription.Name, playlistResponse.NextPageToken);
+            logger.LogInformation("Got page of {} videos for {}, next page will be {}", playlistItems.Count, subscription.Name, playlistResponse.NextPageToken);
 
             foreach (var item in playlistItems)
                 await AddVideoFromApi(subscription, db, cancellationToken, item);
