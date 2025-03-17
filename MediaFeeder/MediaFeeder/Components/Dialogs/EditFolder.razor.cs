@@ -1,3 +1,4 @@
+using AntDesign;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
@@ -13,7 +14,8 @@ public partial class EditFolder
     [Inject] public required MediaFeederDataContext Context { get; set; }
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
-    private List<Folder> ExistingFolders { get; set; } = new();
+    private List<Folder> ExistingFolders { get; set; } = [];
+    public required Form<Folder> Form { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -30,7 +32,7 @@ public partial class EditFolder
         }
         else
         {
-            // Context.Attach(Options);
+            Options = Context.Folders.Single(f => f.Id == Options.Id);
         }
 
         ExistingFolders = await Context.Folders
@@ -41,10 +43,18 @@ public partial class EditFolder
         await base.OnInitializedAsync();
     }
 
-    private void OnFinish(EditContext editContext)
+    /// <summary>
+    /// when form is submited, close the modal
+    /// </summary>
+    private async Task OnFinish(EditContext editContext)
     {
-        Context.SaveChanges();
+        await FeedbackRef.CloseAsync();
+    }
 
-        _ = FeedbackRef.CloseAsync();
+    public override Task OnFeedbackOkAsync(ModalClosingEventArgs args)
+    {
+        Form.Submit();
+        args.Cancel = true;
+        return Task.CompletedTask;
     }
 }

@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Data;
 
-public sealed class Metrics
+public sealed class Metrics : IDisposable
 {
     internal const string MeterName = "MediaFeeder";
+    private readonly Meter _meter;
 
     private ObservableGauge<int> PublishedGauge { get; }
     private ObservableGauge<int> SubscriptionsGauge { get; }
@@ -18,9 +19,9 @@ public sealed class Metrics
 
     public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory)
     {
-        var meter = meterFactory.Create(MeterName);
+        _meter = meterFactory.Create(MeterName);
 
-        PublishedGauge = meter.CreateObservableGauge(
+        PublishedGauge = _meter.CreateObservableGauge(
             "videos-published",
             () =>
             {
@@ -30,7 +31,7 @@ public sealed class Metrics
             },
             "Video");
 
-        SubscriptionsGauge = meter.CreateObservableGauge(
+        SubscriptionsGauge = _meter.CreateObservableGauge(
             "total-subscriptions",
             () =>
             {
@@ -38,7 +39,7 @@ public sealed class Metrics
                 return new Measurement<int>(context.Subscriptions.Count());
             },
             "Subscription");
-        VideosGauge = meter.CreateObservableGauge(
+        VideosGauge = _meter.CreateObservableGauge(
             "total-videos",
             () =>
             {
@@ -46,7 +47,7 @@ public sealed class Metrics
                 return new Measurement<int>(context.Videos.Count());
             },
             "Video");
-        WatchedGauge = meter.CreateObservableGauge(
+        WatchedGauge = _meter.CreateObservableGauge(
             "watched-videos",
             () =>
             {
@@ -54,7 +55,7 @@ public sealed class Metrics
                 return new Measurement<int>(context.Videos.Count(static video => video.Watched));
             },
             "Video");
-        FoldersGauge = meter.CreateObservableGauge(
+        FoldersGauge = _meter.CreateObservableGauge(
             "unwatched-videos",
             () =>
             {
@@ -63,7 +64,7 @@ public sealed class Metrics
             },
             "Video");
 
-        FolderTrackedGauge = meter.CreateObservableGauge(
+        FolderTrackedGauge = _meter.CreateObservableGauge(
             "folders-tracked",
             () =>
             {
@@ -81,7 +82,7 @@ public sealed class Metrics
             },
             "Videos");
 
-        FolderUnwatchedGauge = meter.CreateObservableGauge(
+        FolderUnwatchedGauge = _meter.CreateObservableGauge(
             "folders-unwatched",
             () =>
             {
@@ -99,7 +100,7 @@ public sealed class Metrics
             },
             "Videos");
 
-        FolderUnwatchedDurationGauge = meter.CreateObservableGauge(
+        FolderUnwatchedDurationGauge = _meter.CreateObservableGauge(
             "folders-unwatched-duration",
             () =>
             {
@@ -117,5 +118,10 @@ public sealed class Metrics
                     .ToList();
             },
             "Seconds");
+    }
+
+    public void Dispose()
+    {
+        _meter.Dispose();
     }
 }

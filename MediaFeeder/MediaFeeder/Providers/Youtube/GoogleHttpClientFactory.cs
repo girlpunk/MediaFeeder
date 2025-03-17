@@ -7,25 +7,11 @@ namespace MediaFeeder.Providers.Youtube;
 internal sealed class SystemNetClientFactory(IHttpMessageHandlerFactory factory) : HttpClientFactory, IDisposable
 {
     private readonly HttpMessageHandler _handler = factory.CreateHandler("retry");
-    private bool _disposed;
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
+        _handler.Dispose();
     }
 
     protected override HttpMessageHandler CreateHandler(CreateHttpClientArgs args) => _handler;
-
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(GetType().FullName);
-        }
-    }
 }

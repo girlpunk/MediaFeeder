@@ -11,7 +11,8 @@ namespace MediaFeeder.Components.Tree;
 
 public sealed partial class TreeView
 {
-    [Inject] public IDbContextFactory<MediaFeederDataContext>? ContextFactory { get; set; }
+    [Inject]
+    public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 
     public Dictionary<int, (int unwatched, int downloaded)>? UnwatchedCache { get; set; }
 
@@ -65,48 +66,20 @@ public sealed partial class TreeView
 
     private void EditFolder(Folder? folder)
     {
-        var modalConfig = new ModalOptions();
-        ModalRef? modalRef = null;
-
-        modalConfig.Title = "Basic Form";
-        modalConfig.OnCancel = async _ =>
+        var modalConfig = new ModalOptions
         {
-            Console.WriteLine("OnCancel");
-            await modalRef?.CloseAsync();
+            AfterClose = () =>
+            {
+                Console.WriteLine("AfterClose");
+                InvokeAsync(StateHasChanged);
+                return Task.CompletedTask;
+            },
+            Title = folder != null
+                ? $"Edit Folder {folder?.Name}"
+                : "Create Folder"
         };
 
-        modalConfig.AfterClose = () =>
-        {
-            Console.WriteLine("AfterClose");
-            InvokeAsync(StateHasChanged);
-            return Task.CompletedTask;
-        };
-
-        modalRef = ModalService.CreateModal<EditFolder, Folder?>(modalConfig, folder);
-
-        modalRef.OnOpen = static () =>
-        {
-            Console.WriteLine("ModalRef OnOpen");
-            return Task.CompletedTask;
-        };
-
-        modalRef.OnOk = static () =>
-        {
-            Console.WriteLine("ModalRef OnOk");
-            return Task.CompletedTask;
-        };
-
-        modalRef.OnCancel = static () =>
-        {
-            Console.WriteLine("ModalRef OnCancel");
-            return Task.CompletedTask;
-        };
-
-        modalRef.OnClose = static () =>
-        {
-            Console.WriteLine("ModalRef OnClose");
-            return Task.CompletedTask;
-        };
+        ModalService.CreateModal<EditFolder, Folder?>(modalConfig, folder);
     }
 
     private void EditSubscription(Subscription? subscription)
