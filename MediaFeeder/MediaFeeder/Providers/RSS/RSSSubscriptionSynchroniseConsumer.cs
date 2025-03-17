@@ -60,17 +60,17 @@ public class RSSSubscriptionSynchroniseConsumer(
         item.Id = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/")
             .FirstOrDefault() ?? item.Id;
 
-        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken) ?? new Video()
-        {
-            VideoId = item.Id,
-            Name = item.Title.Text,
-            Description = item.Summary.Text,
-            UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
-                                             ?? item.Authors.Select(static a => a.Name)),
-            SubscriptionId = subscription.Id,
-        };
+        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken)
+                    ?? new Video
+                    {
+                        VideoId = item.Id,
+                        Name = item.Title.Text,
+                        Description = item.Summary.Text,
+                        SubscriptionId = subscription.Id,
+                        UploaderName = subscription.Name,
+                    };
 
-        video.VideoId = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/").FirstOrDefault() ?? item.Id;
+        video.VideoId = item.Id;
         video.Name = item.Title.Text;
         video.New = DateTimeOffset.UtcNow - item.PublishDate <= TimeSpan.FromDays(7);
         video.PublishDate = item.PublishDate.UtcDateTime;
