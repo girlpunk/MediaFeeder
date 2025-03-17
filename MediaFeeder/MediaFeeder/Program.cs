@@ -187,6 +187,15 @@ builder.Services.AddMassTransit(static config =>
         cfg.UseMessageScheduler(schedulerEndpoint);
         cfg.ConfigureEndpoints(context);
         cfg.UseConcurrencyLimit(1);
+        cfg.UseInMemoryScheduler();
+        cfg.UseMessageRetry(static r => r.Exponential(15, TimeSpan.FromMinutes(15), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
+        cfg.UseCircuitBreaker(static cb =>
+        {
+            cb.TrackingPeriod = TimeSpan.FromMinutes(5);
+            cb.TripThreshold = 15;
+            cb.ActiveThreshold = 10;
+            cb.ResetInterval = TimeSpan.FromHours(1);
+        });
     });
 
     config.AddConsumer<SynchroniseAllConsumer>();
