@@ -56,32 +56,36 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         }
         else
         {
-            var channelRequest = youTubeService.Channels.List("snippet");
-            channelRequest.Id = subscription.ChannelId;
-            var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
-            var channelResult = channelResponse?.Items?.SingleOrDefault();
-
-            if (channelResult == null)
-                logger.LogError("Could not load channel details for {} (channel {})", subscription.Id, subscription.ChannelId);
-
-            if (channelResult?.Snippet?.Title != null)
+            if (subscription.LastSynchronised.Value.DayOfYear != DateTimeOffset.Now.DayOfYear)
             {
-                if (subscription.Name == subscription.ChannelName)
-                    subscription.Name = channelResult.Snippet.Title;
+                var channelRequest = youTubeService.Channels.List("snippet");
+                channelRequest.Id = subscription.ChannelId;
+                var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
+                var channelResult = channelResponse?.Items?.SingleOrDefault();
 
-                subscription.ChannelName = channelResult.Snippet.Title;
+                if (channelResult == null)
+                    logger.LogError("Could not load channel details for {} (channel {})", subscription.Id,
+                        subscription.ChannelId);
+
+                if (channelResult?.Snippet?.Title != null)
+                {
+                    if (subscription.Name == subscription.ChannelName)
+                        subscription.Name = channelResult.Snippet.Title;
+
+                    subscription.ChannelName = channelResult.Snippet.Title;
+                }
+
+                if (channelResult?.Snippet?.Thumbnails != null)
+                    subscription.Thumb = await utils.LoadResourceThumbnail(
+                        subscription.PlaylistId,
+                        "sub",
+                        channelResult.Snippet.Thumbnails,
+                        logger,
+                        context.CancellationToken);
+
+                if (channelResult?.Snippet?.Description != null)
+                    subscription.Description = channelResult.Snippet.Description;
             }
-
-            if (channelResult?.Snippet?.Thumbnails != null)
-                subscription.Thumb = await utils.LoadResourceThumbnail(
-                    subscription.PlaylistId,
-                    "sub",
-                    channelResult.Snippet.Thumbnails,
-                    logger,
-                    context.CancellationToken);
-
-            if (channelResult?.Snippet?.Description != null)
-                subscription.Description = channelResult.Snippet.Description;
 
             try
             {
@@ -94,7 +98,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             }
         }
 
-        subscription.LastSynchronised = DateTime.UtcNow;
+        subscription.LastSynchronised = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(context.CancellationToken);
 
         // enabled = first_non_null(channel.auto_download, channel.user.preferences['auto_download'])
