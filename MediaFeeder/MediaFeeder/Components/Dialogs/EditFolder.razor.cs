@@ -31,7 +31,6 @@ public partial class EditFolder
             ArgumentNullException.ThrowIfNull(user);
 
             Folder.UserId = user.Id;
-            Context.Folders.Add(Folder);
         }
         else
         {
@@ -51,6 +50,10 @@ public partial class EditFolder
     /// </summary>
     private async Task OnFinish(EditContext editContext)
     {
+        if (Options == null)
+        {
+            Context.Folders.Add(Folder);
+        }
         await Context.SaveChangesAsync();
         await FeedbackRef.CloseAsync();
     }
