@@ -55,6 +55,9 @@ public sealed partial class TreeView
                     .Include(static f => f.Subfolders)
                     .Include(static f => f.Subscriptions)
                     .ToList();
+
+                // adding this filter to above query fails with an error about lazy-load after the DbContext was disposed.
+                Folders = Folders.Where(f => f.ParentId == null).ToList();
             }
             finally
             {
