@@ -1,4 +1,5 @@
 using AntDesign;
+using FluentValidation;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
@@ -16,27 +17,28 @@ public partial class EditFolder
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
     public required Form<Folder> Form { get; set; }
+    private Folder? Folder { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         if (Options == null)
         {
-            Options = Context.Folders.CreateProxy();
+            Folder = Context.Folders.CreateProxy();
 
             var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = await UserManager.GetUserAsync(auth.User);
 
             ArgumentNullException.ThrowIfNull(user);
 
-            Options.User = user;
+            Folder.UserId = user.Id;
         }
         else
         {
-            Options = Context.Folders.Single(f => f.Id == Options.Id);
+            Folder = Context.Folders.Single(f => f.Id == Options);
         }
 
         ExistingFolders = await Context.Folders
-            .Where(f => f != Options)
+            .Where(f => f != Folder)
             .Include(static f => f.Subfolders)
             .ToListAsync();
 
@@ -48,6 +50,11 @@ public partial class EditFolder
     /// </summary>
     private async Task OnFinish(EditContext editContext)
     {
+        if (Options == null)
+        {
+            Context.Folders.Add(Folder);
+        }
+        await Context.SaveChangesAsync();
         await FeedbackRef.CloseAsync();
     }
 
@@ -56,5 +63,13 @@ public partial class EditFolder
         Form.Submit();
         args.Cancel = true;
         return Task.CompletedTask;
+    }
+
+    public class Validator : AbstractValidator<Folder>
+    {
+        public Validator()
+        {
+            RuleFor(f => f.Name).NotEmpty();
+        }
     }
 }

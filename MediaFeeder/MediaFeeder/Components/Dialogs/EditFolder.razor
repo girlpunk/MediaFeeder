@@ -1,15 +1,17 @@
-@inherits FeedbackComponent<MediaFeeder.Data.db.Folder?>
+@inherits FeedbackComponent<int?>
+@using Blazored.FluentValidation
 
-<Form Model="@Options"
+<Form Model="@Folder"
       LabelCol="new ColLayoutParam { Span = 8 }"
       WrapperCol="new ColLayoutParam { Span = 16 }"
-      ValidateOnChange="true"
-      OnFinish="OnFinish"
-      @ref="Form">
-    <FormItem Label="Name" Required ShowFeedbackOnError="true">
-        <Input @bind-Value="@context.Name" required="required" />
+      ValidateOnChange="@true"
+      OnFinish="@OnFinish"
+      @ref="@Form">
+    <FluentValidationValidator/>
+    <FormItem Label="Name" Required>
+        <Input @bind-Value="@context.Name" required="required"/>
     </FormItem>
-    <FormItem Label="Parent" ShowFeedbackOnError="true">
+    <FormItem Label="Parent">
         <TreeSelect
             DataSource="@ExistingFolders"
             @bind-Value="@context.Parent"
