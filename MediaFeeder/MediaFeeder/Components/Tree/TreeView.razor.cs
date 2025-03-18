@@ -79,7 +79,7 @@ public sealed partial class TreeView
                 : "Create Folder"
         };
 
-        ModalService.CreateModal<EditFolder, Folder?>(modalConfig, folder);
+        ModalService.CreateModal<EditFolder, int?>(modalConfig, folder?.Id);
     }
 
     private void EditSubscription(Subscription? subscription)
