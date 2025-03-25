@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using FluentValidation;
 using Google.Apis.Services;
 using MassTransit;
 using MassTransit.Logging;
@@ -9,6 +10,7 @@ using Mediafeeder;
 using MediaFeeder;
 using MediaFeeder.Components;
 using MediaFeeder.Components.Account;
+using MediaFeeder.Components.Dialogs;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
@@ -283,6 +285,8 @@ builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
 
 builder.Services.AddSingleton<PlaybackSessionManager>();
+
+builder.Services.AddTransient<AbstractValidator<Folder>, EditFolder.Validator>();
 
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
