@@ -21,7 +21,7 @@ namespace MediaFeeder.Data.Migrations
                 table: "YtManagerApp_video",
                 type: "boolean",
                 nullable: false,
-                computedColumnSql: "(downloaded_path <> '') IS NOT TRUE",
+                computedColumnSql: "downloaded_path <> ''",
                 stored: true);
 
             migrationBuilder.CreateIndex(
