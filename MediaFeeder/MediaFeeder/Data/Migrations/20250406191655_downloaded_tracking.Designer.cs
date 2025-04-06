@@ -1092,7 +1092,7 @@ namespace MediaFeeder.Data.Migrations
                     b.Property<bool>("IsDownloaded")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("boolean")
-                        .HasComputedColumnSql("(downloaded_path <> '') IS NOT TRUE", true);
+                        .HasComputedColumnSql("downloaded_path <> ''", true);
 
                     b.Property<string>("Name")
                         .IsRequired()
