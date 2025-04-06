@@ -29,6 +29,8 @@ public class Video
     public bool New { get; set; }
     public int? Duration { get; set; }
 
+    public string? DownloadError { get; set; }
+
     [MaxLength(100)] public string? Thumb { get; set; }
 
     [NotMapped]
@@ -39,4 +41,5 @@ public class Video
     }
 
     public virtual Subscription? Subscription { get; set; }
+    public virtual bool IsDownloaded { get; }
 }

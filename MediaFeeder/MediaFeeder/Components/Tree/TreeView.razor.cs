@@ -42,12 +42,13 @@ public sealed partial class TreeView
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
                 UnwatchedCache = context.Videos
-                    .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
+                    .Where(v => v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .Select(static g => new
                     {
                         Id = g.Key,
-                        Unwatched = g.Count(),
+                        Unwatched = g.Count(static v => !v.Watched),
+                        Downloaded = g.Count(static v => v.IsDownloaded)
                     })
                     .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: 0));
 

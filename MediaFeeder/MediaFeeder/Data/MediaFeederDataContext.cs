@@ -576,6 +576,8 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
         {
             entity.ToTable("YtManagerApp_video");
 
+            entity.HasKey(e => e.Id).HasName("YtManagerApp_video_pkey");
+
             entity.HasIndex(static e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
             entity.Property(static e => e.Id).HasColumnName("id");
             entity.Property(static e => e.Description).HasColumnName("description");
@@ -599,6 +601,13 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
                 .HasForeignKey(static d => d.SubscriptionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("YtManagerApp_video_subscription_id_720d4227_fk_YtManager");
+
+            entity.Property(static e => e.IsDownloaded)
+                .HasComputedColumnSql("(downloaded_path <> '') IS NOT TRUE", stored: true);
+
+            // entity.HasIndex(e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
+            // entity.HasIndex(e => new { e.SubscriptionId, e.Watched }, "ytmanagerapp_video_subscription_id_idx");
+            entity.HasIndex(static e => new { e.SubscriptionId, e.IsDownloaded }, "ytmanagerapp_video_subscription_id_downloaded");
         });
     }
 }
