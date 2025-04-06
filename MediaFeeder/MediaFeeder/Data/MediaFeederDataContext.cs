@@ -603,7 +603,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
                 .HasConstraintName("YtManagerApp_video_subscription_id_720d4227_fk_YtManager");
 
             entity.Property(static e => e.IsDownloaded)
-                .HasComputedColumnSql("downloaded_path <> ''", stored: true);
+                .HasComputedColumnSql("downloaded_path IS NOT NULL", stored: true);
 
             // entity.HasIndex(e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
             // entity.HasIndex(e => new { e.SubscriptionId, e.Watched }, "ytmanagerapp_video_subscription_id_idx");
