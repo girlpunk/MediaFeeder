@@ -14,6 +14,8 @@ public sealed partial class TreeView
     [Inject]
     public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 
+    [Inject] public required ILogger<TreeView> Logger { get; set; }
+
     public Dictionary<int, (int unwatched, int downloaded)>? UnwatchedCache { get; set; }
 
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
@@ -33,28 +35,35 @@ public sealed partial class TreeView
         if (UnwatchedCache == null && ContextFactory != null && Folders == null)
             try
             {
+                Logger.LogInformation("Waiting for lock");
                 await Updating.WaitAsync();
-
+                Logger.LogInformation("Got lock, checking auth");
                 var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
                 var user = await UserManager.GetUserAsync(auth.User);
 
                 ArgumentNullException.ThrowIfNull(user);
 
+                Logger.LogInformation("Preparing queries");
                 await using var context = await ContextFactory.CreateDbContextAsync();
+                Logger.LogInformation("Staring unwatched");
                 var unwatched = context.Videos
                     .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .ToDictionary(static g => g.Key, static g => g.Count());
 
+                Logger.LogInformation("Unwatched done, starting downloaded");
                 var downloaded = context.Videos.Where(v => v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .ToDictionary(static g => g.Key, static g => g.Count());
 
+                Logger.LogInformation("downloaded done, starting merge");
                 var cache = new Dictionary<int, (int unwatched, int downloaded)>(int.Max(unwatched.Count, downloaded.Count));
 
+                Logger.LogInformation("merge step 1");
                 foreach (var pair in unwatched)
                     cache.Add(pair.Key, (unwatched: pair.Value, downloaded: 0));
 
+                Logger.LogInformation("merge step 2");
                 foreach (var pair in downloaded)
                 {
                     if (cache.ContainsKey(pair.Key))
@@ -63,15 +72,20 @@ public sealed partial class TreeView
                         cache.Add(pair.Key, (unwatched: 0, downloaded: pair.Value));
                 }
 
+                Logger.LogInformation("merge step 3");
                 UnwatchedCache = cache;
 
+                Logger.LogInformation("merge done, getting folders");
                 Folders = context.Folders.Where(f => f.UserId == user.Id)
                     .Include(static f => f.Subfolders)
                     .Include(static f => f.Subscriptions)
                     .ToList();
 
+                Logger.LogInformation("Filtering fonder");
                 // adding this filter to above query fails with an error about lazy-load after the DbContext was disposed.
                 Folders = Folders.Where(static f => f.ParentId == null).ToList();
+
+                Logger.LogInformation("Done!");
             }
             finally
             {
