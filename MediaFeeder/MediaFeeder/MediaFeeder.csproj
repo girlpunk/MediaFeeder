@@ -15,7 +15,7 @@
         <PackageReference Include="FluentValidation" Version="11.11.0" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
         <PackageReference Include="Google.Apis.YouTube.v3" Version="1.69.0.3707" />
-        <PackageReference Include="Google.Protobuf" Version="3.30.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.30.2" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
         <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.70.0" />
         <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.70.0" />

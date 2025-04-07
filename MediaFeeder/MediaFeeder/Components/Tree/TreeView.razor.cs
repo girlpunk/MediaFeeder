@@ -48,9 +48,9 @@ public sealed partial class TreeView
                     {
                         Id = g.Key,
                         Unwatched = g.Count(static v => !v.Watched),
-                        Downloaded = g.Count(static v => v.IsDownloaded)
+                        Downloaded = 0 //g.Count(static v => v.IsDownloaded)
                     })
-                    .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: 0));
+                    .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: g.Downloaded));
 
                 Folders = context.Folders.Where(f => f.UserId == user.Id)
                     .Include(static f => f.Subfolders)
