@@ -41,16 +41,29 @@ public sealed partial class TreeView
                 ArgumentNullException.ThrowIfNull(user);
 
                 await using var context = await ContextFactory.CreateDbContextAsync();
-                UnwatchedCache = context.Videos
-                    .Where(v => v.Subscription!.UserId == user.Id)
+                var unwatched = context.Videos
+                    .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
-                    .Select(static g => new
-                    {
-                        Id = g.Key,
-                        Unwatched = g.Count(static v => !v.Watched),
-                        Downloaded = 0 //g.Count(static v => v.IsDownloaded)
-                    })
-                    .ToDictionary(static g => g.Id, static g => (unwatched: g.Unwatched, downloaded: g.Downloaded));
+                    .ToDictionary(static g => g.Key, static g => g.Count());
+
+                var downloaded = context.Videos.Where(v => v.Subscription!.UserId == user.Id)
+                    .GroupBy(static v => v.SubscriptionId)
+                    .ToDictionary(static g => g.Key, static g => g.Count());
+
+                var cache = new Dictionary<int, (int unwatched, int downloaded)>(int.Max(unwatched.Count, downloaded.Count));
+
+                foreach (var pair in unwatched)
+                    cache.Add(pair.Key, (unwatched: pair.Value, downloaded: 0));
+
+                foreach (var pair in downloaded)
+                {
+                    if (cache.ContainsKey(pair.Key))
+                        cache[pair.Key] = (unwatched: cache[pair.Key].unwatched, pair.Value);
+                    else
+                        cache.Add(pair.Key, (unwatched: 0, downloaded: pair.Value));
+                }
+
+                UnwatchedCache = cache;
 
                 Folders = context.Folders.Where(f => f.UserId == user.Id)
                     .Include(static f => f.Subfolders)
@@ -58,7 +71,7 @@ public sealed partial class TreeView
                     .ToList();
 
                 // adding this filter to above query fails with an error about lazy-load after the DbContext was disposed.
-                Folders = Folders.Where(f => f.ParentId == null).ToList();
+                Folders = Folders.Where(static f => f.ParentId == null).ToList();
             }
             finally
             {
@@ -79,7 +92,7 @@ public sealed partial class TreeView
                 return Task.CompletedTask;
             },
             Title = folder != null
-                ? $"Edit Folder {folder?.Name}"
+                ? $"Edit Folder {folder.Name}"
                 : "Create Folder"
         };
 
