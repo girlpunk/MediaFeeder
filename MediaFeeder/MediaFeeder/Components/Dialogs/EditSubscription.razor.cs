@@ -24,9 +24,17 @@ public partial class EditSubscription
 
         if (Options == null)
         {
-            Options = Context.Subscriptions.CreateProxy();
-
-            Options.User = user;
+            Options = new Subscription
+            {
+                Name = null!,
+                PlaylistId = null!,
+                Description = null!,
+                ParentFolderId = 0,
+                UserId = user.Id,
+                ChannelId = null!,
+                ChannelName = null!,
+                Provider = null!
+            };
         }
         else
         {

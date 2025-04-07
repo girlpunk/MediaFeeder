@@ -23,14 +23,17 @@ public partial class EditFolder
     {
         if (Options == null)
         {
-            Folder = Context.Folders.CreateProxy();
-
             var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = await UserManager.GetUserAsync(auth.User);
 
             ArgumentNullException.ThrowIfNull(user);
 
-            Folder.UserId = user.Id;
+            Folder = new Folder
+            {
+                Name = "",
+                UserId = user.Id
+            };
+            Context.Folders.Add(Folder);
         }
         else
         {
@@ -54,6 +57,7 @@ public partial class EditFolder
         {
             Context.Folders.Add(Folder);
         }
+
         await Context.SaveChangesAsync();
         await FeedbackRef.CloseAsync();
     }
