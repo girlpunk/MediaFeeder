@@ -51,16 +51,15 @@ public sealed partial class Home
     {
         await base.OnParametersSetAsync();
 
-        if (DataContext != null)
-            await Update();
+        await Update();
     }
 
     private async Task Update(bool force = false)
     {
         ArgumentNullException.ThrowIfNull(DataContext);
 
-        if (force || !UpdateHash())
-            return;
+        // if (force || !UpdateHash())
+        //     return;
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
