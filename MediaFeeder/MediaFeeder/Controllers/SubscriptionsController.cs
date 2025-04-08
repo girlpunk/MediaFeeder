@@ -100,8 +100,8 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     }
 
     [HttpGet("{id:int}/thumbnail")]
-    [OutputCache(Duration = 60 * 60)]
-    [ResponseCache(Duration = 60 * 60)]
+    [OutputCache(Duration = 60 * 60 * 24)]
+    [ResponseCache(Duration = 60 * 60 * 24)]
     public async Task<IActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);

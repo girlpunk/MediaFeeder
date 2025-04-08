@@ -36,8 +36,8 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
     }
 
     [HttpGet("{id:int}/thumbnail")]
-    [OutputCache(Duration = 60 * 60)]
-    [ResponseCache(Duration = 60 * 60)]
+    [OutputCache(Duration = 60 * 60 * 24 * 7)]
+    [ResponseCache(Duration = 60 * 60 * 24 * 7)]
     public async Task<IActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
