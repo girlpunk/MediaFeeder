@@ -50,18 +50,20 @@ public sealed partial class TreeView
 
                 Logger.LogInformation("Staring unwatched");
                 var unwatched = await context.Videos
+                    .TagWith("TreeView Unwatched")
                     .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .ToDictionaryAsync(static g => g.Key, static g => g.Count());
 
                 Logger.LogInformation("Unwatched done, starting downloaded");
-                var downloaded = await context.Videos.Where(v => v.Subscription!.UserId == user.Id)
+                var downloaded = await context.Videos
+                    .TagWith("TreeView Downloaded")
+                    .Where(v => v.Subscription!.UserId == user.Id)
                     .GroupBy(static v => v.SubscriptionId)
                     .ToDictionaryAsync(static g => g.Key, static g => g.Count());
 
                 Logger.LogInformation("downloaded done, starting merge");
-                var cache = new Dictionary<int, (int unwatched, int downloaded)>(int.Max(unwatched.Count,
-                    downloaded.Count));
+                var cache = new Dictionary<int, (int unwatched, int downloaded)>(int.Max(unwatched.Count, downloaded.Count));
 
                 Logger.LogInformation("merge step 1");
                 foreach (var pair in unwatched)
@@ -80,7 +82,9 @@ public sealed partial class TreeView
                 UnwatchedCache = cache;
 
                 Logger.LogInformation("merge done, getting folders");
-                Folders = await context.Folders.Where(f => f.UserId == user.Id && f.ParentId == null)
+                Folders = await context.Folders
+                    .TagWith("TreeView Folders")
+                    .Where(f => f.UserId == user.Id && f.ParentId == null)
                     .Include(static f => f.Subfolders)
                     .Include(static f => f.Subscriptions)
                     .ToListAsync();
