@@ -291,6 +291,8 @@ builder.Services.AddTransient<AbstractValidator<Folder>, EditFolder.Validator>()
 builder.Services.AddAntDesign();
 builder.Services.AddControllers();
 
+builder.Services.AddOutputCache();
+
 var app = builder.Build();
 
 app.UsePathBase(app.Configuration.GetValue<string>("base_path", "/"));
@@ -330,6 +332,7 @@ app.UseAntiforgery();
 app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+app.UseOutputCache();
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();

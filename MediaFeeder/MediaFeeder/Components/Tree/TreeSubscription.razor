@@ -9,26 +9,19 @@
                    Preview="false" />
         </IconTemplate>
         <TitleTemplate>
-            <Badge Count="@Unwatched" Offset="(15, 0)" >
-                <CountTemplate>
-                    @if (Unwatched > 0)
-                    {
-                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #007bff;">
-                            @Unwatched.ToMetric()
-                        </sup>
-                    }
-                    @if (Downloaded > 0) {
-                        <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #59b352">
-                            @Downloaded.ToMetric()
-                        </sup>
-                    }
-                </CountTemplate>
-                <ChildContent>
-                <span>
-                    @Subscription.Name
-                </span>
-                </ChildContent>
-            </Badge>
+            @Subscription.Name
+
+            @if (Unwatched > 0)
+            {
+                <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #007bff;">
+                    @Unwatched.ToMetric(decimals: 1)
+                </sup>
+            }
+            @if (Downloaded > 0) {
+                <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #59b352">
+                    @Downloaded.ToMetric(decimals: 1)
+                </sup>
+            }
         </TitleTemplate>
     </TreeNode>
 }

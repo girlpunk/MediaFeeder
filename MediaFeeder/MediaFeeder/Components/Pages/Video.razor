@@ -101,7 +101,7 @@
                 <AntDesign.Text Type="TextElementType.Secondary">
                     @if (VideoObject.Views != null)
                     {
-                        <span>@VideoObject.Views.Value.ToMetric() views &#x2022; </span>
+                        <span>@VideoObject.Views.Value.ToMetric(decimals: 2) views &#x2022; </span>
                     }
 
                     <span>@VideoObject.PublishDate.Humanize()</span>

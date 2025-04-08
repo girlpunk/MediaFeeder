@@ -3,6 +3,7 @@ using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders.Physical;
@@ -99,6 +100,8 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     }
 
     [HttpGet("{id:int}/thumbnail")]
+    [OutputCache]
+    [ResponseCache]
     public async Task<IActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);

@@ -47,7 +47,7 @@
                     Title="@Video.Name"
                     Description="@Video.Description.Truncate(120)"/>
                 <AntDesign.Text Type="TextElementType.Secondary">
-                    @Video.Views?.ToMetric() Views
+                    @Video.Views?.ToMetric(decimals: 2) Views
                     •
                     @Video.PublishDate.Humanize()
                     •
