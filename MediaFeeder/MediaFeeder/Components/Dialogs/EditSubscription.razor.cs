@@ -10,51 +10,59 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Dialogs;
 
-public partial class EditSubscription
+public sealed partial class EditSubscription
 {
-    [Inject] public required MediaFeederDataContext Context { get; set; }
+    [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
     public required Form<Subscription> Form { get; set; }
     private Subscription? Subscription { get; set; }
+    private MediaFeederDataContext? Context { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override void Dispose(bool disposing)
     {
-        if (Subscription == null)
+        Context?.Dispose();
+
+        base.Dispose(disposing);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Context != null) await Context.DisposeAsync();
+        Context = await ContextFactory.CreateDbContextAsync();
+
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+
+        ArgumentNullException.ThrowIfNull(user);
+
+        if (Options == null)
         {
-            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = await UserManager.GetUserAsync(auth.User);
-
-            ArgumentNullException.ThrowIfNull(user);
-
-            if (Options == null)
+            Subscription = new Subscription
             {
-                Subscription = new Subscription
-                {
-                    Name = null!,
-                    PlaylistId = null!,
-                    Description = "",
-                    ParentFolderId = 0,
-                    UserId = user.Id,
-                    ChannelId = null!,
-                    ChannelName = null!,
-                    Provider = null!
-                };
-                Context.Subscriptions.Add(Subscription);
-            }
-            else
-            {
-                Subscription = Context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
-            }
-
-            ExistingFolders = await Context.Folders
-                .Where(f => f.User == user)
-                .Include(static f => f.Subfolders)
-                .ToListAsync();
+                Name = null!,
+                PlaylistId = null!,
+                Description = "",
+                ParentFolderId = 0,
+                UserId = user.Id,
+                ChannelId = null!,
+                ChannelName = null!,
+                Provider = null!
+            };
+            Context.Subscriptions.Add(Subscription);
+        }
+        else
+        {
+            Subscription = Context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
         }
 
-        await base.OnParametersSetAsync();
+        ExistingFolders = await Context.Folders
+            .Where(f => f.User == user)
+            .Include(static f => f.Subfolders)
+            .ToListAsync();
+
+        await base.OnInitializedAsync();
     }
 
     /// <summary>
