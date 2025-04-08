@@ -72,7 +72,8 @@ public sealed partial class TreeView
             AfterClose = async () => await UpdateTree(),
             Title = folder != null
                 ? $"Edit Folder {folder.Name}"
-                : "Create Folder"
+                : "Create Folder",
+            DestroyOnClose = true,
         };
 
         ModalService.CreateModal<EditFolder, int?>(modalConfig, folder?.Id);
@@ -85,7 +86,8 @@ public sealed partial class TreeView
             Title = subscription != null
                 ? $"Edit Subscription {subscription.Name}"
                 : "Create Subscription",
-            AfterClose = async () => await UpdateTree()
+            AfterClose = async () => await UpdateTree(),
+            DestroyOnClose = true,
         };
 
         ModalService.CreateModal<EditSubscription, int?>(modalConfig, subscription?.Id);
