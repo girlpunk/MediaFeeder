@@ -100,7 +100,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     }
 
     [HttpGet("{id:int}/thumbnail")]
-    [OutputCache]
+    [OutputCache(Duration = 60 * 60)]
     [ResponseCache]
     public async Task<IActionResult> Thumbnail(int id)
     {
