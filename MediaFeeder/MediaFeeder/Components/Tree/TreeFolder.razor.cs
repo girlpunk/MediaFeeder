@@ -16,11 +16,11 @@ public sealed partial class TreeFolder
 
     [Inject] private NavigationManager? NavigationManager { get; set; }
 
-    internal int AddUnwatched((int unwatched, int downloaded) add)
+    internal int AddUnwatched(int unwatched, int downloaded)
     {
-        Unwatched += add.unwatched;
-        Downloaded += add.downloaded;
-        Parent?.AddUnwatched(add);
+        Unwatched += unwatched;
+        Downloaded += downloaded;
+        Parent?.AddUnwatched(unwatched, downloaded);
         StateHasChanged();
 
         return Unwatched;

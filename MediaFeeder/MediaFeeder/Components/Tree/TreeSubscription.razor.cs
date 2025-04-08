@@ -1,5 +1,7 @@
-﻿using MediaFeeder.Data.db;
+﻿using MediaFeeder.Data;
+using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Tree;
 
@@ -7,6 +9,9 @@ public sealed partial class TreeSubscription
 {
     private int Unwatched { get; set; }
     private int Downloaded { get; set; }
+
+    [Inject]
+    public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 
     [Parameter]
     [EditorRequired]
@@ -21,23 +26,30 @@ public sealed partial class TreeSubscription
 
     [Inject] private NavigationManager? NavigationManager { get; set; }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (
             Unwatched == 0 &&
             Subscription != null &&
             UnwatchedCache != null &&
-            UnwatchedCache.TryGetValue(Subscription.Id, out var unwatched) &&
             Parent != null
         )
         {
-            Unwatched = unwatched.unwatched;
-            Downloaded = unwatched.downloaded;
-            Parent.AddUnwatched(unwatched);
+            await using var context = await ContextFactory.CreateDbContextAsync();
+
+            Unwatched = await context.Videos
+                .TagWith("TreeView Unwatched")
+                .CountAsync(v => !v.Watched && v.SubscriptionId == Subscription.Id);
+
+            Downloaded = await context.Videos
+                .TagWith("TreeView Downloaded")
+                .CountAsync(v => v.IsDownloaded && v.SubscriptionId == Subscription.Id);
+
+            Parent.AddUnwatched(Unwatched, Downloaded);
             StateHasChanged();
         }
 
-        base.OnParametersSet();
+        await base.OnParametersSetAsync();
     }
 
     private void OnSelectedChanged(bool obj)
