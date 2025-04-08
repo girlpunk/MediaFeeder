@@ -35,7 +35,7 @@
             }
             @if (UnwatchedCache?.Values.Sum(static f => f.downloaded) > 0) {
                 <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">
-                    @UnwatchedCache.Values.Sum(static f => f.downloaded) .ToMetric(decimals: 1)
+                    @UnwatchedCache.Values.Sum(static f => f.downloaded).ToMetric(decimals: 1)
                 </sup>
             }
         </span>
