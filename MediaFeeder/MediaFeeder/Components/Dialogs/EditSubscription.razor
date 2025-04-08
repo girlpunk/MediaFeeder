@@ -66,11 +66,13 @@
         <Switch @bind-Checked="@context.RewritePlaylistIndices"/>
     </FormItem>
 
-    <FormItem Label="Provider" Required="">
+    <FormItem Label="Provider" Required="true">
         <Select @bind-Value="@context.Provider"
                 DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])"
                 ItemValue="@(static c => c.ProviderIdentifier)"
-                ItemLabel="@(static c => c.Name)"></Select>
+                ItemLabel="@(static c => c.Name)"
+                required="required"
+                ></Select>
     </FormItem>
 
     <FormItem WrapperCol="new ColLayoutParam { Offset = 8, Span = 16 }">
