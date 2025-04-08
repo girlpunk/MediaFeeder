@@ -26,30 +26,38 @@ public sealed partial class TreeSubscription
 
     [Inject] private NavigationManager? NavigationManager { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (
-            Unwatched == 0 &&
+        if ((firstRender ||
+             Unwatched == 0) &&
             Subscription != null &&
             UnwatchedCache != null &&
             Parent != null
-        )
+           )
         {
             await using var context = await ContextFactory.CreateDbContextAsync();
 
-            Unwatched = await context.Videos
-                .TagWith("TreeView Unwatched")
-                .CountAsync(v => !v.Watched && v.SubscriptionId == Subscription.Id);
+            if (UnwatchedCache.TryGetValue(Subscription.Id, out var value))
+            {
+                Unwatched = value.unwatched;
+                Downloaded = value.downloaded;
+            }
+            else
+            {
+                Unwatched = await context.Videos
+                    .TagWith("TreeView Unwatched")
+                    .CountAsync(v => !v.Watched && v.SubscriptionId == Subscription.Id);
 
-            Downloaded = await context.Videos
-                .TagWith("TreeView Downloaded")
-                .CountAsync(v => v.IsDownloaded && v.SubscriptionId == Subscription.Id);
+                Downloaded = await context.Videos
+                    .TagWith("TreeView Downloaded")
+                    .CountAsync(v => v.IsDownloaded && v.SubscriptionId == Subscription.Id);
+            }
 
             Parent.AddUnwatched(Unwatched, Downloaded);
             StateHasChanged();
         }
 
-        await base.OnParametersSetAsync();
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private void OnSelectedChanged(bool obj)
