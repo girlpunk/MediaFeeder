@@ -14,8 +14,6 @@ public sealed partial class TreeView
     [Inject]
     public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 
-    [Inject] public required ILogger<TreeView> Logger { get; set; }
-
     public Dictionary<int, (int unwatched, int downloaded)>? UnwatchedCache { get; set; }
 
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
@@ -33,57 +31,45 @@ public sealed partial class TreeView
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender || UnwatchedCache == null)
-        {
-            Logger.LogInformation("Got lock, checking auth");
-            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = await UserManager.GetUserAsync(auth.User);
-
-            ArgumentNullException.ThrowIfNull(user);
-
-            Logger.LogInformation("Preparing queries");
-            await using var context = await ContextFactory.CreateDbContextAsync();
-
-            Logger.LogInformation("Staring unwatched");
-            UnwatchedCache = await context.Videos
-                .TagWith("TreeView Unwatched")
-                .Where(v => v.Subscription!.UserId == user.Id)
-                .GroupBy(static v => v.SubscriptionId, static (k, g) => new
-                {
-                    key = k,
-                    unwatched = g.Count(static v => !v.Watched),
-                    downloaded = g.Count(static v => v.IsDownloaded)
-                })
-                .ToDictionaryAsync(static g => g.key, static g => (unwatched: g.unwatched, downloaded: g.downloaded));
-
-            Logger.LogInformation("merge done, getting folders");
-            Folders = await context.Folders
-                .TagWith("TreeView Folders")
-                .Where(f => f.UserId == user.Id && f.ParentId == null)
-                .Include(static f => f.Subfolders)
-                .Include(static f => f.Subscriptions)
-                .ToListAsync();
-
-            // Logger.LogInformation("Filtering fonder");
-            // adding this filter to above query fails with an error about lazy-load after the DbContext was disposed.
-            // Folders = Folders.Where(static f => f.ParentId == null).ToList();
-
-            Logger.LogInformation("Done!");
-            await InvokeAsync(StateHasChanged);
-        }
+            await UpdateTree();
 
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task UpdateTree()
+    {
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var context = await ContextFactory.CreateDbContextAsync();
+
+        UnwatchedCache = await context.Videos
+            .TagWith("TreeView Unwatched & Downloaded")
+            .Where(v => v.Subscription!.UserId == user.Id)
+            .GroupBy(static v => v.SubscriptionId, static (k, g) => new
+            {
+                key = k,
+                unwatched = g.Count(static v => !v.Watched),
+                downloaded = g.Count(static v => v.IsDownloaded)
+            })
+            .ToDictionaryAsync(static g => g.key, static g => (g.unwatched, g.downloaded));
+
+        Folders = await context.Folders
+            .TagWith("TreeView Folders")
+            .Where(f => f.UserId == user.Id && f.ParentId == null)
+            .Include(static f => f.Subfolders)
+            .Include(static f => f.Subscriptions)
+            .ToListAsync();
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private void EditFolder(Folder? folder)
     {
         var modalConfig = new ModalOptions
         {
-            AfterClose = () =>
-            {
-                Console.WriteLine("AfterClose");
-                InvokeAsync(StateHasChanged);
-                return Task.CompletedTask;
-            },
+            AfterClose = async () => await UpdateTree(),
             Title = folder != null
                 ? $"Edit Folder {folder.Name}"
                 : "Create Folder"
@@ -94,48 +80,15 @@ public sealed partial class TreeView
 
     private void EditSubscription(Subscription? subscription)
     {
-        var modalConfig = new ModalOptions();
-        ModalRef? modalRef = null;
-
-        modalConfig.Title = "Basic Form";
-        modalConfig.OnCancel = async _ =>
+        var modalConfig = new ModalOptions
         {
-            Console.WriteLine("OnCancel");
-            await modalRef?.CloseAsync();
+            Title = subscription != null
+                ? $"Edit Subscription {subscription.Name}"
+                : "Create Subscription",
+            AfterClose = async () => await UpdateTree()
         };
 
-        modalConfig.AfterClose = () =>
-        {
-            Console.WriteLine("AfterClose");
-            InvokeAsync(StateHasChanged);
-            return Task.CompletedTask;
-        };
-
-        modalRef = ModalService.CreateModal<EditSubscription, Subscription?>(modalConfig, subscription);
-
-        modalRef.OnOpen = static () =>
-        {
-            Console.WriteLine("ModalRef OnOpen");
-            return Task.CompletedTask;
-        };
-
-        modalRef.OnOk = static () =>
-        {
-            Console.WriteLine("ModalRef OnOk");
-            return Task.CompletedTask;
-        };
-
-        modalRef.OnCancel = static () =>
-        {
-            Console.WriteLine("ModalRef OnCancel");
-            return Task.CompletedTask;
-        };
-
-        modalRef.OnClose = static () =>
-        {
-            Console.WriteLine("ModalRef OnClose");
-            return Task.CompletedTask;
-        };
+        ModalService.CreateModal<EditSubscription, int?>(modalConfig, subscription?.Id);
     }
 
     private void EditSelected()
