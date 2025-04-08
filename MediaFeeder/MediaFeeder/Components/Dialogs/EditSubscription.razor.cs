@@ -2,6 +2,7 @@ using AntDesign;
 using FluentValidation;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
+using MediaFeeder.Data.Enums;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -16,15 +17,13 @@ public sealed partial class EditSubscription
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
-    public required Form<Subscription> Form { get; set; }
-    private Subscription? Subscription { get; set; }
-    private MediaFeederDataContext? Context { get; set; }
+    public required Form<SubscriptionForm> Form { get; set; }
+    private SubscriptionForm? Subscription { get; set; }
     [Inject] public required ILogger<EditSubscription> Logger { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        if (Context != null) await Context.DisposeAsync();
-        Context = await ContextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         Logger.LogInformation("Got new context");
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -34,26 +33,30 @@ public sealed partial class EditSubscription
 
         if (Options == null)
         {
-            Subscription = new Subscription
-            {
-                Name = null!,
-                PlaylistId = null!,
-                Description = "",
-                ParentFolderId = 0,
-                UserId = user.Id,
-                ChannelId = null!,
-                ChannelName = null!,
-                Provider = null!
-            };
-            Context.Subscriptions.Add(Subscription);
+            Subscription = new SubscriptionForm();
         }
         else
         {
             Logger.LogInformation("Finding existing subscription");
-            Subscription = Context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
+            var subscription = await context.Subscriptions.SingleAsync(f => f.Id == Options && f.UserId == user.Id);
+
+            Subscription = new SubscriptionForm
+            {
+                AutoDownload = subscription.AutoDownload,
+                AutomaticallyDeleteWatched = subscription.AutomaticallyDeleteWatched,
+                ChannelId = subscription.ChannelId,
+                ChannelName = subscription.ChannelName,
+                DownloadLimit = subscription.DownloadLimit,
+                DownloadOrder = subscription.DownloadOrder,
+                Name = subscription.Name,
+                ParentFolderId = subscription.ParentFolderId,
+                PlaylistId = subscription.PlaylistId,
+                Provider = subscription.Provider,
+                RewritePlaylistIndices = subscription.RewritePlaylistIndices
+            };
         }
 
-        ExistingFolders = await Context.Folders
+        ExistingFolders = await context.Folders
             .Where(f => f.User == user)
             .Include(static f => f.Subfolders)
             .ToListAsync();
@@ -66,7 +69,53 @@ public sealed partial class EditSubscription
     /// </summary>
     private async Task OnFinish(EditContext editContext)
     {
-        await Context.SaveChangesAsync();
+        ArgumentNullException.ThrowIfNull(Subscription);
+
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+
+        ArgumentNullException.ThrowIfNull(user);
+
+        if (Options == null)
+        {
+            var subscription = new Subscription
+            {
+                AutoDownload = Subscription.AutoDownload,
+                AutomaticallyDeleteWatched = Subscription.AutomaticallyDeleteWatched,
+                ChannelId = Subscription.ChannelId,
+                ChannelName = Subscription.ChannelName,
+                DownloadLimit = Subscription.DownloadLimit,
+                DownloadOrder = Subscription.DownloadOrder,
+                Name = Subscription.Name,
+                ParentFolderId = Subscription.ParentFolderId,
+                PlaylistId = Subscription.PlaylistId,
+                Provider = Subscription.Provider ?? throw new InvalidOperationException(),
+                RewritePlaylistIndices = Subscription.RewritePlaylistIndices,
+                Description = "",
+                UserId = user.Id,
+            };
+
+            context.Subscriptions.Add(subscription);
+        }
+        else
+        {
+            var subscription = context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
+
+            subscription.AutoDownload = Subscription.AutoDownload;
+            subscription.AutomaticallyDeleteWatched = Subscription.AutomaticallyDeleteWatched;
+            subscription.ChannelId = Subscription.ChannelId;
+            subscription.ChannelName = Subscription.ChannelName;
+            subscription.DownloadLimit = Subscription.DownloadLimit;
+            subscription.DownloadOrder = Subscription.DownloadOrder;
+            subscription.Name = Subscription.Name;
+            subscription.ParentFolderId = Subscription.ParentFolderId;
+            subscription.PlaylistId = Subscription.PlaylistId;
+            subscription.Provider = Subscription.Provider ?? throw new InvalidOperationException();
+            subscription.RewritePlaylistIndices = Subscription.RewritePlaylistIndices;
+        }
+
+        await context.SaveChangesAsync();
         await FeedbackRef.CloseAsync();
     }
 
@@ -77,7 +126,7 @@ public sealed partial class EditSubscription
         return Task.CompletedTask;
     }
 
-    public class Validator : AbstractValidator<Subscription>
+    public class Validator : AbstractValidator<SubscriptionForm>
     {
         public Validator()
         {
@@ -88,5 +137,20 @@ public sealed partial class EditSubscription
             RuleFor(static f => f.ChannelName).NotEmpty();
             RuleFor(static f => f.Provider).NotEmpty();
         }
+    }
+
+    public class SubscriptionForm
+    {
+        public string Name { get; set; } = "";
+        public int ParentFolderId { get; set; }
+        public string PlaylistId { get; set; } = "";
+        public string ChannelId { get; set; } = "";
+        public string ChannelName { get; set; } = "";
+        public bool AutoDownload { get; set; }
+        public int? DownloadLimit { get; set; }
+        public DownloadOrder? DownloadOrder { get; set; }
+        public bool AutomaticallyDeleteWatched { get; set; }
+        public bool RewritePlaylistIndices { get; set; }
+        public string? Provider { get; set; }
     }
 }

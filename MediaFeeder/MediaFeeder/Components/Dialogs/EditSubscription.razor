@@ -17,9 +17,9 @@
     <FormItem Label="Parent">
         <TreeSelect
             DataSource="@ExistingFolders"
-            @bind-Value="@context.ParentFolder"
+            @bind-Value="@context.ParentFolderId"
             Placeholder="Please select"
-            ItemValue="static item => item"
+            ItemValue="static item => item.Id"
             ItemLabel="static item => item.Name"
             AllowClear
             EnableSearch
@@ -54,7 +54,7 @@
                     DefaultValue="@DownloadOrder.Oldest"
                     DataSource="@(Enum.GetValues<DownloadOrder>())"
                     ItemValue="@(static c => c)"
-                    ItemLabel="@(static c => c?.Humanize() ?? "")"
+                    ItemLabel="@(static c => c.Humanize() ?? "")"
                     Placeholder="Please Select"></Select>
         </FormItem>
     }
