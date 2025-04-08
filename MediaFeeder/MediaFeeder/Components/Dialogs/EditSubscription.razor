@@ -1,17 +1,20 @@
-@inherits FeedbackComponent<MediaFeeder.Data.db.Subscription?>
+@inherits FeedbackComponent<int?>
 @using Humanizer
 @using MediaFeeder.Data.Enums
 @inject IServiceProvider ServiceProvider
+@using Blazored.FluentValidation
 
-<Form Model="@Options"
+<Form Model="@Subscription"
       LabelCol="new ColLayoutParam { Span = 8 }"
       WrapperCol="new ColLayoutParam { Span = 16 }"
       ValidateOnChange="true"
-      OnFinish="OnFinish">
-    <FormItem Label="Name" Required ShowFeedbackOnError="true">
-        <Input @bind-Value="@context.Name" required="required" />
+      OnFinish="@OnFinish"
+      @ref="@Form">
+    <FluentValidationValidator/>
+    <FormItem Label="Name" Required>
+        <Input @bind-Value="@context.Name" required="required"/>
     </FormItem>
-    <FormItem Label="Parent" ShowFeedbackOnError="true">
+    <FormItem Label="Parent">
         <TreeSelect
             DataSource="@ExistingFolders"
             @bind-Value="@context.ParentFolder"
@@ -25,8 +28,7 @@
             TitleExpression="static node => node.DataItem.Name"
             TitleTemplate="static node => node.DataItem.Name.ToRenderFragment()"
             KeyExpression="static node => node.DataItem.Id.ToString()"
-            IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"
-        />
+            IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"/>
     </FormItem>
     <FormItem Label="Channel or Playlist ID" Required="true">
         <Input @bind-Value="@context.PlaylistId" required="required" maxlength="128" name="PlaylistId"/>
@@ -64,14 +66,14 @@
         <Switch @bind-Checked="@context.RewritePlaylistIndices"/>
     </FormItem>
 
-    <FormItem Label="Provider">
+    <FormItem Label="Provider" Required="">
         <Select @bind-Value="@context.Provider"
                 DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])"
                 ItemValue="@(static c => c.ProviderIdentifier)"
                 ItemLabel="@(static c => c.Name)"></Select>
     </FormItem>
 
-    <FormItem WrapperCol="new ColLayoutParam{ Offset = 8, Span = 16 }">
+    <FormItem WrapperCol="new ColLayoutParam { Offset = 8, Span = 16 }">
         <Button Type="@ButtonType.Primary" HtmlType="submit">
             Submit
         </Button>

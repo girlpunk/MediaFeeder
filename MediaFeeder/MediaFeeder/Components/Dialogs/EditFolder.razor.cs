@@ -21,13 +21,13 @@ public partial class EditFolder
 
     protected override async Task OnInitializedAsync()
     {
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(auth.User);
+
+        ArgumentNullException.ThrowIfNull(user);
+
         if (Options == null)
         {
-            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = await UserManager.GetUserAsync(auth.User);
-
-            ArgumentNullException.ThrowIfNull(user);
-
             Folder = new Folder
             {
                 Name = "",
@@ -37,7 +37,7 @@ public partial class EditFolder
         }
         else
         {
-            Folder = Context.Folders.Single(f => f.Id == Options);
+            Folder = Context.Folders.Single(f => f.Id == Options && f.UserId == user.Id);
         }
 
         ExistingFolders = await Context.Folders
@@ -53,11 +53,6 @@ public partial class EditFolder
     /// </summary>
     private async Task OnFinish(EditContext editContext)
     {
-        if (Options == null)
-        {
-            Context.Folders.Add(Folder);
-        }
-
         await Context.SaveChangesAsync();
         await FeedbackRef.CloseAsync();
     }
