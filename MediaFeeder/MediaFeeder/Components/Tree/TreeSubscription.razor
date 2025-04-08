@@ -13,12 +13,12 @@
 
             @if (Unwatched > 0)
             {
-                <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #007bff;">
+                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">
                     @Unwatched.ToMetric(decimals: 1)
                 </sup>
             }
             @if (Downloaded > 0) {
-                <sup class="ant-scroll-number ant-badge-count" style="right:-15px; background-color: #59b352">
+                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">
                     @Downloaded.ToMetric(decimals: 1)
                 </sup>
             }
