@@ -19,10 +19,12 @@ public sealed partial class EditSubscription
     public required Form<Subscription> Form { get; set; }
     private Subscription? Subscription { get; set; }
     private MediaFeederDataContext? Context { get; set; }
+    [Inject] public required ILogger<EditSubscription> Logger { get; set; }
 
     protected override void Dispose(bool disposing)
     {
         Context?.Dispose();
+        Logger.LogInformation("Disposed called");
 
         base.Dispose(disposing);
     }
@@ -31,6 +33,7 @@ public sealed partial class EditSubscription
     {
         if (Context != null) await Context.DisposeAsync();
         Context = await ContextFactory.CreateDbContextAsync();
+        Logger.LogInformation("Got new context");
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
@@ -54,6 +57,7 @@ public sealed partial class EditSubscription
         }
         else
         {
+            Logger.LogInformation("Finding existing subscription");
             Subscription = Context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
         }
 
