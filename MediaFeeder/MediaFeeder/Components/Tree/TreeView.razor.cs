@@ -48,35 +48,35 @@ public sealed partial class TreeView
                 Logger.LogInformation("Preparing queries");
                 await using var context = await ContextFactory.CreateDbContextAsync();
 
-                Logger.LogInformation("Staring unwatched");
-                var unwatched = await context.Videos
-                    .TagWith("TreeView Unwatched")
-                    .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
-                    .GroupBy(static v => v.SubscriptionId)
-                    .ToDictionaryAsync(static g => g.Key, static g => g.Count());
-
-                Logger.LogInformation("Unwatched done, starting downloaded");
-                var downloaded = await context.Videos
-                    .TagWith("TreeView Downloaded")
-                    .Where(v => v.Subscription!.UserId == user.Id)
-                    .GroupBy(static v => v.SubscriptionId)
-                    .ToDictionaryAsync(static g => g.Key, static g => g.Count());
-
-                Logger.LogInformation("downloaded done, starting merge");
-                var cache = new Dictionary<int, (int unwatched, int downloaded)>(int.Max(unwatched.Count, downloaded.Count));
-
-                Logger.LogInformation("merge step 1");
-                foreach (var pair in unwatched)
-                    cache.Add(pair.Key, (unwatched: pair.Value, downloaded: 0));
-
-                Logger.LogInformation("merge step 2");
-                foreach (var pair in downloaded)
-                {
-                    if (cache.ContainsKey(pair.Key))
-                        cache[pair.Key] = (cache[pair.Key].unwatched, pair.Value);
-                    else
-                        cache.Add(pair.Key, (unwatched: 0, downloaded: pair.Value));
-                }
+                // Logger.LogInformation("Staring unwatched");
+                // var unwatched = await context.Videos
+                //     .TagWith("TreeView Unwatched")
+                //     .Where(v => !v.Watched && v.Subscription!.UserId == user.Id)
+                //     .GroupBy(static v => v.SubscriptionId)
+                //     .ToDictionaryAsync(static g => g.Key, static g => g.Count());
+                //
+                // Logger.LogInformation("Unwatched done, starting downloaded");
+                // var downloaded = await context.Videos
+                //     .TagWith("TreeView Downloaded")
+                //     .Where(v => v.Subscription!.UserId == user.Id)
+                //     .GroupBy(static v => v.SubscriptionId)
+                //     .ToDictionaryAsync(static g => g.Key, static g => g.Count());
+                //
+                // Logger.LogInformation("downloaded done, starting merge");
+                var cache = new Dictionary<int, (int unwatched, int downloaded)>(/*int.Max(unwatched.Count, downloaded.Count)*/);
+                //
+                // Logger.LogInformation("merge step 1");
+                // foreach (var pair in unwatched)
+                //     cache.Add(pair.Key, (unwatched: pair.Value, downloaded: 0));
+                //
+                // Logger.LogInformation("merge step 2");
+                // foreach (var pair in downloaded)
+                // {
+                //     if (cache.ContainsKey(pair.Key))
+                //         cache[pair.Key] = (cache[pair.Key].unwatched, pair.Value);
+                //     else
+                //         cache.Add(pair.Key, (unwatched: 0, downloaded: pair.Value));
+                // }
 
                 Logger.LogInformation("merge step 3");
                 UnwatchedCache = cache;
