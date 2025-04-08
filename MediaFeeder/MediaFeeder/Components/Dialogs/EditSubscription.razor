@@ -54,7 +54,8 @@
                     DefaultValue="@DownloadOrder.Oldest"
                     DataSource="@(Enum.GetValues<DownloadOrder>())"
                     ItemValue="@(static c => c)"
-                    ItemLabel="@(static c => c.Humanize())"></Select>
+                    ItemLabel="@(static c => c?.Humanize() ?? "")"
+                    Placeholder="Please Select"></Select>
         </FormItem>
     }
 
@@ -70,8 +71,9 @@
         <Select @bind-Value="@context.Provider"
                 DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])"
                 ItemValue="@(static c => c.ProviderIdentifier)"
-                ItemLabel="@(static c => c.Name)"
+                ItemLabel="@(static c => c?.Name ?? "")"
                 required="required"
+                Placeholder="Please Select"
                 ></Select>
     </FormItem>
 
