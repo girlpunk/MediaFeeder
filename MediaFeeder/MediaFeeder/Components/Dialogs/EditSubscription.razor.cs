@@ -1,3 +1,4 @@
+using System;
 using AntDesign;
 using FluentValidation;
 using MediaFeeder.Data;
@@ -10,8 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components.Dialogs;
 
-public sealed partial class EditSubscription
+public sealed partial class EditSubscription : IDisposable
 {
+    private bool _disposed;
+
     [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
@@ -21,12 +24,18 @@ public sealed partial class EditSubscription
     private MediaFeederDataContext? Context { get; set; }
     [Inject] public required ILogger<EditSubscription> Logger { get; set; }
 
-    protected override void Dispose(bool disposing)
+    public new void Dispose()
     {
-        Context?.Dispose();
-        Logger.LogInformation("Disposed called");
+        if (_disposed)
+        {
+            return;
+        }
 
-        base.Dispose(disposing);
+        _disposed = true;
+        Logger.LogInformation("Disposing");
+        Context?.Dispose();
+
+        base.Dispose();
     }
 
     protected override async Task OnInitializedAsync()
@@ -83,6 +92,14 @@ public sealed partial class EditSubscription
         Form.Submit();
         args.Cancel = true;
         return Task.CompletedTask;
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(GetType().FullName);
+        }
     }
 
     public class Validator : AbstractValidator<Subscription>
