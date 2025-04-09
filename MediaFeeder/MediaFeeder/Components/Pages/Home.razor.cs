@@ -89,16 +89,7 @@ public sealed partial class Home
                 Title = (await DataContext.Subscriptions.FindAsync(SubscriptionId))?.Name ?? "";
             }
 
-            source = SortOrder switch
-            {
-                SortOrders.Oldest => source.OrderBy(static v => v.PublishDate),
-                SortOrders.Newest => source.OrderByDescending(static v => v.PublishDate),
-                SortOrders.PlaylistOrder => source.OrderBy(static v => v.PlaylistIndex),
-                SortOrders.ReversePlaylistOrder => source.OrderByDescending(static v => v.PlaylistIndex),
-                SortOrders.Popularity => source.OrderByDescending(static v => v.Views),
-                SortOrders.TopRated => source.OrderByDescending(static v => v.Rating),
-                _ => source
-            };
+            source = source.SortVideos(SortOrder);
 
             if (ShowWatched != null)
                 source = source.Where(v => v.Watched == ShowWatched);

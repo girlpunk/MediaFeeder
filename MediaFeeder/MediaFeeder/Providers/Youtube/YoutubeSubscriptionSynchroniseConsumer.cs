@@ -4,7 +4,7 @@ using Google.Apis.YouTube.v3.Data;
 using JetBrains.Annotations;
 using MassTransit;
 using MediaFeeder.Data;
-using MediaFeeder.Data.db;
+using MediaFeeder.Filters;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Subscription = MediaFeeder.Data.db.Subscription;
@@ -101,31 +101,30 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         subscription.LastSynchronised = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(context.CancellationToken);
 
-        // enabled = first_non_null(channel.auto_download, channel.user.preferences['auto_download'])
-        //
-        // if enabled:
+        if (!subscription.AutoDownload)
+            return;
+
+        var alreadyDownloaded = await db.Videos.CountAsync(v => v.SubscriptionId == subscription.Id && v.IsDownloaded, context.CancellationToken);
+
+        if (alreadyDownloaded >= subscription.DownloadLimit)
+            return;
+
+        var videoToDownload = await db.Videos
+            .Where(v => v.SubscriptionId == subscription.Id && !v.IsDownloaded && !v.Watched)
+            .SortVideos(subscription.DownloadOrder)
+            .FirstOrDefaultAsync(context.CancellationToken);
+
+        if (videoToDownload != null)
+        {
+            var downloadContract = new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id);
+            await bus.Publish(downloadContract, context.CancellationToken);
+        }
+
         //     global_limit = channel.user.preferences['download_global_limit']
-        //     limit = first_non_null(channel.download_limit, channel.user.preferences['download_subscription_limit'])
-        //     order = first_non_null(channel.download_order, channel.user.preferences['download_order'])
-        //     order = VIDEO_ORDER_MAPPING[order]
         //
-        //     videos_to_download = Video.objects \
-        //         .filter(subscription=channel, downloaded_path__isnull=True, watched=False, subscription__auto_download=True) \
-        //         .order_by(order)
-        //
-        //     if global_limit > 0:
-        //         global_downloaded = Video.objects.filter(subscription__user=channel.user, downloaded_path__isnull=False).count()
-        //         allowed_count = max(global_limit - global_downloaded, 0)
-        //         videos_to_download = videos_to_download[0:allowed_count]
-        //
-        //     if limit > 0:
-        //         sub_downloaded = Video.objects.filter(subscription=channel, downloaded_path__isnull=False).count()
-        //         allowed_count = max(limit - sub_downloaded, 0)
-        //         videos_to_download = videos_to_download[0:allowed_count]
-        //
-        //     # enqueue download
-        //     for video in videos_to_download:
-        //         download_video.delay(video.pk)
+        //     global_downloaded = Video.objects.filter(subscription__user=channel.user, downloaded_path__isnull=False).count()
+        //     allowed_count = max(global_limit - global_downloaded, 0)
+        //     videos_to_download = videos_to_download[0:allowed_count]
     }
 
     // @shared_task()
@@ -323,7 +322,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             var highest = (await db.Videos
                     .Where(v => v.SubscriptionId == subscription.Id)
                     .OrderByDescending(static v => v.PlaylistIndex)
-                    .FirstOrDefaultAsync(cancellationToken: cancellationToken))
+                    .FirstOrDefaultAsync(cancellationToken))
                 ?.PlaylistIndex;
             item.Snippet.Position = 1 + (highest ?? -1);
         }
