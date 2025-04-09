@@ -57,9 +57,8 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
 
         try
         {
-            var stream = (new PhysicalFileInfo(new FileInfo(video.Thumb))).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(video.Thumb, out var mimeType);
-            return File(stream, mimeType ?? "application/octet-stream");
+            return File(new PhysicalFileInfo(new FileInfo(video.Thumb)).PhysicalPath, mimeType ?? "application/octet-stream");
         }
         catch (IOException e)
         {

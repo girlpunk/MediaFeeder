@@ -6,7 +6,7 @@ public enum DownloadOrder
     // ('newest', 'Newest'),
 
     // ('oldest', 'Oldest')
-        Oldest,
+    Oldest,
 
     // ('playlist', 'Playlist order'),
     PlaylistOrder,
@@ -19,5 +19,4 @@ public enum DownloadOrder
 
     // ('rating', 'Top rated'),
     TopRated,
-
 }

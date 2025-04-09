@@ -1,5 +1,4 @@
 ﻿@page "/auth"
-@using MediaFeeder.Components.Tree
 
 @attribute [Authorize]
 @attribute [StreamRendering]
@@ -10,8 +9,4 @@
 
 <AuthorizeView>
     Hello @context.User.Identity?.Name!
-
-
-    Folders:
-    <TreeView/>
 </AuthorizeView>

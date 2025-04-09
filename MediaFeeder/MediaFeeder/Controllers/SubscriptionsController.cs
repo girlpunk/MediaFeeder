@@ -120,9 +120,8 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
 
         try
         {
-            var stream = (new PhysicalFileInfo(new FileInfo(subscription.Thumb))).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(subscription.Thumb, out var mimeType);
-            return File(stream, mimeType ?? "application/octet-stream");
+            return File(new PhysicalFileInfo(new FileInfo(subscription.Thumb)).PhysicalPath, mimeType ?? "application/octet-stream");
         }
         catch (IOException)
         {

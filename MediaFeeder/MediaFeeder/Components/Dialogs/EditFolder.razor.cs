@@ -68,7 +68,7 @@ public partial class EditFolder
     {
         public Validator()
         {
-            RuleFor(f => f.Name).NotEmpty();
+            RuleFor(static f => f.Name).NotEmpty();
         }
     }
 }

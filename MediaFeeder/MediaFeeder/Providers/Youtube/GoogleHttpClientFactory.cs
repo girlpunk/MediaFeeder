@@ -1,4 +1,3 @@
-using System;
 using Google.Apis.Http;
 
 namespace MediaFeeder.Providers.Youtube;
