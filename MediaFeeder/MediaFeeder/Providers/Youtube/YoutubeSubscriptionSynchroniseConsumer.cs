@@ -107,7 +107,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         var alreadyDownloaded = await db.Videos.CountAsync(v => v.SubscriptionId == subscription.Id && v.IsDownloaded, context.CancellationToken);
 
         if (alreadyDownloaded >= subscription.DownloadLimit)
+        {
+            logger.LogInformation("Already downloaded enough");
             return;
+        }
 
         var videoToDownload = await db.Videos
             .Where(v => v.SubscriptionId == subscription.Id && !v.IsDownloaded && !v.Watched)
@@ -116,8 +119,13 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         if (videoToDownload != null)
         {
+            logger.LogInformation("Starting download {}", videoToDownload.Name);
             var downloadContract = new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id);
             await bus.Publish(downloadContract, context.CancellationToken);
+        }
+        else
+        {
+            logger.LogInformation("Can download more, but none available");
         }
 
         //     global_limit = channel.user.preferences['download_global_limit']
