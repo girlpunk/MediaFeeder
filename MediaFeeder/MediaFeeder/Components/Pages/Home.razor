@@ -4,11 +4,16 @@
 @using Humanizer
 @using MediaFeeder.Components.Layout
 @using MediaFeeder.Filters
+@using MediaFeeder.Components.Tree
 
 @layout ListLayout
 
 <PageTitle>@Title</PageTitle>
 
+<Sider Width="350" Style="background-color: white;">
+    <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId" />
+</Sider>
+<Content>
 <GridRow Gutter="8">
     <GridCol Class="gutter-row" Span="5">
         <Search Placeholder="Search" Size="@InputSize.Large" EnterButton="@("Search")" @bind-Value="@SearchValue"
@@ -130,3 +135,5 @@
     <Pagination Current="@PageNumber" Total="@ItemsAvailable" PageSize="@ResultsPerPage"
                 OnChange="@PageChange"/>
 </Flex>
+
+</Content>
