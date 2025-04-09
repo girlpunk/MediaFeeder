@@ -51,12 +51,21 @@
             <AntDesign.InputNumber @bind-Value="@context.DownloadLimit" Min="0"/>
         </FormItem>
         <FormItem Label="Download Order">
-            <Select @bind-Value="@context.DownloadOrder"
-                    DefaultValue="@DownloadOrder.Oldest"
-                    DataSource="@(Enum.GetValues<DownloadOrder>())"
-                    ItemValue="@(static c => c)"
-                    ItemLabel="@(static c => c.Humanize() ?? "")"
-                    Placeholder="Please Select"></Select>
+            <InputSelect @bind-Value="context.DownloadOrder" class="form-control">
+                <option disabled="disabled" selected="@(context.DownloadOrder == null ? "selected" : "")">Please Select</option>
+                @foreach (var cnt in Enum.GetValues<DownloadOrder>())
+                {
+                    <option value="@cnt" selected="@(context.DownloadOrder == cnt ? "selected" : "")">@cnt.Humanize()</option>
+                }
+            </InputSelect>
+
+
+            @* <Select @bind-Value="@context.DownloadOrder" *@
+            @*         DefaultValue="@DownloadOrder.Oldest" *@
+            @*         DataSource="@(Enum.GetValues<DownloadOrder>())" *@
+            @*         ItemValue="@(static c => c)" *@
+            @*         ItemLabel="@(static c => c.Humanize() ?? "")" *@
+            @*         Placeholder="Please Select"></Select> *@
         </FormItem>
     }
 
@@ -69,13 +78,21 @@
     </FormItem>
 
     <FormItem Label="Provider" Required="true">
-        <Select @bind-Value="@context.Provider"
-                DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])"
-                ItemValue="@(static c => c.ProviderIdentifier)"
-                ItemLabel="@(static c => c?.Name ?? "")"
-                required="required"
-                Placeholder="Please Select"
-                ></Select>
+        @* <Select @bind-Value="@context.Provider" *@
+        @*         DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])" *@
+        @*         ItemValue="@(static c => c.ProviderIdentifier)" *@
+        @*         ItemLabel="@(static c => c?.Name ?? "")" *@
+        @*         required="required" *@
+        @*         Placeholder="Please Select" *@
+        @* ></Select> *@
+
+        <InputSelect @bind-Value="context.Provider" class="form-control">
+            <option disabled="disabled" selected="@(context.Provider == null ? "selected" : "")">Please Select</option>
+            @foreach (var cnt in ServiceProvider?.GetServices<IProvider>())
+            {
+                <option value="@cnt" selected="@(context.Provider == cnt.ProviderIdentifier ? "selected" : "")">@cnt.Name</option>
+            }
+        </InputSelect>
     </FormItem>
 
     <FormItem WrapperCol="new ColLayoutParam { Offset = 8, Span = 16 }">
