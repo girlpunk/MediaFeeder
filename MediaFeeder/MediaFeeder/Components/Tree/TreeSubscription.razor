@@ -1,29 +1,29 @@
 ﻿@using Humanizer
-@using MediaFeeder.Data
+
 @if (Subscription != null)
 {
-    <TreeNode SelectedChanged="OnSelectedChanged" IsLeaf="true" TItem="ITreeSelectable" DataItem="@Subscription">
-        <IconTemplate>
-            <Image Src="@($"api/subscriptions/{Subscription.Id}/thumbnail/")" Alt="Subscription Icon"
-                   Style="max-width: 24px; max-height: 24px;"
-                   Preview="false" />
-        </IconTemplate>
-        <TitleTemplate>
-            @Subscription.Name
-
-            @if (Unwatched > 0)
-            {
-                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">
-                    @Unwatched.ToMetric(decimals: 1)
-                </sup>
-            }
-            @if (Downloaded > 0) {
-                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">
-                    @Downloaded.ToMetric(decimals: 1)
-                </sup>
-            }
-        </TitleTemplate>
-    </TreeNode>
+    <div class="ant-tree-treenode"  style="padding-left: 24px;">
+        <a href="subscription/@Subscription.Id">
+            <span class="ant-tree-node-content-wrapper">
+                <span class="ant-tree-iconEle">
+                    <span class="ant-tree-iconEle ant-tree-icon__customize">
+                        <Image Src="@($"api/subscriptions/{Subscription.Id}/thumbnail/")" Alt="Subscription Icon"
+                               Style="max-width: 24px; max-height: 24px;"
+                               Preview="false" />
+                    </span>
+                </span>
+                @Subscription.Name
+                @if (Unwatched > 0)
+                {
+                    <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">@Unwatched.ToMetric(decimals: 1)</sup>
+                }
+                @if (Downloaded > 0)
+                {
+                    <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">@Downloaded.ToMetric(decimals: 1)</sup>
+                }
+            </span>
+        </a>
+    </div>
 }
 else
 {

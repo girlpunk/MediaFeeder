@@ -16,6 +16,9 @@ public sealed partial class TreeFolder
 
     [Inject] private NavigationManager? NavigationManager { get; set; }
 
+    [CascadingParameter(Name = nameof(TreeView.SelectedFolder))]
+    public int? SelectedFolder { get; set; }
+
     internal int AddUnwatched(int unwatched, int downloaded)
     {
         Unwatched += unwatched;
@@ -24,11 +27,5 @@ public sealed partial class TreeFolder
         StateHasChanged();
 
         return Unwatched;
-    }
-
-    private void OnSelectedChanged(bool arg)
-    {
-        if (arg && NavigationManager != null && Folder != null)
-            NavigationManager.NavigateTo("folder/" + Folder.Id);
     }
 }

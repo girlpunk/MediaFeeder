@@ -24,7 +24,8 @@ public sealed partial class TreeSubscription
     [CascadingParameter(Name = nameof(UnwatchedCache))]
     public Dictionary<int, (int unwatched, int downloaded)>? UnwatchedCache { get; set; }
 
-    [Inject] private NavigationManager? NavigationManager { get; set; }
+    [CascadingParameter(Name = nameof(TreeView.SelectedSubscription))]
+    public int? SelectedSubscription { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -58,11 +59,5 @@ public sealed partial class TreeSubscription
         }
 
         await base.OnAfterRenderAsync(firstRender);
-    }
-
-    private void OnSelectedChanged(bool obj)
-    {
-        if (obj && NavigationManager != null && Subscription != null)
-            NavigationManager.NavigateTo("subscription/" + Subscription.Id);
     }
 }

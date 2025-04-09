@@ -1,5 +1,6 @@
 ﻿@using Humanizer
 @using MediaFeeder.Data
+
 <Flex Direction="FlexDirection.Vertical">
     <Flex Justify="FlexJustify.SpaceEvenly">
         <Tooltip Title="Add Subscription">
@@ -40,20 +41,37 @@
             }
         </span>
         <CascadingValue Value="UnwatchedCache" Name="@nameof(UnwatchedCache)">
-            <Tree
-                ShowIcon="true"
-                ShowExpand="true"
-                BlockNode="true"
-                ShowLeafIcon="true"
-                Selectable="true"
-                TItem="ITreeSelectable"
-                DefaultExpandAll="true"
-                @ref="TreeRef">
-                @foreach (var folder in Folders)
-                {
-                    <TreeFolder Folder="@folder"/>
-                }
-            </Tree>
+            <CascadingValue Value="SelectedFolder" Name="@nameof(SelectedFolder)">
+                <CascadingValue Value="SelectedSubscription" Name="@nameof(SelectedSubscription)">
+
+                    @* <Tree *@
+                    @*     ShowIcon="true" *@
+                    @*     ShowExpand="true" *@
+                    @*     BlockNode="true" *@
+                    @*     ShowLeafIcon="true" *@
+                    @*     Selectable="true" *@
+                    @*     TItem="ITreeSelectable" *@
+                    @*     DefaultExpandAll="true" *@
+                    @*     @ref="TreeRef"> *@
+                    @*     @foreach (var folder in Folders) *@
+                    @*     { *@
+                    @*         <TreeFolder Folder="@folder"/> *@
+                    @*     } *@
+                    @* </Tree> *@
+
+                    <div class="ant-tree ant-tree-icon-hide ant-tree-block-node">
+                        <div class="ant-tree-list">
+                            <div class="ant-tree-list-holder-inner">
+                                @foreach (var folder in Folders)
+                                {
+                                    <TreeFolder Folder="@folder"/>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                </CascadingValue>
+            </CascadingValue>
         </CascadingValue>
     }
     else

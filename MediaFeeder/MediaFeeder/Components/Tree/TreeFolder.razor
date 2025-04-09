@@ -1,34 +1,40 @@
 ﻿@using Humanizer
-@using MediaFeeder.Data
+
 @if (Folder != null)
 {
-    <TreeNode SelectedChanged="OnSelectedChanged" TItem="ITreeSelectable" DataItem="@Folder">
-        <TitleTemplate>
-            @Folder.Name
-            @if (Unwatched > 0)
-            {
-                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">
-                    @Unwatched.ToMetric(decimals: 1)
-                </sup>
-            }
-            @if (Downloaded > 0) {
-                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">
-                    @Downloaded.ToMetric(decimals: 1)
-                </sup>
-            }
-        </TitleTemplate>
-        <ChildContent>
-            @foreach (var subfolder in Folder.Subfolders)
-            {
-                <TreeFolder Folder="subfolder" Parent="@(this)"/>
-            }
-            @if (Folder != null)
-                @foreach (var subscription in Folder.Subscriptions)
-            {
-                <TreeSubscription Subscription="@subscription" Parent="this"/>
-            }
-        </ChildContent>
-    </TreeNode>
+    <div class="ant-tree-treenode ant-tree-treenode-switcher-open ant-tree-treenode-selected" style="padding-left: 24px;">
+        <a href="folder/@Folder.Id">
+            <span class="ant-tree-switcher ant-tree-switcher_open">
+                <span class="ant-tree-switcher-icon anticon anticon-caret-down" id="ant-blazor-f2079da9-a5a5-4802-8fd1-d7e1090f6bae" role="img" _bl_790a8102-c6d0-40d8-859d-c0cce3204e0d="">
+                    <svg focusable="false" width="1em" height="1em" fill="currentColor" style="pointer-events: none;" xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 1024 1024">
+                        <path d="M840.4 300H183.6c-19.7 0-30.7 20.8-18.5 35l328.4 380.8c9.4 10.9 27.5 10.9 37 0L858.9 335c12.2-14.2 1.2-35-18.5-35z"></path>
+                    </svg>
+                </span>
+            </span>
+
+            <span class="ant-tree-node-content-wrapper ant-tree-node-content-wrapper-open ant-tree-node-selected">
+                @Folder.Name
+                @if (Unwatched > 0)
+                {
+                    <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">@Unwatched.ToMetric(decimals: 1)</sup>
+                }
+                @if (Downloaded > 0)
+                {
+                    <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">@Downloaded.ToMetric(decimals: 1)</sup>
+                }
+            </span>
+        </a>
+
+        @foreach (var subfolder in Folder.Subfolders)
+        {
+            <TreeFolder Folder="subfolder" Parent="@(this)"/>
+        }
+        @if (Folder != null)
+            @foreach (var subscription in Folder.Subscriptions)
+        {
+            <TreeSubscription Subscription="@subscription" Parent="this"/>
+        }
+    </div>
 }
 else
 {

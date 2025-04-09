@@ -22,11 +22,18 @@ public sealed partial class TreeView
 
     [Inject] public required ModalService ModalService { get; set; }
 
+    [Parameter]
+    [EditorRequired]
+    public int? SelectedFolder { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public int? SelectedSubscription { get; set; }
 
     private List<Folder>? Folders { get; set; }
 
-    private SemaphoreSlim Updating { get; } = new(1);
-    private Tree<ITreeSelectable>? TreeRef { get; set; }
+    // private SemaphoreSlim Updating { get; } = new(1);
+    // private Tree<ITreeSelectable>? TreeRef { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -65,44 +72,39 @@ public sealed partial class TreeView
         await InvokeAsync(StateHasChanged);
     }
 
-    private void EditFolder(Folder? folder)
+    private void EditFolder(int? folder)
     {
         var modalConfig = new ModalOptions
         {
             AfterClose = async () => await UpdateTree(),
             Title = folder != null
-                ? $"Edit Folder {folder.Name}"
+                ? $"Edit Folder"
                 : "Create Folder",
             DestroyOnClose = true,
         };
 
-        ModalService.CreateModal<EditFolder, int?>(modalConfig, folder?.Id);
+        ModalService.CreateModal<EditFolder, int?>(modalConfig, folder);
     }
 
-    private void EditSubscription(Subscription? subscription)
+    private void EditSubscription(int? subscription)
     {
         var modalConfig = new ModalOptions
         {
             Title = subscription != null
-                ? $"Edit Subscription {subscription.Name}"
+                ? $"Edit Subscription"
                 : "Create Subscription",
             AfterClose = async () => await UpdateTree(),
             DestroyOnClose = true,
         };
 
-        ModalService.CreateModal<EditSubscription, int?>(modalConfig, subscription?.Id);
+        ModalService.CreateModal<EditSubscription, int?>(modalConfig, subscription);
     }
 
     private void EditSelected()
     {
-        switch (TreeRef?.SelectedData)
-        {
-            case Folder folder:
-                EditFolder(folder);
-                break;
-            case Subscription subscription:
-                EditSubscription(subscription);
-                break;
-        }
+        if (SelectedFolder != null)
+            EditFolder(SelectedFolder);
+        else if (SelectedSubscription != null)
+            EditSubscription(SelectedSubscription);
     }
 }
