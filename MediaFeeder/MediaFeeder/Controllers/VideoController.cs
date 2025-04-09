@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders.Physical;
 
 namespace MediaFeeder.Controllers;
 
@@ -56,8 +57,9 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
 
         try
         {
+            var stream = (new PhysicalFileInfo(new FileInfo(video.Thumb))).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(video.Thumb, out var mimeType);
-            return File(new FileInfo(video.Thumb).FullName, mimeType ?? "application/octet-stream");
+            return File(stream, mimeType ?? "application/octet-stream");
         }
         catch (IOException e)
         {
