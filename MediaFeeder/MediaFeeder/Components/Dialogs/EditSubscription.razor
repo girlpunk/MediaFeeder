@@ -90,7 +90,7 @@
             <option disabled="disabled" selected="@(context.Provider == null ? "selected" : "")">Please Select</option>
             @foreach (var cnt in ServiceProvider?.GetServices<IProvider>() ?? [])
             {
-                <option value="@cnt" selected="@(string.Equals(context.Provider, cnt.ProviderIdentifier, StringComparison.OrdinalIgnoreCase) ? "selected" : "")">@cnt.Name</option>
+                <option value="@cnt.ProviderIdentifier" selected="@(string.Equals(context.Provider, cnt.ProviderIdentifier, StringComparison.OrdinalIgnoreCase) ? "selected" : "")">@cnt.Name</option>
             }
         </InputSelect>
     </FormItem>
