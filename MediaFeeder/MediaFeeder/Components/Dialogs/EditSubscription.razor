@@ -51,12 +51,12 @@
             <AntDesign.InputNumber @bind-Value="@context.DownloadLimit" Min="0"/>
         </FormItem>
         <FormItem Label="Download Order">
-            @* <Select @bind-Value="@context.DownloadOrder" *@
-            @*         DefaultValue="@DownloadOrder.Oldest" *@
-            @*         DataSource="@(Enum.GetValues<DownloadOrder>())" *@
-            @*         ItemValue="@(static c => c)" *@
-            @*         ItemLabel="@(static c => c.Humanize() ?? "")" *@
-            @*         Placeholder="Please Select"></Select> *@
+            <Select @bind-Value="@context.DownloadOrder"
+                    DefaultValue="@DownloadOrder.Oldest"
+                    DataSource="@(Enum.GetValues<DownloadOrder>())"
+                    ItemValue="@(static c => c)"
+                    ItemLabel="@(static c => c.Humanize() ?? "")"
+                    Placeholder="Please Select"></Select>
         </FormItem>
     }
 
@@ -69,13 +69,13 @@
     </FormItem>
 
     <FormItem Label="Provider" Required="true">
-        @* <Select @bind-Value="@context.Provider" *@
-        @*         DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])" *@
-        @*         ItemValue="@(static c => c.ProviderIdentifier)" *@
-        @*         ItemLabel="@(static c => c?.Name ?? "")" *@
-        @*         required="required" *@
-        @*         Placeholder="Please Select" *@
-        @*         ></Select> *@
+        <Select @bind-Value="@context.Provider"
+                DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])"
+                ItemValue="@(static c => c.ProviderIdentifier)"
+                ItemLabel="@(static c => c?.Name ?? "")"
+                required="required"
+                Placeholder="Please Select"
+                ></Select>
     </FormItem>
 
     <FormItem WrapperCol="new ColLayoutParam { Offset = 8, Span = 16 }">

@@ -13,7 +13,7 @@ namespace MediaFeeder.Components.Dialogs;
 
 public sealed partial class EditSubscription
 {
-    [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
+    [Inject] public required MediaFeederDataContext Context { get; set; }
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
@@ -23,9 +23,6 @@ public sealed partial class EditSubscription
 
     protected override async Task OnInitializedAsync()
     {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        Logger.LogInformation("Got new context");
-
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
 
@@ -38,7 +35,7 @@ public sealed partial class EditSubscription
         else
         {
             Logger.LogInformation("Finding existing subscription");
-            var subscription = await context.Subscriptions.SingleAsync(f => f.Id == Options && f.UserId == user.Id);
+            var subscription = await Context.Subscriptions.SingleAsync(f => f.Id == Options && f.UserId == user.Id);
 
             Subscription = new SubscriptionForm
             {
@@ -56,7 +53,7 @@ public sealed partial class EditSubscription
             };
         }
 
-        ExistingFolders = await context.Folders
+        ExistingFolders = await Context.Folders
             .Where(f => f.User == user)
             .Include(static f => f.Subfolders)
             .ToListAsync();
@@ -71,7 +68,6 @@ public sealed partial class EditSubscription
     {
         ArgumentNullException.ThrowIfNull(Subscription);
 
-        await using var context = await ContextFactory.CreateDbContextAsync();
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
 
@@ -96,11 +92,11 @@ public sealed partial class EditSubscription
                 UserId = user.Id,
             };
 
-            context.Subscriptions.Add(subscription);
+            Context.Subscriptions.Add(subscription);
         }
         else
         {
-            var subscription = context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
+            var subscription = Context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
 
             subscription.AutoDownload = Subscription.AutoDownload;
             subscription.AutomaticallyDeleteWatched = Subscription.AutomaticallyDeleteWatched;
@@ -115,7 +111,7 @@ public sealed partial class EditSubscription
             subscription.RewritePlaylistIndices = Subscription.RewritePlaylistIndices;
         }
 
-        await context.SaveChangesAsync();
+        await Context.SaveChangesAsync();
         await FeedbackRef.CloseAsync();
     }
 
