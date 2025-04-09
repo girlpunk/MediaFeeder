@@ -32,7 +32,7 @@ public sealed partial class TreeFolder
 
     private bool Selected => SelectedFolder == Folder?.Id;
 
-    private string ContainerClasses => new CssBuilder("ant-tree-node-selected")
+    private string ContainerClasses => new CssBuilder("ant-tree-node-content-wrapper")
         .AddClass("ant-tree-node-selected", Selected)
         .Build();
 }

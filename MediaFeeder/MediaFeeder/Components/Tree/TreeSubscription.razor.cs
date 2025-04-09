@@ -63,7 +63,8 @@ public sealed partial class TreeSubscription
     }
 
     private bool Selected => SelectedSubscription == Subscription?.Id;
-    private string ContainerClasses => new CssBuilder("ant-tree-node-selected")
+
+    private string ContainerClasses => new CssBuilder("ant-tree-node-content-wrapper")
         .AddClass("ant-tree-node-selected", Selected)
         .Build();
 }
