@@ -21,6 +21,7 @@ public sealed partial class TreeView
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
     [Inject] public required ModalService ModalService { get; set; }
+    [Inject] public required ILogger<TreeView> Logger { get; set; }
 
     [Parameter]
     [EditorRequired]
@@ -103,8 +104,18 @@ public sealed partial class TreeView
     private void EditSelected()
     {
         if (SelectedFolder != null)
+        {
+            Logger.LogInformation("Opening EditFolder for {}", SelectedFolder);
             EditFolder(SelectedFolder);
+        }
         else if (SelectedSubscription != null)
+        {
+            Logger.LogInformation("Opening EditSubscription for {}", SelectedSubscription);
             EditSubscription(SelectedSubscription);
+        }
+        else
+        {
+            Logger.LogWarning("Edit clicked when both SelectedFolder and SelectedSubscription are null");
+        }
     }
 }
