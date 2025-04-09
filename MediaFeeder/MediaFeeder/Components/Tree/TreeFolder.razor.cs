@@ -1,4 +1,5 @@
-﻿using MediaFeeder.Data.db;
+﻿using BlazorComponentUtilities;
+using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
 
 namespace MediaFeeder.Components.Tree;
@@ -28,4 +29,10 @@ public sealed partial class TreeFolder
 
         return Unwatched;
     }
+
+    private bool Selected => SelectedFolder == Folder?.Id;
+
+    private string ContainerClasses => new CssBuilder("ant-tree-node-selected")
+        .AddClass("ant-tree-node-selected", Selected)
+        .Build();
 }

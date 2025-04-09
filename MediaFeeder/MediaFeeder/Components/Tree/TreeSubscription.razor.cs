@@ -1,4 +1,5 @@
-﻿using MediaFeeder.Data;
+﻿using BlazorComponentUtilities;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
@@ -60,4 +61,9 @@ public sealed partial class TreeSubscription
 
         await base.OnAfterRenderAsync(firstRender);
     }
+
+    private bool Selected => SelectedSubscription == Subscription?.Id;
+    private string ContainerClasses => new CssBuilder("ant-tree-node-selected")
+        .AddClass("ant-tree-node-selected", Selected)
+        .Build();
 }

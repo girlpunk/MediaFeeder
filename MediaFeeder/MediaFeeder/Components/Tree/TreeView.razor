@@ -59,15 +59,11 @@
                     @*     } *@
                     @* </Tree> *@
 
-                    <div class="ant-tree ant-tree-icon-hide ant-tree-block-node">
-                        <div class="ant-tree-list">
-                            <div class="ant-tree-list-holder-inner">
-                                @foreach (var folder in Folders)
-                                {
-                                    <TreeFolder Folder="@folder"/>
-                                }
-                            </div>
-                        </div>
+                    <div class="ant-tree">
+                        @foreach (var folder in Folders)
+                        {
+                            <TreeFolder Folder="@folder"/>
+                        }
                     </div>
 
                 </CascadingValue>
