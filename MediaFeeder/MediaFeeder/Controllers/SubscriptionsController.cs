@@ -2,6 +2,7 @@
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -13,7 +14,7 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "API")]
+[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class SubscriptionsController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
 {
     // GET: api/Subscriptions

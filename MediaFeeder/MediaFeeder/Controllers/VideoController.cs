@@ -1,6 +1,7 @@
 using System.Net;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -13,11 +14,11 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "API")]
+[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
-    [Authorize(Roles = "Download")]
+    [Authorize(Roles = "Download", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public async Task<IActionResult> Play(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);

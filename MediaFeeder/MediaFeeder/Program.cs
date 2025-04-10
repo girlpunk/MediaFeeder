@@ -97,58 +97,60 @@ builder.Services.AddAuthentication(static options =>
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
         })
-    .AddJwtBearer(options =>
-    {
-        var authSettings = builder.Configuration.GetSection("Auth");
-        var selfIssuer = authSettings.GetValue<string>("issuer", "MediaFeeder");
-
-        options.TokenValidationParameters.ValidIssuers = [selfIssuer];
-        options.TokenValidationParameters.ValidAudience = selfIssuer;
-        options.TokenValidationParameters.IssuerSigningKey =
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()));
-
-        options.TokenValidationParameters.ValidateLifetime = true;
-        options.TokenValidationParameters.ValidateIssuerSigningKey = true;
-        options.TokenValidationParameters.ValidateIssuer = true;
-        options.TokenValidationParameters.ValidateAudience = true;
-
-        options.Events = new JwtBearerEvents
+    .AddJwtBearer(
+        JwtBearerDefaults.AuthenticationScheme,
+        options =>
         {
-            OnMessageReceived = static (context) =>
+            var authSettings = builder.Configuration.GetSection("Auth");
+            var selfIssuer = authSettings.GetValue<string>("issuer", "MediaFeeder");
+
+            options.TokenValidationParameters.ValidIssuers = [selfIssuer];
+            options.TokenValidationParameters.ValidAudience = selfIssuer;
+            options.TokenValidationParameters.IssuerSigningKey =
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()));
+
+            options.TokenValidationParameters.ValidateLifetime = true;
+            options.TokenValidationParameters.ValidateIssuerSigningKey = true;
+            options.TokenValidationParameters.ValidateIssuer = true;
+            options.TokenValidationParameters.ValidateAudience = true;
+
+            options.Events = new JwtBearerEvents
             {
-                if (!context.Request.Query.TryGetValue("access_token", out var values))
-                    return Task.CompletedTask;
-
-                if (values.Count > 1)
+                OnMessageReceived = static (context) =>
                 {
-                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    context.Fail(
-                        "Only one 'access_token' query string parameter can be defined. " +
-                        $"However, {values.Count:N0} were included in the request."
-                    );
+                    if (!context.Request.Query.TryGetValue("access_token", out var values))
+                        return Task.CompletedTask;
+
+                    if (values.Count > 1)
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        context.Fail(
+                            "Only one 'access_token' query string parameter can be defined. " +
+                            $"However, {values.Count:N0} were included in the request."
+                        );
+
+                        return Task.CompletedTask;
+                    }
+
+                    var token = values.Single();
+
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        context.Fail(
+                            "The 'access_token' query string parameter was defined, " +
+                            "but a value to represent the token was not included."
+                        );
+
+                        return Task.CompletedTask;
+                    }
+
+                    context.Token = token;
 
                     return Task.CompletedTask;
                 }
-
-                var token = values.Single();
-
-                if (string.IsNullOrWhiteSpace(token))
-                {
-                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    context.Fail(
-                        "The 'access_token' query string parameter was defined, " +
-                        "but a value to represent the token was not included."
-                    );
-
-                    return Task.CompletedTask;
-                }
-
-                context.Token = token;
-
-                return Task.CompletedTask;
-            }
-        };
-    })
+            };
+        })
     .AddIdentityCookies();
 
 builder.Services.AddAuthorization(static options =>
