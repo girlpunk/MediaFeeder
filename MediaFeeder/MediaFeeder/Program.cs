@@ -114,44 +114,10 @@ builder.Services.AddAuthentication(static options =>
             options.TokenValidationParameters.ValidateIssuer = true;
             options.TokenValidationParameters.ValidateAudience = true;
 
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = static (context) =>
-                {
-                    if (!context.Request.Query.TryGetValue("access_token", out var values))
-                        return Task.CompletedTask;
-
-                    if (values.Count > 1)
-                    {
-                        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        context.Fail(
-                            "Only one 'access_token' query string parameter can be defined. " +
-                            $"However, {values.Count:N0} were included in the request."
-                        );
-
-                        return Task.CompletedTask;
-                    }
-
-                    var token = values.Single();
-
-                    if (string.IsNullOrWhiteSpace(token))
-                    {
-                        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        context.Fail(
-                            "The 'access_token' query string parameter was defined, " +
-                            "but a value to represent the token was not included."
-                        );
-
-                        return Task.CompletedTask;
-                    }
-
-                    context.Token = token;
-
-                    return Task.CompletedTask;
-                }
-            };
+            options.EventsType = typeof(AppJwtBearerEvents);
         })
     .AddIdentityCookies();
+builder.Services.AddSingleton<AppJwtBearerEvents>();
 
 builder.Services.AddAuthorization(static options =>
 {
