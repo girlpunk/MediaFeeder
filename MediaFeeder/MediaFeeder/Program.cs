@@ -15,6 +15,7 @@ using MediaFeeder.Components.Dialogs;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
+using MediaFeeder.Helpers;
 using MediaFeeder.PlaybackManager;
 using MediaFeeder.Providers;
 using MediaFeeder.Providers.RSS;
@@ -292,6 +293,7 @@ builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
 
 builder.Services.AddSingleton<PlaybackSessionManager>();
+builder.Services.AddSingleton<TokenHelper>();
 
 builder.Services.AddTransient<AbstractValidator<Folder>, EditFolder.Validator>();
 
