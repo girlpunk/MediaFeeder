@@ -35,6 +35,8 @@ public class Subscription : ITreeSelectable
 
     [MaxLength(100)] public string? Thumb { get; set; }
 
+    public bool DisableSync { get; set; }
+
 
     public virtual Folder? ParentFolder { get; set; }
     public virtual AuthUser? User { get; set; }

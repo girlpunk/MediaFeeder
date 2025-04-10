@@ -49,7 +49,8 @@ public sealed partial class EditSubscription
                 ParentFolderId = subscription.ParentFolderId,
                 PlaylistId = subscription.PlaylistId,
                 Provider = subscription.Provider,
-                RewritePlaylistIndices = subscription.RewritePlaylistIndices
+                RewritePlaylistIndices = subscription.RewritePlaylistIndices,
+                DisableSync = subscription.DisableSync,
             };
         }
 
@@ -109,6 +110,7 @@ public sealed partial class EditSubscription
             subscription.PlaylistId = Subscription.PlaylistId;
             subscription.Provider = Subscription.Provider ?? throw new InvalidOperationException();
             subscription.RewritePlaylistIndices = Subscription.RewritePlaylistIndices;
+            subscription.DisableSync = Subscription.DisableSync;
         }
 
         await Context.SaveChangesAsync();
@@ -148,5 +150,6 @@ public sealed partial class EditSubscription
         public bool AutomaticallyDeleteWatched { get; set; }
         public bool RewritePlaylistIndices { get; set; }
         public string? Provider { get; set; }
+        public bool DisableSync { get; set; }
     }
 }

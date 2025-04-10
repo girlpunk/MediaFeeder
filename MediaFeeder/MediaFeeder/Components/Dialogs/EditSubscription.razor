@@ -77,6 +77,10 @@
         <Switch @bind-Checked="@context.RewritePlaylistIndices"/>
     </FormItem>
 
+    <FormItem Label="Disable synchronisation">
+        <Switch @bind-Checked="@context.DisableSync"/>
+    </FormItem>
+
     <FormItem Label="Provider" Required="true">
         @* <Select @bind-Value="@context.Provider" *@
         @*         DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])" *@
@@ -95,11 +99,6 @@
         </InputSelect>
     </FormItem>
 
-    <FormItem WrapperCol="new ColLayoutParam { Offset = 8, Span = 16 }">
-        <Button Type="@ButtonType.Primary" HtmlType="submit">
-            Submit
-        </Button>
-    </FormItem>
 </Form>
 } else {
 <span>Loading...</span>

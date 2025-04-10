@@ -19,6 +19,7 @@ public class SynchroniseAllConsumer(
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
         var subscriptions = await db.Subscriptions
+            .Where(static s => !s.DisableSync)
             .OrderBy(static s => s.LastSynchronised)
             .Select(static s => new Tuple<int, string>(s.Id, s.Provider).ToValueTuple())
             .ToListAsync(context.CancellationToken);
