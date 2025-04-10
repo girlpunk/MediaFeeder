@@ -15,15 +15,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (HttpContext != null)
-        {
-            var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-            Token1 = TokenHelper.GenerateAPIJwt(user);
-            Token2 = TokenHelper.GeneratePlaybackJwt(user, 439110);
-        }
-        else
-        {
-            Token2 = "Waiting for context";
-        }
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        Token1 = TokenHelper.GenerateAPIJwt(user);
+        Token2 = TokenHelper.GeneratePlaybackJwt(user, 439110);
     }
 }
