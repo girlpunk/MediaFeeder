@@ -15,7 +15,7 @@ namespace MediaFeeder.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
+public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, ILogger<VideoController> logger) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
     [Authorize(Roles = "Download", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -26,7 +26,10 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
 
         var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == JwtRegisteredClaimNames.Acr);
         if (scopeClaim == null || scopeClaim.Value != id.ToString())
+        {
+            logger.LogInformation("The video claim does not contain '{}' or was not found", scopeClaim);
             return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found");
+        }
 
         await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
         var video = await context.Videos.SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);
