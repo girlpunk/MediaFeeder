@@ -1,23 +1,31 @@
 using System.Net;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders.Physical;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "API")]
 public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
+    [Authorize(Roles = "Download")]
     public async Task<IActionResult> Play(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
+
+        var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == JwtRegisteredClaimNames.Acr);
+        if (scopeClaim == null || scopeClaim.Value != id.ToString())
+            return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found");
 
         await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
         var video = await context.Videos.SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);

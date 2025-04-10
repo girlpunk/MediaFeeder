@@ -2,6 +2,7 @@
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.StaticFiles;
@@ -12,6 +13,7 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "API")]
 public class SubscriptionsController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
 {
     // GET: api/Subscriptions

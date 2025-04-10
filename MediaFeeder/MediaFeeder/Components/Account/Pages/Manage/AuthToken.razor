@@ -1,26 +1,29 @@
 @page "/Account/Manage/AuthToken"
-@using Microsoft.AspNetCore.Authentication
+@using MediaFeeder.Helpers
 @inject IdentityUserAccessor UserAccessor
 
 <h3>AuthToken</h3>
 
-<pre>@Token</pre>
+<pre>@Token1</pre><br/>
+<pre>@Token2</pre>
 
 @code {
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
-    public string Token { get; set; } = "Loading...";
+    [Inject] private TokenHelper TokenHelper { get; set; }
+    public string Token1 { get; set; } = "Loading...";
+    public string Token2 { get; set; } = "";
 
     protected override async Task OnParametersSetAsync()
     {
         if (HttpContext != null)
         {
             var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-            await HttpContext.SignInAsync(HttpContext.User);
-            Token = "Set!";
+            Token1 = TokenHelper.GenerateAPIJwt(user);
+            Token2 = TokenHelper.GeneratePlaybackJwt(user, 439110);
         }
         else
         {
-            Token = "Waiting for context";
+            Token2 = "Waiting for context";
         }
     }
 }

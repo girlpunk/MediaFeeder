@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using FluentValidation;
 using Google.Apis.Services;
 using MassTransit;
@@ -33,6 +34,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
@@ -94,15 +96,20 @@ builder.Services.AddAuthentication(static options =>
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
         })
-    .AddJwtBearer(static options =>
+    .AddJwtBearer(options =>
     {
-        // options.TokenValidationParameters = new TokenValidationParameters {
-        //     ValidIssuers = authentication["Issuer"],
-        //     ValidAudience = authentication["ClientId"],
-        //     IssuerSigningKey = new SymmetricSecurityKey(
-        //         Encoding.UTF8.GetBytes(authentication["ClientSecret"])
-        //     )
-        // };
+        var authSettings = builder.Configuration.GetSection("Auth");
+        var selfIssuer = authSettings.GetValue<string>("issuer", "MediaFeeder");
+
+        options.TokenValidationParameters.ValidIssuers = [selfIssuer];
+        options.TokenValidationParameters.ValidAudience = selfIssuer;
+        options.TokenValidationParameters.IssuerSigningKey =
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()));
+
+        options.TokenValidationParameters.ValidateLifetime = true;
+        options.TokenValidationParameters.ValidateIssuerSigningKey = true;
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidateAudience = true;
 
         options.Events = new JwtBearerEvents
         {

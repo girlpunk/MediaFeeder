@@ -5,7 +5,7 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize]
+[Authorize(Roles="API")]
 public class UserController : ControllerBase
 {
     [HttpGet]
