@@ -6,7 +6,7 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[Authorize(/*Roles = "API", */AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class UserController : ControllerBase
 {
     [HttpGet]
