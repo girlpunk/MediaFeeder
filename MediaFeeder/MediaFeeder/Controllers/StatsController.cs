@@ -19,6 +19,7 @@ public class StatsController(MediaFeederDataContext context) : ControllerBase
 
     // GET: api/<StatsController>
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> Get()
     {
         var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);

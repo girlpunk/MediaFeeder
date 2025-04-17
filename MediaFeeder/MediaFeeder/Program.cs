@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -87,15 +86,21 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 
 builder.Services.AddAuthentication(static options =>
     {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultScheme = OpenIdConnectDefaults.AuthenticationScheme; //IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
+    .AddIdentityCookies();
+
+builder.Services.AddAuthentication()
     .AddOpenIdConnect(
         OpenIdConnectDefaults.AuthenticationScheme,
         "Authentik", options =>
         {
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
+
+            options.CorrelationCookie.Name = "MediaFeeder-OIDC-Correlation";
+            options.NonceCookie.Name = "MediaFeeder-OIDC-Nonce";
         })
     .AddJwtBearer(
         JwtBearerDefaults.AuthenticationScheme,
@@ -107,7 +112,8 @@ builder.Services.AddAuthentication(static options =>
             options.TokenValidationParameters.ValidIssuers = [selfIssuer];
             options.TokenValidationParameters.ValidAudience = selfIssuer;
             options.TokenValidationParameters.IssuerSigningKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()));
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ??
+                                                                throw new InvalidOperationException()));
 
             options.TokenValidationParameters.ValidateLifetime = true;
             options.TokenValidationParameters.ValidateIssuerSigningKey = true;
@@ -115,8 +121,8 @@ builder.Services.AddAuthentication(static options =>
             options.TokenValidationParameters.ValidateAudience = true;
 
             options.EventsType = typeof(AppJwtBearerEvents);
-        })
-    .AddIdentityCookies();
+        });
+
 builder.Services.AddSingleton<AppJwtBearerEvents>();
 
 builder.Services.AddAuthorization(static options =>
