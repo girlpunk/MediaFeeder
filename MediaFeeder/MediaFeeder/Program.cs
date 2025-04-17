@@ -138,11 +138,11 @@ builder.Services.AddAuthorization(static options =>
         policyBuilder
             .RequireAuthenticatedUser()
             .AddAuthenticationSchemes(OpenIdConnectDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
-            .RequireAssertion(static c =>
-            {
-                Console.WriteLine(JsonSerializer.Serialize(c.User));
-                return c.User.Identity?.AuthenticationType == OpenIdConnectDefaults.AuthenticationScheme || c.User.IsInRole("API");
-            })
+            // .RequireAssertion(static c =>
+            // {
+            //     Console.WriteLine(JsonSerializer.Serialize(c.User));
+            //     return c.User.Identity?.AuthenticationType == OpenIdConnectDefaults.AuthenticationScheme || c.User.IsInRole("API");
+            // })
             .Build();
     });
 
