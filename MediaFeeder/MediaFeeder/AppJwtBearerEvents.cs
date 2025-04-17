@@ -20,11 +20,8 @@ public class AppJwtBearerEvents : JwtBearerEvents
 
     public override async Task MessageReceived(MessageReceivedContext context)
     {
-        _logger.LogInformation("MessageReceived");
-
         if (!context.Request.Query.TryGetValue("access_token", out var values))
         {
-            _logger.LogInformation("GET parameter not found");
             return;
         }
 
@@ -61,6 +58,7 @@ public class AppJwtBearerEvents : JwtBearerEvents
     public override Task TokenValidated(TokenValidatedContext context)
     {
         _logger.LogInformation("TokenValidated");
+        context.Success();
         return base.TokenValidated(context);
     }
 }

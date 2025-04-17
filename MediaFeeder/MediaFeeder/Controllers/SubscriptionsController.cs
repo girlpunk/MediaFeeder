@@ -14,7 +14,7 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[Authorize(/*Roles = "API",*/ AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class SubscriptionsController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
 {
     // GET: api/Subscriptions

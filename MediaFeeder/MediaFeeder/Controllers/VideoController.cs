@@ -14,7 +14,7 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[Authorize(/*Roles = "API", */AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, ILogger<VideoController> logger) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
