@@ -15,7 +15,6 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "API")]
 public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, ILogger<VideoController> logger) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
