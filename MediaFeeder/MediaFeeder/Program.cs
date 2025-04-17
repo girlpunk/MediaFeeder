@@ -84,11 +84,11 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)/*static options =>
+builder.Services.AddAuthentication(static options =>
     {
-        options.DefaultScheme = OpenIdConnectDefaults.AuthenticationScheme; //IdentityConstants.ApplicationScheme;
+        options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })*/
+    })
     .AddOpenIdConnect(
         OpenIdConnectDefaults.AuthenticationScheme,
         "Authentik", options =>
