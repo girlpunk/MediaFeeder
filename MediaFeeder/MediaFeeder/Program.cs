@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using FluentValidation;
 using Google.Apis.Services;
 using MassTransit;
@@ -139,7 +140,7 @@ builder.Services.AddAuthorization(static options =>
             .AddAuthenticationSchemes(OpenIdConnectDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
             .RequireAssertion(static c =>
             {
-                Console.WriteLine($"Authentication type is {c.User.Identity?.AuthenticationType}");
+                Console.WriteLine(JsonSerializer.Serialize(c.User));
                 return c.User.Identity?.AuthenticationType == OpenIdConnectDefaults.AuthenticationScheme || c.User.IsInRole("API");
             })
             .Build();
@@ -150,6 +151,7 @@ builder.Services.AddAuthorization(static options =>
         policyBuilder
             .RequireAuthenticatedUser()
             .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+            .RequireRole("API")
             .Build();
     });
 });
