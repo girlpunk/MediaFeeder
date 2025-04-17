@@ -10,7 +10,7 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[Authorize(Policy = "API")]
 public class FoldersController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
 {
     // GET: api/Folders

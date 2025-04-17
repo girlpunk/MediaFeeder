@@ -129,7 +129,23 @@ builder.Services.AddAuthorization(static options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
+        .AddAuthenticationSchemes(OpenIdConnectDefaults.AuthenticationScheme)
         .Build();
+
+    options.AddPolicy("Thumbnails", static policyBuilder =>
+    {
+        policyBuilder.RequireAuthenticatedUser()
+            .AddAuthenticationSchemes(OpenIdConnectDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
+            .RequireAssertion(static c => c.User.Identity?.AuthenticationType == OpenIdConnectDefaults.AuthenticationScheme || c.User.IsInRole("API"))
+            .Build();
+    });
+
+    options.AddPolicy("API", static policyBuilder =>
+    {
+        policyBuilder.RequireAuthenticatedUser()
+            .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+            .Build();
+    });
 });
 
 builder.Services.AddDataProtection()

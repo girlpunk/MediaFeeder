@@ -15,7 +15,7 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[Authorize(Policy = "API")]
 public class SubscriptionsController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
 {
     // GET: api/Subscriptions
@@ -106,8 +106,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     [HttpGet("{id:int}/thumbnail")]
     [OutputCache(Duration = 60 * 60 * 24)]
     [ResponseCache(Duration = 60 * 60 * 24)]
-    [Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    [Authorize(AuthenticationSchemes = OpenIdConnectDefaults.AuthenticationScheme)]
+    [Authorize(Policy = "Thumbnails")]
     public async Task<IActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
