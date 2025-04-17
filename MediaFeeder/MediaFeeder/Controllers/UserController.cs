@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace MediaFeeder.Controllers;
 
 [ApiController]
+[Route("[controller]")]
 [Authorize(Policy = "API")]
-[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class UserController : ControllerBase
 {
     [HttpGet]
