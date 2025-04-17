@@ -137,7 +137,7 @@ builder.Services.AddAuthorization(static options =>
     {
         policyBuilder
             .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes(OpenIdConnectDefaults.AuthenticationScheme, JwtBearerDefaults.AuthenticationScheme)
+            .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, JwtBearerDefaults.AuthenticationScheme)
             // .RequireAssertion(static c =>
             // {
             //     Console.WriteLine(JsonSerializer.Serialize(c.User));
