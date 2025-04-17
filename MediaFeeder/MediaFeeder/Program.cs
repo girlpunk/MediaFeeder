@@ -89,9 +89,6 @@ builder.Services.AddAuthentication(static options =>
         options.DefaultScheme = OpenIdConnectDefaults.AuthenticationScheme; //IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
-    .AddIdentityCookies();
-
-builder.Services.AddAuthentication()
     .AddOpenIdConnect(
         OpenIdConnectDefaults.AuthenticationScheme,
         "Authentik", options =>
@@ -102,6 +99,9 @@ builder.Services.AddAuthentication()
             options.CorrelationCookie.Name = "MediaFeeder-OIDC-Correlation";
             options.NonceCookie.Name = "MediaFeeder-OIDC-Nonce";
         })
+    .AddIdentityCookies();
+
+builder.Services.AddAuthentication()
     .AddJwtBearer(
         JwtBearerDefaults.AuthenticationScheme,
         options =>
