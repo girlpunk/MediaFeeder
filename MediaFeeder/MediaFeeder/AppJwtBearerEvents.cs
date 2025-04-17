@@ -12,11 +12,11 @@ public class AppJwtBearerEvents : JwtBearerEvents
         _logger = logger;
     }
 
-    public override Task AuthenticationFailed(AuthenticationFailedContext context)
-    {
-        _logger.LogInformation("Token-Expired...");
-        return base.AuthenticationFailed(context);
-    }
+    // public override Task AuthenticationFailed(AuthenticationFailedContext context)
+    // {
+    //     _logger.LogInformation("Token-Expired...");
+    //     return base.AuthenticationFailed(context);
+    // }
 
     public override async Task MessageReceived(MessageReceivedContext context)
     {
@@ -55,10 +55,10 @@ public class AppJwtBearerEvents : JwtBearerEvents
         context.Token = token;
     }
 
-    public override Task TokenValidated(TokenValidatedContext context)
-    {
-        _logger.LogInformation("TokenValidated");
-        context.Success();
-        return base.TokenValidated(context);
-    }
+    // public override Task TokenValidated(TokenValidatedContext context)
+    // {
+    //     _logger.LogInformation("TokenValidated");
+    //     context.Success();
+    //     return base.TokenValidated(context);
+    // }
 }

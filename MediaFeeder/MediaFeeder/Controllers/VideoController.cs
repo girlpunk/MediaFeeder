@@ -2,6 +2,7 @@ using System.Net;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -14,7 +15,7 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(/*Roles = "API", */AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, ILogger<VideoController> logger) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
@@ -50,6 +51,8 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
     [HttpGet("{id:int}/thumbnail")]
     [OutputCache(Duration = 60 * 60 * 24 * 7)]
     [ResponseCache(Duration = 60 * 60 * 24 * 7)]
+    [Authorize(Roles = "API", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = OpenIdConnectDefaults.AuthenticationScheme)]
     public async Task<IActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
