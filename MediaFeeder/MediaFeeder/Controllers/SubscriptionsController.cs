@@ -15,15 +15,16 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Policy = "API")]
 public class SubscriptionsController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
 {
     // GET: api/Subscriptions
     [HttpGet]
+    [Authorize(Policy = "API")]
     public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions() => await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
 
     // GET: api/Subscriptions/5
     [HttpGet("{id}")]
+    [Authorize(Policy = "API")]
     public async Task<ActionResult<object>> GetSubscription(int id)
     {
         var subscription =
@@ -52,6 +53,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     // PUT: api/Subscriptions/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
+    [Authorize(Policy = "API")]
     public async Task<IActionResult> PutSubscription(int id,
         Subscription subscription)
     {
@@ -74,6 +76,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     // POST: api/Subscriptions
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
+    [Authorize(Policy = "API")]
     public async Task<ActionResult<Subscription>> PostSubscription(
         Subscription subscription)
     {
@@ -86,6 +89,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
 
     // DELETE: api/Subscriptions/5
     [HttpDelete("{id}")]
+    [Authorize(Policy = "API")]
     public async Task<IActionResult> DeleteSubscription(int id)
     {
         var subscription =

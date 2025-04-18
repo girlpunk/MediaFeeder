@@ -1,8 +1,10 @@
 using System.Net;
+using System.Text.Json;
+using MediaFeeder.Data;
+using MediaFeeder.Data;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -28,7 +30,7 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         if (scopeClaim == null || scopeClaim.Value != id.ToString())
         {
             logger.LogInformation("The video claim does not contain '{}' or was not found", scopeClaim);
-            return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found");
+            return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {JsonSerializer.Serialize(HttpContext.User)}");
         }
 
         await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
