@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,8 +28,13 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == JwtRegisteredClaimNames.Acr);
         if (scopeClaim == null || scopeClaim.Value != id.ToString())
         {
+            var serialized = JsonSerializer.Serialize(HttpContext.User, new JsonSerializerOptions()
+            {
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            });
+
             logger.LogInformation("The video claim does not contain '{}' or was not found", scopeClaim);
-            return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {JsonSerializer.Serialize(HttpContext.User)}");
+            return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {serialized}");
         }
 
         await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
