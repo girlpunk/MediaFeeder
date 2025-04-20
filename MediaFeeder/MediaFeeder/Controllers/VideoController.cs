@@ -1,8 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using MediaFeeder.Data;
-using MediaFeeder.Data;
-using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
