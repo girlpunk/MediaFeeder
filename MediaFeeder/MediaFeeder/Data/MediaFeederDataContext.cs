@@ -579,7 +579,8 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasKey(static e => e.Id).HasName("YtManagerApp_video_pkey");
 
             entity.HasIndex(static e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
-            entity.Property(static e => e.Id).HasColumnName("id");
+            entity.Property(static e => e.Id).HasColumnName("id")
+                .ValueGeneratedOnAdd();
             entity.Property(static e => e.Description).HasColumnName("description");
             entity.Property(static e => e.DownloadedPath).HasColumnName("downloaded_path");
             entity.Property(static e => e.Duration).HasColumnName("duration");
