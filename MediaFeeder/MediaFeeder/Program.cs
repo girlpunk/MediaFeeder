@@ -40,6 +40,8 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Quartz;
+using ResQueue;
+using ResQueue.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -182,6 +184,11 @@ builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>()
 
 builder.Services.AddQuartz();
 builder.Services.AddQuartzHostedService();
+builder.Services.AddOptions<SqlTransportOptions>().Configure(options =>
+{
+    options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+});
+builder.Services.AddPostgresMigrationHostedService();
 builder.Services.AddMassTransit(static config =>
 {
     config.AddOpenTelemetry();
@@ -202,6 +209,8 @@ builder.Services.AddMassTransit(static config =>
             cb.TripThreshold = 15;
             cb.ActiveThreshold = 10;
             cb.ResetInterval = TimeSpan.FromHours(1);
+            // cb.Handle<>();
+            cb.Ignore<HttpRequestException>();
         });
     });
 
@@ -214,6 +223,8 @@ builder.Services.AddMassTransit(static config =>
 
     config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();
 });
+builder.Services.AddResQueue(static o => o.SqlEngine = ResQueueSqlEngine.Postgres);
+builder.Services.AddResQueueMigrationsHostedService();
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -339,6 +350,12 @@ app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.UseOutputCache();
+
+app.UseResQueue("resqueue", static options =>
+{
+    // Highly recommended for production
+    options.RequireAuthorization();
+});
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
