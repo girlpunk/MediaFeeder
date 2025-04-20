@@ -60,15 +60,21 @@ public class RSSSubscriptionSynchroniseConsumer(
         item.Id = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/")
             .FirstOrDefault() ?? item.Id;
 
-        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken)
-                    ?? new Video
-                    {
-                        VideoId = item.Id,
-                        Name = item.Title.Text,
-                        Description = item.Summary.Text,
-                        SubscriptionId = subscription.Id,
-                        UploaderName = subscription.Name,
-                    };
+        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken);
+
+        if (video == null)
+        {
+            video = new Video
+            {
+                VideoId = item.Id,
+                Name = item.Title.Text,
+                Description = item.Summary.Text,
+                SubscriptionId = subscription.Id,
+                UploaderName = subscription.Name,
+            };
+
+            db.Videos.Add(video);
+        }
 
         video.VideoId = item.Id;
         video.Name = item.Title.Text;
@@ -84,8 +90,6 @@ public class RSSSubscriptionSynchroniseConsumer(
         video.UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
                                                ?? item.Authors.Select(static a => a.Name));
         video.DownloadedPath = item.Links.SingleOrDefault(static l => l.RelationshipType == "enclosure")?.Uri.ToString();
-
-        db.Videos.Add(video);
 
         await db.SaveChangesAsync(cancellationToken);
     }
