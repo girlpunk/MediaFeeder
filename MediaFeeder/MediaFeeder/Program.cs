@@ -196,7 +196,7 @@ builder.Services.AddMassTransit(static config =>
     var schedulerEndpoint = new Uri("queue:scheduler");
 
     config.AddMessageScheduler(schedulerEndpoint);
-    config.UsingInMemory((context, cfg) =>
+    config.UsingPostgres((context, cfg) =>
     {
         cfg.UseMessageScheduler(schedulerEndpoint);
         cfg.ConfigureEndpoints(context);
