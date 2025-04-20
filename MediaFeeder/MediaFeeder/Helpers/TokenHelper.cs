@@ -40,7 +40,7 @@ public class TokenHelper(IConfiguration configuration)
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.Role, "Download"),
-            new(JwtRegisteredClaimNames.Acr, videoId.ToString())
+            new("Video", videoId.ToString())
         };
 
         var authSettings = configuration.GetSection("Auth");
@@ -53,7 +53,7 @@ public class TokenHelper(IConfiguration configuration)
             selfIssuer,
             selfIssuer,
             userClaims,
-            expires: DateTime.Now.AddYears(1),
+            expires: DateTime.Now.AddDays(1),
             signingCredentials: signinCredentials
         );
 

@@ -25,7 +25,7 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
-        var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == JwtRegisteredClaimNames.Acr);
+        var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == "Video");
         if (scopeClaim == null || scopeClaim.Value != id.ToString())
         {
             var serialized = JsonSerializer.Serialize(HttpContext.User, new JsonSerializerOptions()
