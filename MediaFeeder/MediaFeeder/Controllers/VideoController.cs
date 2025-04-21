@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders.Physical;
-using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace MediaFeeder.Controllers;
 

@@ -13,24 +13,24 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class StatsController(MediaFeederDataContext context) : ControllerBase
+public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFactory) : ControllerBase
 {
-    private MediaFeederDataContext Context { get; } = context;
-
     // GET: api/<StatsController>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> Get()
     {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
-        var newPublished = await Context.Videos.CountAsync(video => video.PublishDate >= lastHour);
+        var newPublished = await context.Videos.CountAsync(video => video.PublishDate >= lastHour);
 
-        var subscriptions = await Context.Subscriptions.CountAsync();
-        var trackedVideos = await Context.Videos.CountAsync();
-        var watchedVideos = await Context.Videos.CountAsync(static video => video.Watched);
-        var newUnwatched = await Context.Videos.CountAsync(static video => !video.Watched);
+        var subscriptions = await context.Subscriptions.CountAsync();
+        var trackedVideos = await context.Videos.CountAsync();
+        var watchedVideos = await context.Videos.CountAsync(static video => video.Watched);
+        var newUnwatched = await context.Videos.CountAsync(static video => !video.Watched);
 
-        var folders = await Context.Videos
+        var folders = await context.Videos
             .GroupBy(static video => video.Subscription!.ParentFolderId)
             .Select(static group => new
             {

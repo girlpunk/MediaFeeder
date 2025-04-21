@@ -168,6 +168,8 @@ builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>((sp, options)
     options.AddInterceptors(new SlowQueryDetectionHelper(sp.GetRequiredService<ILogger<SlowQueryDetectionHelper>>()));
 });
 
+builder.Services.AddScoped<MediaFeederDataContext>(static p => p.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContext());
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.RequireConfirmedAccount = true)

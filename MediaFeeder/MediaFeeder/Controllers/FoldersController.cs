@@ -1,7 +1,6 @@
 ﻿using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,7 @@ namespace MediaFeeder.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize(Policy = "API")]
-public class FoldersController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
+public class FoldersController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
 {
     // GET: api/Folders
     [HttpGet]
@@ -19,6 +18,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
+
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
 
         return await context.Folders
             .Where(folder => folder.UserId == user.Id && folder.ParentId == null)
@@ -32,6 +33,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
+
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
 
         var folder = await context.Folders
             .Include(static folder => folder.Subfolders)
@@ -59,6 +62,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         var dbFolder =
             await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id,
                 HttpContext.RequestAborted);
@@ -76,7 +81,7 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!FolderExists(id)) return NotFound();
+            if (!await FolderExists(id)) return NotFound();
 
             throw;
         }
@@ -97,6 +102,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         if (folder.UserId != user.Id)
             return Unauthorized();
 
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         context.Folders.Add(folder);
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
@@ -111,6 +118,8 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         var folder =
             await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id,
                 HttpContext.RequestAborted);
@@ -123,8 +132,10 @@ public class FoldersController(MediaFeederDataContext context, UserManager userM
         return NoContent();
     }
 
-    private bool FolderExists(int id)
+    private async Task<bool> FolderExists(int id)
     {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         return context.Folders.Any(e => e.Id == id);
     }
 }

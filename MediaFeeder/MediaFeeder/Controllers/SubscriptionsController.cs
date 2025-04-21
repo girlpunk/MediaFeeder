@@ -2,8 +2,6 @@
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -15,18 +13,24 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SubscriptionsController(MediaFeederDataContext context, UserManager userManager) : ControllerBase
+public class SubscriptionsController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
 {
     // GET: api/Subscriptions
     [HttpGet]
     [Authorize(Policy = "API")]
-    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions() => await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
+    public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        return await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
+    }
 
     // GET: api/Subscriptions/5
     [HttpGet("{id}")]
     [Authorize(Policy = "API")]
     public async Task<ActionResult<object>> GetSubscription(int id)
     {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         var subscription =
             await context.Subscriptions
                 .Include(static v => v.Videos)
@@ -59,15 +63,20 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     {
         if (id != subscription.Id) return BadRequest();
 
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         context.Entry(subscription).State = EntityState.Modified;
 
         try
         {
             await context.SaveChangesAsync(HttpContext.RequestAborted);
         }
-        catch (DbUpdateConcurrencyException) when (!SubscriptionExists(id))
+        catch (DbUpdateConcurrencyException)
         {
-            return NotFound();
+            if (!await SubscriptionExists(id))
+                return NotFound();
+
+            throw;
         }
 
         return NoContent();
@@ -80,6 +89,8 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     public async Task<ActionResult<Subscription>> PostSubscription(
         Subscription subscription)
     {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         context.Subscriptions.Add(subscription);
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
@@ -92,6 +103,8 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     [Authorize(Policy = "API")]
     public async Task<IActionResult> DeleteSubscription(int id)
     {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
         var subscription =
             await context.Subscriptions.FindAsync([id], HttpContext.RequestAborted);
         if (subscription == null) return NotFound();
@@ -102,8 +115,9 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
         return NoContent();
     }
 
-    private bool SubscriptionExists(int id)
+    private async Task<bool> SubscriptionExists(int id)
     {
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
         return context.Subscriptions.Any(e => e.Id == id);
     }
 
@@ -115,6 +129,8 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
+
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
 
         var subscription = await context.Subscriptions.SingleOrDefaultAsync(s => s.Id == id && s.UserId == user.Id, HttpContext.RequestAborted);
 
@@ -129,7 +145,7 @@ public class SubscriptionsController(MediaFeederDataContext context, UserManager
 
         try
         {
-            var stream = (new PhysicalFileInfo(new FileInfo(subscription.Thumb))).CreateReadStream();
+            var stream = new PhysicalFileInfo(new FileInfo(subscription.Thumb)).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(subscription.Thumb, out var mimeType);
             return File(stream, mimeType ?? "application/octet-stream");
         }
