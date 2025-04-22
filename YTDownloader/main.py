@@ -206,5 +206,6 @@ if __name__ == '__main__':
     reflection.enable_server_reflection(services, server)
 
     server.start()
+    print(f"YT-DLP version {yt_dlp.__version__}")
     print(f"Listening on {bind_to}")
     server.wait_for_termination()
