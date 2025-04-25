@@ -368,8 +368,8 @@ if (useDatabaseMessageQueue)
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
-app.MapGrpcService<MediaToadService>();
-app.MapGrpcService<ApiService>();
+app.MapGrpcService<MediaToadService>().RequireAuthorization("API");
+app.MapGrpcService<ApiService>().RequireAuthorization("API");
 
 if (app.Environment.IsDevelopment())
     app.MapGrpcReflectionService();
