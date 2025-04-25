@@ -184,37 +184,36 @@ builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
 
+var useDatabaseMessageQueue = builder.Configuration.GetValue("UseDatabaseMessageQueue", false);
+
 builder.Services.AddQuartz();
 builder.Services.AddQuartzHostedService();
-builder.Services.AddOptions<SqlTransportOptions>().Configure(options =>
+
+if (useDatabaseMessageQueue)
 {
-    options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-});
-builder.Services.AddPostgresMigrationHostedService();
-builder.Services.AddMassTransit(static config =>
+    builder.Services.AddOptions<SqlTransportOptions>().Configure(options =>
+    {
+        options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    });
+    builder.Services.AddPostgresMigrationHostedService();
+}
+
+builder.Services.AddMassTransit(config =>
 {
     config.AddOpenTelemetry();
 
     var schedulerEndpoint = new Uri("queue:scheduler");
 
     config.AddMessageScheduler(schedulerEndpoint);
-    config.UsingPostgres((context, cfg) =>
+
+    if (useDatabaseMessageQueue)
     {
-        cfg.UseMessageScheduler(schedulerEndpoint);
-        cfg.ConfigureEndpoints(context);
-        cfg.UseConcurrencyLimit(1);
-        cfg.UseInMemoryScheduler();
-        cfg.UseMessageRetry(static r => r.Exponential(15, TimeSpan.FromMinutes(15), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
-        cfg.UseCircuitBreaker(static cb =>
-        {
-            cb.TrackingPeriod = TimeSpan.FromMinutes(5);
-            cb.TripThreshold = 15;
-            cb.ActiveThreshold = 10;
-            cb.ResetInterval = TimeSpan.FromHours(1);
-            // cb.Handle<>();
-            cb.Ignore<HttpRequestException>();
-        });
-    });
+        config.UsingPostgres((context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint));
+    }
+    else
+    {
+        config.UsingInMemory((context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint));
+    }
 
     config.AddConsumer<SynchroniseAllConsumer>();
 
@@ -225,8 +224,12 @@ builder.Services.AddMassTransit(static config =>
 
     config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();
 });
-builder.Services.AddResQueue(static o => o.SqlEngine = ResQueueSqlEngine.Postgres);
-builder.Services.AddResQueueMigrationsHostedService();
+
+if (useDatabaseMessageQueue)
+{
+    builder.Services.AddResQueue(static o => o.SqlEngine = ResQueueSqlEngine.Postgres);
+    builder.Services.AddResQueueMigrationsHostedService();
+}
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -353,11 +356,14 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.UseOutputCache();
 
-app.UseResQueue("resqueue", static options =>
+if (useDatabaseMessageQueue)
 {
-    // Highly recommended for production
-    options.RequireAuthorization();
-});
+    app.UseResQueue("resqueue", static options =>
+    {
+        // Highly recommended for production
+        options.RequireAuthorization();
+    });
+}
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
@@ -374,3 +380,23 @@ await using (var context = await app.Services.GetRequiredService<IDbContextFacto
 }
 
 app.Run();
+return;
+
+static void ConfigureMessageQueue<TBus>(IBusRegistrationContext context, IBusFactoryConfigurator<TBus> cfg, Uri schedulerEndpoint) where TBus : IReceiveEndpointConfigurator
+{
+    cfg.UseMessageScheduler(schedulerEndpoint);
+    cfg.ConfigureEndpoints(context);
+    cfg.UseConcurrencyLimit(1);
+    cfg.UseInMemoryScheduler();
+    cfg.UseMessageRetry(static r =>
+        r.Exponential(15, TimeSpan.FromMinutes(15), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
+    cfg.UseCircuitBreaker(static cb =>
+    {
+        cb.TrackingPeriod = TimeSpan.FromMinutes(5);
+        cb.TripThreshold = 15;
+        cb.ActiveThreshold = 10;
+        cb.ResetInterval = TimeSpan.FromHours(1);
+        // cb.Handle<>();
+        cb.Ignore<HttpRequestException>();
+    });
+}
