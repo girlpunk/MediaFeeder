@@ -152,7 +152,7 @@ builder.Services.AddAuthorization(static options =>
         policyBuilder
             .RequireAuthenticatedUser()
             .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-            .RequireRole("API")
+            // .RequireRole("API")
             .Build();
     });
 });
