@@ -4,8 +4,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using FluentValidation;
 using Google.Apis.Services;
-using MassTransit;
-using MassTransit.Logging;
 using Mediafeeder;
 using MediaFeeder;
 using MediaFeeder.Components;
@@ -36,12 +34,11 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
+using Paramore.Brighter.Extensions.DependencyInjection;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
-using Quartz;
-using ResQueue;
-using ResQueue.Enums;
+using Polly.Registry;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -184,49 +181,54 @@ builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
 
-builder.Services.AddQuartz();
-builder.Services.AddQuartzHostedService();
-builder.Services.AddOptions<SqlTransportOptions>().Configure(options =>
-{
-    options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-});
-builder.Services.AddPostgresMigrationHostedService();
-builder.Services.AddMassTransit(static config =>
-{
-    config.AddOpenTelemetry();
-
-    var schedulerEndpoint = new Uri("queue:scheduler");
-
-    config.AddMessageScheduler(schedulerEndpoint);
-    config.UsingPostgres((context, cfg) =>
+builder.Services.AddBrighter(static options =>
     {
-        cfg.UseMessageScheduler(schedulerEndpoint);
-        cfg.ConfigureEndpoints(context);
-        cfg.UseConcurrencyLimit(1);
-        cfg.UseInMemoryScheduler();
-        cfg.UseMessageRetry(static r => r.Exponential(15, TimeSpan.FromMinutes(15), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
-        cfg.UseCircuitBreaker(static cb =>
+        var circuitBreakerPolicy = Policy.Handle<Exception>().CircuitBreaker(
+            15,
+            TimeSpan.FromHours(1));
+
+        var circuitBreakerPolicyAsync = Policy.Handle<Exception>()
+            .CircuitBreakerAsync(15, TimeSpan.FromHours(1));
+
+        options.PolicyRegistry = new PolicyRegistry()
         {
-            cb.TrackingPeriod = TimeSpan.FromMinutes(5);
-            cb.TripThreshold = 15;
-            cb.ActiveThreshold = 10;
-            cb.ResetInterval = TimeSpan.FromHours(1);
-            // cb.Handle<>();
-            cb.Ignore<HttpRequestException>();
-        });
-    });
+            { "SyncCircuitBreakerPolicy", circuitBreakerPolicy },
+            { "AsyncCircuitBreakerPolicy", circuitBreakerPolicyAsync }
+        };
 
-    config.AddConsumer<SynchroniseAllConsumer>();
+        options.HandlerLifetime = ServiceLifetime.Scoped;
+        options.CommandProcessorLifetime = ServiceLifetime.Scoped;
+        options.MapperLifetime = ServiceLifetime.Singleton;
+    })
+    .AutoFromAssemblies();
+// builder.Services.AddServiceActivator(options =>
+// {
+//     options.UseScoped = true;
+//     options.HandlerLifetime = ServiceLifetime.Scoped;
+//     options.MapperLifetime = ServiceLifetime.Singleton;
+//     options.CommandProcessorLifetime = ServiceLifetime.Scoped;
+//     // options.DefaultChannelFactory = new InMemoryChannelFactory(bus, TimeProvider.System);
+//     // options.InboxConfiguration = new InboxConfiguration(new InMemoryInbox(TimeProvider.System));
+//     options.Subscriptions =
+//     [
+//
+//         new Subscription<GreetingCommand>(
+//             new SubscriptionName("GreetingCommandSubscription"),
+//             new ChannelName("GreetingCommand"),
+//             routingKey
+//         )
+//     ];
+// });
+// builder.Services.AddHostedService<ServiceActivatorHostedService>();
 
-    config.AddConsumer<YoutubeSubscriptionSynchroniseConsumer>();
-    config.AddConsumer<YoutubeVideoSynchroniseConsumer>();
-    config.AddConsumer<YoutubeActualVideoSynchroniseConsumer>();
-    config.AddConsumer<YouTubeDownloadVideoConsumer>();
+builder.Services.AddScoped<SynchroniseAllConsumer>();
 
-    config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();
-});
-builder.Services.AddResQueue(static o => o.SqlEngine = ResQueueSqlEngine.Postgres);
-builder.Services.AddResQueueMigrationsHostedService();
+builder.Services.AddScoped<YoutubeSubscriptionSynchroniseConsumer>();
+builder.Services.AddScoped<YoutubeVideoSynchroniseConsumer>();
+builder.Services.AddScoped<YoutubeActualVideoSynchroniseConsumer>();
+builder.Services.AddScoped<YouTubeDownloadVideoConsumer>();
+
+builder.Services.AddScoped<RSSSubscriptionSynchroniseConsumer>();
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -256,7 +258,7 @@ builder.Services.AddOpenTelemetry()
             .AddAspNetCoreInstrumentation()
             // .AddHttpClientInstrumentation()
             .AddNpgsqlInstrumentation()
-            .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
+            .AddMeter("Paramore.")
             .AddMeter(Metrics.MeterName)
             .AddPrometheusExporter();
     })
@@ -270,7 +272,7 @@ builder.Services.AddOpenTelemetry()
             .AddGrpcClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
             .AddNpgsql()
-            .AddSource(DiagnosticHeaders.DefaultListenerName);
+            .AddSource("Paramore.*", "Microsoft.*");
     });
 
 builder.Services.AddHealthChecks()
@@ -352,12 +354,6 @@ app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.UseOutputCache();
-
-app.UseResQueue("resqueue", static options =>
-{
-    // Highly recommended for production
-    options.RequireAuthorization();
-});
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();

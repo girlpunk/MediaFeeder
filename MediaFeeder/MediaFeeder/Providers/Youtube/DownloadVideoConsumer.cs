@@ -3,6 +3,7 @@ using Mediafeeder;
 using MediaFeeder.Data;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Paramore.Brighter;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -11,7 +12,7 @@ public sealed class YouTubeDownloadVideoConsumer(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IConfiguration configuration,
     YTDownloader.YTDownloaderClient downloaderClient
-) : IConsumer<DownloadVideoContract<YoutubeProvider>>
+) : RequestHandlerAsync<DownloadVideoContract<YoutubeProvider>>
 {
     public async Task Consume(ConsumeContext<DownloadVideoContract<YoutubeProvider>> context)
     {

@@ -6,6 +6,7 @@ using MassTransit;
 using MediaFeeder.Data;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Paramore.Brighter;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -16,7 +17,7 @@ public class YoutubeActualVideoSynchroniseConsumer(
     YouTubeService youTubeService,
     Utils utils,
     IHttpClientFactory httpClientFactory
-) : IConsumer<YoutubeActualVideoSynchroniseContract>
+) : RequestHandlerAsync<YoutubeActualVideoSynchroniseContract>
 {
     public async Task Consume(ConsumeContext<YoutubeActualVideoSynchroniseContract> context)
     {

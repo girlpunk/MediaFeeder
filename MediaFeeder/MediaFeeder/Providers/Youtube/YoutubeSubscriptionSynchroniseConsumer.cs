@@ -20,7 +20,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     IBus bus,
     Utils utils,
     YouTubeService youTubeService
-) : IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>
+) : RequestHandlerAsync<SynchroniseSubscriptionContract<YoutubeProvider>>
 {
     public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<YoutubeProvider>> context)
     {

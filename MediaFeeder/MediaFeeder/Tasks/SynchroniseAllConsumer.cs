@@ -2,6 +2,7 @@ using MassTransit;
 using MassTransit.Scheduling;
 using MediaFeeder.Data;
 using Microsoft.EntityFrameworkCore;
+using Paramore.Brighter;
 
 namespace MediaFeeder.Tasks;
 
@@ -10,7 +11,7 @@ public class SynchroniseAllConsumer(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IServiceProvider serviceProvider,
     IBus bus)
-    : IConsumer<SynchroniseAllContract>
+    : RequestHandlerAsync<SynchroniseAllContract>
 {
     public async Task Consume(ConsumeContext<SynchroniseAllContract> context)
     {

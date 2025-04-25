@@ -12,7 +12,7 @@ public class RSSSubscriptionSynchroniseConsumer(
     ILogger<RSSSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory
-) : IConsumer<SynchroniseSubscriptionContract<RSSProvider>>
+) : RequestHandlerAsync<SynchroniseSubscriptionContract<RSSProvider>>
 {
     public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<RSSProvider>> context)
     {
