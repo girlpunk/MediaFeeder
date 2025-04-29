@@ -416,8 +416,8 @@ public sealed class ApiService(
                     if (requestStream.Current.Provider != null)
                     {
                         session.Provider = serviceProvider.GetServices<IProvider>()
-                            .Single(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
-                            .Provider;
+                            .SingleOrDefault(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
+                            ?.Provider;
                     }
                     else
                     {
