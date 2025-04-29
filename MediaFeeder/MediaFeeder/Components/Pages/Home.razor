@@ -10,7 +10,7 @@
 
 <PageTitle>@Title</PageTitle>
 
-<Sider Width="350" Style="background-color: white;">
+<Sider Width="300" Breakpoint="BreakpointType.Lg" CollapsedWidth="0" Style="background-color: white;">
     <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId" />
 </Sider>
 <Content>
@@ -115,7 +115,7 @@
     {
         @foreach (var video in Videos)
         {
-            <GridCol Md="4" Sm="6" Xs="12">
+            <GridCol Xl="4" Lg="6" Md="6" Sm="8" Xs="24">
                 <VideoCard Video="video"/>
             </GridCol>
         }
