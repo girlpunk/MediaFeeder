@@ -158,6 +158,7 @@ public sealed class ApiService(
             Downloaded = video.Downloaded,
             New = video.New,
             Watched = video.Watched,
+            VideoId = video.VideoId,
         };
 
         if (video.Duration != null)
