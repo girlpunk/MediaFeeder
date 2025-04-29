@@ -2,6 +2,7 @@
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
+using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
@@ -101,7 +102,7 @@ public sealed partial class VideoCard : ComponentBase
             var contract = Activator.CreateInstance(contractType, new object[] { Video.Id });
             ArgumentNullException.ThrowIfNull(contract);
 
-            await Bus.Publish(contract);
+            await Bus.PublishWithGuid(contract);
             await MessageService.Info("Sent for download");
         }
         else

@@ -1,6 +1,7 @@
 using MassTransit;
 using MassTransit.Scheduling;
 using MediaFeeder.Data;
+using MediaFeeder.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Tasks;
@@ -41,7 +42,7 @@ public class SynchroniseAllConsumer(
             var contract = Activator.CreateInstance(contractType, new object[] { subscription.Item1 });
             ArgumentNullException.ThrowIfNull(contract);
 
-            await bus.Publish(contract, context.CancellationToken);
+            await bus.PublishWithGuid(contract, context.CancellationToken);
         }
     }
 }
