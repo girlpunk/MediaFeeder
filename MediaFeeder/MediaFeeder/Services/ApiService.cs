@@ -140,6 +140,7 @@ public sealed class ApiService(
                 v.Duration,
                 v.New,
                 Published = v.PublishDate, //?.ToUnixTimeSeconds(),
+                v.VideoId,
                 v.Views,
                 v.Watched,
                 v.DownloadedPath

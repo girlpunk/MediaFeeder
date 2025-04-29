@@ -64,6 +64,7 @@ message VideoReply {
   int32 Views = 5;
   optional int64 Published = 6;
   optional int32 Duration = 7;
+  string VideoId = 8;
 
   bool New = 10;
   bool Downloaded = 11;
