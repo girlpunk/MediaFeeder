@@ -16,6 +16,7 @@ service API {
   rpc GetVideoThumbnail (GetVideoThumbnailRequest) returns (stream GetVideoThumbnailReply) {}
   rpc Watched (WatchedRequest) returns (WatchedReply) {}
   rpc Shuffle (ShuffleRequest) returns (ShuffleReply) {}
+  rpc PlaybackSession (stream PlaybackSessionRequest) returns (stream PlaybackSessionReply) {}
 }
 
 message ListFolderRequest {
@@ -122,4 +123,21 @@ message ShuffleRequest {
 
 message ShuffleReply {
   repeated int32 Id = 1;
+}
+
+message PlaybackSessionRequest {
+  optional int32 VideoId = 2;
+  optional int32 Duration = 3;
+  optional string Quality = 4;
+  optional string Provider = 5;
+  optional string State = 6;
+  optional int32 Volume = 7;
+  optional float  Rate = 8;
+  optional float Loaded = 9;
+}
+
+message PlaybackSessionReply {
+  optional bool ShouldPlayPause = 1;
+  optional bool ShouldWatch = 2;
+  optional bool ShouldSkip = 3;
 }

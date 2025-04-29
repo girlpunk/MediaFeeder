@@ -3,6 +3,7 @@ using Grpc.Core;
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
+using MediaFeeder.PlaybackManager;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,8 @@ public sealed class ApiService(
     IBus bus,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager<AuthUser> userManager,
-    IServiceProvider serviceProvider
+    IServiceProvider serviceProvider,
+    PlaybackSessionManager playbackSessionManager
 ) : API.APIBase
 {
     public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
@@ -382,6 +384,72 @@ public sealed class ApiService(
             };
 
             await responseStream.WriteAsync(reply);
+        }
+    }
+
+    public override async Task PlaybackSession(IAsyncStreamReader<PlaybackSessionRequest> requestStream, IServerStreamWriter<PlaybackSessionReply> responseStream, ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+
+        using var session = playbackSessionManager.NewSession(user);
+
+        session.PlayPauseEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPlayPause = true }, context.CancellationToken);
+        session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
+        session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
+
+        while (!context.CancellationToken.IsCancellationRequested)
+        {
+            if (await requestStream.MoveNext(context.CancellationToken))
+            {
+                if (requestStream.Current.HasDuration)
+                    session.CurrentPosition = requestStream.Current.Duration != null ? TimeSpan.FromSeconds(requestStream.Current.Duration) : null;
+
+                if (requestStream.Current.HasLoaded)
+                    session.Loaded = requestStream.Current.Loaded;
+
+                if (requestStream.Current.HasProvider)
+                {
+                    if (requestStream.Current.Provider != null)
+                    {
+                        session.Provider = serviceProvider.GetServices<IProvider>()
+                            .Single(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
+                            .Provider;
+                    }
+                    else
+                    {
+                        session.Provider = null;
+                    }
+                }
+
+                if (requestStream.Current.HasQuality)
+                    session.Quality = requestStream.Current.Quality;
+
+                if (requestStream.Current.HasRate)
+                    session.Rate = requestStream.Current.Rate;
+
+                if (requestStream.Current.HasState)
+                    session.State = requestStream.Current.State;
+
+                if (requestStream.Current.HasVideoId)
+                {
+                    if (requestStream.Current.VideoId != null)
+                    {
+                        session.Video = db.Videos.Single(v => v.Id == requestStream.Current.VideoId);
+                    }
+                    else
+                    {
+                        session.Video = null;
+                    }
+                }
+
+                if (requestStream.Current.HasVolume)
+                    session.Volume = requestStream.Current.Volume;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), context.CancellationToken);
         }
     }
 }
