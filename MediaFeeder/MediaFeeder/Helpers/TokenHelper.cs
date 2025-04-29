@@ -27,7 +27,7 @@ public class TokenHelper(IConfiguration configuration)
             selfIssuer,
             selfIssuer,
             userClaims,
-            expires: DateTime.Now.AddHours(1),
+            expires: DateTime.Now.AddDays(30),
             signingCredentials: signinCredentials
         );
 
