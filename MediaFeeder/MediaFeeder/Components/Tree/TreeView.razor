@@ -61,7 +61,7 @@
                     <div class="ant-tree">
                         @foreach (var folder in Folders)
                         {
-                            <TreeFolder Folder="@folder"/>
+                            <TreeFolder @key="folder.Id" Folder="@folder"/>
                         }
                     </div>
 

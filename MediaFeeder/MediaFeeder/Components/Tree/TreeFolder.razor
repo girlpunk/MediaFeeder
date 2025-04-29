@@ -21,12 +21,12 @@
 
         @foreach (var subfolder in Folder.Subfolders)
         {
-            <TreeFolder Folder="subfolder" Parent="@(this)"/>
+            <TreeFolder @key="subfolder.Id" Folder="subfolder" Parent="@(this)"/>
         }
         @if (Folder != null)
             @foreach (var subscription in Folder.Subscriptions)
         {
-            <TreeSubscription Subscription="@subscription" Parent="this"/>
+            <TreeSubscription @key="subscription.Id" Subscription="@subscription" Parent="this"/>
         }
     </div>
 }
