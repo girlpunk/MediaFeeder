@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # pylint: disable=invalid-name
 
 import argparse
 import sys
 from threading import Event
 from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
 
 import pychromecast
 from pychromecast.controllers.youtube import YouTubeController
@@ -25,8 +26,7 @@ class MyMediaStatusListener(MediaStatusListener):
         self.last_is_idle = Event()
 
     def new_media_status(self, status: MediaStatus) -> None:
-        #print("status media change:")
-        #print(status)
+        #print(f"new_media_status: {status}")
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
             self.last_is_idle.set()
@@ -37,14 +37,12 @@ class MyMediaStatusListener(MediaStatusListener):
         if not status.supports_pause:
             return
 
-        status_message = Api_pb2.PlaybackSessionRequest(
-            Duration = int(status.current_time),
-            Provider = "youtube" if status.content_type == "x-youtube/video" else None,
-            State = status.player_state,
-            Volume = status.volume_level,
-            Rate = status.playback_rate
-        )
-
+        status_message = Api_pb2.PlaybackSessionRequest()
+        status_message.Duration = int(status.current_time)
+        status_message.Provider = "youtube" if status.content_type == "x-youtube/video" else None
+        status_message.State = status.player_state
+        status_message.Volume = int(status.volume_level * 100)
+        status_message.Rate = status.playback_rate
         self.queue.put(status_message)
 
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
@@ -84,7 +82,7 @@ cast = chromecasts[0]
 # Start socket client's worker thread and wait for initial status update
 cast.wait()
 
-bearer_credentials = auth_creds = grpc.access_token_call_credentials(args.token)
+bearer_credentials = grpc.access_token_call_credentials(args.token)
 ssl_credentials = grpc.ssl_channel_credentials()
 composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
 
@@ -109,7 +107,12 @@ status_message_queue = Queue()
 listenerMedia = MyMediaStatusListener(cast.name, cast, status_message_queue)
 cast.media_controller.register_status_listener(listenerMedia)
 
+executor = ThreadPoolExecutor()
+def on_pb_ses_rep(iterator):
+    for rep in iterator:
+        print(rep)
 state_response_iterator = stub.PlaybackSession(messageQueueIterator(status_message_queue))
+executor.submit(on_pb_ses_rep, state_response_iterator)
 
 while len(videos) > 0:
     video = videos.pop(0)
@@ -120,8 +123,12 @@ while len(videos) > 0:
     print(f"Playing {id_response.Title} ({id_response.VideoId})")
 
     yt.play_video(id_response.VideoId)
-
     listenerMedia.last_is_idle.clear()
+
+    status_message = Api_pb2.PlaybackSessionRequest()
+    status_message.VideoId = video
+    status_message_queue.put(status_message)
+
     listenerMedia.last_is_idle.wait()
 
     watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
