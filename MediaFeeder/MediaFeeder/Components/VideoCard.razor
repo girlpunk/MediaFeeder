@@ -1,6 +1,6 @@
 ﻿@using Humanizer
 
-<Card Loading="@(Video == null)">
+<Card Loading="@(Video == null)" BodyStyle="padding:0.5em;">
     <Cover>
         <BadgeRibbon Text="@(Badge)" Placement="@(Badge == null ? "hidden" : "end")" Color="@BadgeColour">
             <a href="@($"video/{Video?.Id}")">
@@ -17,24 +17,28 @@
             <div @onclick="@(Watch)">
                 @if (Video?.Watched ?? false)
                 {
-                    <Icon Type="@IconType.Outline.EyeInvisible" />
-                    <span>Mark Unwatched</span>
+                    <Tooltip Title="Mark Unwatched">
+                      <Icon Type="@IconType.Outline.EyeInvisible" />
+                    </Tooltip>
                 } else {
-                    <Icon Type="@IconType.Outline.Eye"/>
-                    <span>Mark Watched</span>
+                    <Tooltip Title="Mark Watched">
+                      <Icon Type="@IconType.Outline.Eye"/>
+                    </Tooltip>
                 }
             </div>
         </CardAction>
         <CardAction>
             <div @onclick="@(Delete)">
                 @if(Video?.DownloadedPath != null) {
-                    <Icon Type="@IconType.Outline.Delete"/>
-                    <span>Delete Download</span>
+                    <Tooltip Title="Delete Download">
+                      <Icon Type="@IconType.Outline.Delete"/>
+                    </Tooltip>
                 }
                 else
                 {
-                    <Icon Type="@IconType.Outline.Download"/>
-                    <span>Download Now</span>
+                    <Tooltip Title="Download Now">
+                      <Icon Type="@IconType.Outline.Download"/>
+                    </Tooltip>
                 }
             </div>
         </CardAction>
