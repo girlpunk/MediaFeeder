@@ -3,6 +3,7 @@ using Grpc.Core;
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
+using MediaFeeder.Helpers;
 using MediaFeeder.PlaybackManager;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Identity;
@@ -200,7 +201,7 @@ public sealed class ApiService(
         // var client = bus.CreateRequestClient<dynamic>();
         // var response = await client.GetResponse<DownloadReply>(context, context.CancellationToken);
 
-        await bus.Publish(contract, context.CancellationToken);
+        await bus.PublishWithGuid(contract, context.CancellationToken);
         // return response?.Message ?? new DownloadReply
         // {
         //     Status = DownloadStatus.TemporaryError,
@@ -415,8 +416,8 @@ public sealed class ApiService(
                     if (requestStream.Current.Provider != null)
                     {
                         session.Provider = serviceProvider.GetServices<IProvider>()
-                            .Single(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
-                            .Provider;
+                            .SingleOrDefault(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
+                            ?.Provider;
                     }
                     else
                     {

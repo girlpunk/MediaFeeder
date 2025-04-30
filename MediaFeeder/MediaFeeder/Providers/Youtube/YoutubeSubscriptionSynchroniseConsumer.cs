@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Filters;
+using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Subscription = MediaFeeder.Data.db.Subscription;
@@ -45,7 +46,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                          string.IsNullOrWhiteSpace(v.Thumb)
                      )
                  ))
-            await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
+            await bus.PublishWithGuid(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
@@ -121,7 +122,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         {
             logger.LogInformation("Starting download {}", videoToDownload.Name);
             var downloadContract = new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id);
-            await bus.Publish(downloadContract, context.CancellationToken);
+            await bus.PublishWithGuid(downloadContract, context.CancellationToken);
         }
         else
         {
@@ -268,7 +269,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 db.Videos.Add(video);
                 await db.SaveChangesAsync(cancellationToken);
 
-                await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+                await bus.PublishWithGuid(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
             }
         }
 
@@ -345,6 +346,6 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         db.Videos.Add(video);
         await db.SaveChangesAsync(cancellationToken);
 
-        await bus.Publish(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+        await bus.PublishWithGuid(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
     }
 }

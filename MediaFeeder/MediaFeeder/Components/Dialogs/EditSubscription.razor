@@ -55,7 +55,7 @@
                 <option disabled="disabled" selected="@(context.DownloadOrder == null ? "selected" : "")">Please Select</option>
                 @foreach (var cnt in Enum.GetValues<DownloadOrder>())
                 {
-                    <option value="@cnt" selected="@(context.DownloadOrder == cnt ? "selected" : "")">@cnt.Humanize()</option>
+                    <option @key="cnt" value="@cnt" selected="@(context.DownloadOrder == cnt ? "selected" : "")">@cnt.Humanize()</option>
                 }
             </InputSelect>
 
@@ -94,7 +94,7 @@
             <option disabled="disabled" selected="@(context.Provider == null ? "selected" : "")">Please Select</option>
             @foreach (var cnt in ServiceProvider?.GetServices<IProvider>() ?? [])
             {
-                <option value="@cnt.ProviderIdentifier" selected="@(string.Equals(context.Provider, cnt.ProviderIdentifier, StringComparison.OrdinalIgnoreCase) ? "selected" : "")">@cnt.Name</option>
+                <option @key="cnt.Provider" value="@cnt.ProviderIdentifier" selected="@(string.Equals(context.Provider, cnt.ProviderIdentifier, StringComparison.OrdinalIgnoreCase) ? "selected" : "")">@cnt.Name</option>
             }
         </InputSelect>
     </FormItem>

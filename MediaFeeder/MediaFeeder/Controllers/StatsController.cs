@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Diagnostics;
 using MassTransit;
+using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
@@ -62,7 +63,7 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
     {
         var contract = new SynchroniseAllContract();
 
-        await bus.Publish(contract);
+        await bus.PublishWithGuid(contract, HttpContext.RequestAborted);
 
         return Ok();
     }
