@@ -389,13 +389,13 @@ static void ConfigureMessageQueue<TBus>(IBusRegistrationContext context, IBusFac
     cfg.UseConcurrencyLimit(1);
     cfg.UseInMemoryScheduler();
     cfg.UseMessageRetry(static r =>
-        r.Exponential(15, TimeSpan.FromMinutes(15), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
+        r.Exponential(15, TimeSpan.FromMinutes(1), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
     cfg.UseCircuitBreaker(static cb =>
     {
         cb.TrackingPeriod = TimeSpan.FromMinutes(5);
         cb.TripThreshold = 15;
         cb.ActiveThreshold = 10;
-        cb.ResetInterval = TimeSpan.FromHours(1);
+        cb.ResetInterval = TimeSpan.FromMinutes(10);
         // cb.Handle<>();
         cb.Ignore<HttpRequestException>();
     });
