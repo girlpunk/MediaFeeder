@@ -16,6 +16,7 @@ from pychromecast.controllers.media import MediaStatus, MediaStatusListener
 import Api_pb2
 import Api_pb2_grpc
 
+
 class MyMediaStatusListener(MediaStatusListener):
     """Status media listener"""
 
@@ -24,8 +25,18 @@ class MyMediaStatusListener(MediaStatusListener):
         self.cast = cast
         self.queue = queue
         self.last_is_idle = Event()
+        self.reset()
+
+    def reset(self):
+        self.mark_watched = False
+        self.last_is_idle.clear()
+        self.last_status = None
+
+    def wait(self):
+        self.last_is_idle.wait()
 
     def new_media_status(self, status: MediaStatus) -> None:
+        self.last_status = status
         #print(f"new_media_status: {status}")
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
@@ -39,7 +50,8 @@ class MyMediaStatusListener(MediaStatusListener):
 
         status_message = Api_pb2.PlaybackSessionRequest()
         status_message.Duration = int(status.current_time)
-        status_message.Provider = "youtube" if status.content_type == "x-youtube/video" else None
+        if status.content_type == "x-youtube/video":
+            status_message.Provider = "youtube"
         status_message.State = status.player_state
         status_message.Volume = int(status.volume_level * 100)
         status_message.Rate = status.playback_rate
@@ -53,7 +65,33 @@ class MyMediaStatusListener(MediaStatusListener):
             error_code,
         )
 
-def messageQueueIterator(queue: Queue):
+    def on_ses_rep(self, iterator):
+        for rep in iterator:
+            try:
+                if rep.ShouldPlayPause:
+                    if not self.last_status:
+                        print("can not play/pause without last_status.")
+                    elif self.last_status.player_is_paused:
+                        cast.media_controller.play()
+                        print("playing")
+                    elif self.last_status.player_is_playing:
+                        cast.media_controller.pause()
+                        print("paused")
+                    else:
+                        print(f"can not play/pause in state: {self.last_status.player_state}")
+
+                elif rep.ShouldWatch:
+                    self.mark_watched = True
+                    self.last_is_idle.set()
+
+                elif rep.ShouldSkip:
+                    self.mark_watched = False
+                    self.last_is_idle.set()
+            except Exception as e:
+                print(f"failed to handle msg {rep}: {e}")
+
+
+def message_queue_iterator(queue: Queue):
     while True:
         yield queue.get()
 
@@ -61,7 +99,6 @@ def messageQueueIterator(queue: Queue):
 # Enable deprecation warnings etc.
 if not sys.warnoptions:
     import warnings
-
     warnings.simplefilter("default")
 
 parser = argparse.ArgumentParser(description="Example on how to use the Youtube Controller.")
@@ -107,12 +144,10 @@ status_message_queue = Queue()
 listenerMedia = MyMediaStatusListener(cast.name, cast, status_message_queue)
 cast.media_controller.register_status_listener(listenerMedia)
 
+state_response_iterator = stub.PlaybackSession(message_queue_iterator(status_message_queue))
 executor = ThreadPoolExecutor()
-def on_pb_ses_rep(iterator):
-    for rep in iterator:
-        print(rep)
-state_response_iterator = stub.PlaybackSession(messageQueueIterator(status_message_queue))
-executor.submit(on_pb_ses_rep, state_response_iterator)
+executor.submit(listenerMedia.on_ses_rep, state_response_iterator)
+
 
 while len(videos) > 0:
     video = videos.pop(0)
@@ -123,16 +158,17 @@ while len(videos) > 0:
     print(f"Playing {id_response.Title} ({id_response.VideoId})")
 
     yt.play_video(id_response.VideoId)
-    listenerMedia.last_is_idle.clear()
+    listenerMedia.reset()
 
     status_message = Api_pb2.PlaybackSessionRequest()
     status_message.VideoId = video
     status_message_queue.put(status_message)
 
-    listenerMedia.last_is_idle.wait()
+    listenerMedia.wait()
 
-    watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
-    stub.Watched(watched_request)
+    if listenerMedia.mark_watched:
+        watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
+        stub.Watched(watched_request)
 
 
 # Shut down discovery
