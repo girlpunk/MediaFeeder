@@ -46,6 +46,18 @@ public sealed class ApiService(
             folderReply.ChildFolders.AddRange(folder.ChildFolders);
             folderReply.ChildSubscriptions.AddRange(folder.ChildSubscriptions);
 
+            if (request.IncludeUnwatchedCounts)
+            {
+                var videos = db.Videos
+                    .Where(v => v.Subscription.ParentFolderId == folder.Id);
+
+                folderReply.UnwatchedCounts = new UnwatchedCounts()
+                {
+                    UnwatchedCount = videos.Count(static v => !v.Watched),
+                    UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+                };
+            }
+
             await responseStream.WriteAsync(folderReply, context.CancellationToken);
         }
     }
@@ -79,6 +91,18 @@ public sealed class ApiService(
         reply.ChildFolders.AddRange(folder.ChildFolders);
         reply.ChildSubscriptions.AddRange(folder.ChildSubscriptions);
 
+        if (request.IncludeUnwatchedCounts)
+        {
+            var videos = db.Videos
+                .Where(v => v.Subscription.ParentFolderId == folder.Id);
+
+            reply.UnwatchedCounts = new UnwatchedCounts()
+            {
+                UnwatchedCount = videos.Count(static v => !v.Watched),
+                UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+            };
+        }
+
         return reply;
     }
 
@@ -94,12 +118,25 @@ public sealed class ApiService(
             .Select(static subscription => new SubscriptionReply
             {
                 Name = subscription.Name,
-                Id = subscription.Id,
-                Unwatched = subscription.Videos.Count(static v => !v.Watched)
+                Id = subscription.Id
             });
 
         foreach (var subscription in subscriptions)
+        {
+            if (request.IncludeUnwatchedCounts)
+            {
+                var videos = db.Videos
+                    .Where(v => v.SubscriptionId == subscription.Id);
+
+                subscription.UnwatchedCounts = new UnwatchedCounts()
+                {
+                    UnwatchedCount = videos.Count(static v => !v.Watched),
+                    UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+                };
+            }
+
             await responseStream.WriteAsync(subscription, context.CancellationToken);
+        }
     }
 
     public override async Task<SubscriptionReply> Subscription(SubscriptionRequest request, ServerCallContext context)
@@ -115,12 +152,23 @@ public sealed class ApiService(
             {
                 Name = subscription.Name,
                 Id = subscription.Id,
-                Unwatched = subscription.Videos.Count(static v => !v.Watched)
             })
             .SingleOrDefaultAsync(context.CancellationToken);
 
         if (subscription == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+
+        if (request.IncludeUnwatchedCounts)
+        {
+            var videos = db.Videos
+                .Where(v => v.SubscriptionId == subscription.Id);
+
+            subscription.UnwatchedCounts = new UnwatchedCounts()
+            {
+                UnwatchedCount = videos.Count(static v => !v.Watched),
+                UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+            };
+        }
 
         return subscription;
     }

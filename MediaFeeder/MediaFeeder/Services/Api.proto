@@ -20,10 +20,13 @@ service API {
 }
 
 message ListFolderRequest {
+  bool IncludeUnwatchedCounts = 2;
 }
 
 message FolderRequest {
   int32 Id = 1;
+
+  bool IncludeUnwatchedCounts = 2;
 }
 
 message FolderReply {
@@ -31,13 +34,16 @@ message FolderReply {
   string Name = 2;
   repeated int32 ChildFolders = 3;
   repeated int32 ChildSubscriptions = 4;
+  UnwatchedCounts UnwatchedCounts = 5;
 }
 
 message ListSubscriptionRequest {
+  bool IncludeUnwatchedCounts = 2;
 }
 
 message SubscriptionRequest {
   int32 Id = 1;
+  bool IncludeUnwatchedCounts = 2;
 }
 
 message GetSubscriptionThumbnailReply {
@@ -49,9 +55,11 @@ message GetSubscriptionThumbnailRequest {
 }
 
 message SubscriptionReply {
+  reserved 4; // Was Unwatched, now moved to sub-message
+
   int32 Id = 1;
   string Name = 2;
-  int32 Unwatched = 4;
+  UnwatchedCounts UnwatchedCounts = 3;
 }
 
 message VideoRequest {
@@ -140,4 +148,9 @@ message PlaybackSessionReply {
   optional bool ShouldPlayPause = 1;
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
+}
+
+message UnwatchedCounts {
+  int32 UnwatchedDuration = 3;
+  int32 UnwatchedCount = 4;
 }
