@@ -1,4 +1,4 @@
-FROM jauderho/yt-dlp AS builder
+FROM jauderho/yt-dlp:latest AS builder
 LABEL authors="sam"
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
