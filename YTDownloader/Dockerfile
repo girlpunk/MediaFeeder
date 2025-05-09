@@ -1,4 +1,4 @@
-FROM FROM ghcr.io/linuxcontainers/alpine:latest
+FROM ghcr.io/linuxcontainers/alpine:latest
 LABEL authors="sam"
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
