@@ -39,8 +39,8 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
             await GetDetailsFromYouTube(video, db, context.CancellationToken);
 
-        if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
-            await GetDetailsFromDeArrow(video, db, context.CancellationToken);
+        // if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
+        //     await GetDetailsFromDeArrow(video, db, context.CancellationToken);
 
         await db.SaveChangesAsync(context.CancellationToken);
     }
