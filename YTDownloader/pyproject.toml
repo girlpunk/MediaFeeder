@@ -10,3 +10,8 @@ dependencies = [
     "yt-dlp>=2025.1.30",
     "grpcio-reflection>=1.70.0",
 ]
+
+
+[tool.pyright]
+strict = "**/*"
+reportMissingImports = false
