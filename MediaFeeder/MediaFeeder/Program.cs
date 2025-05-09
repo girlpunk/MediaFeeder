@@ -219,7 +219,6 @@ builder.Services.AddMassTransit(config =>
 
     config.AddConsumer<YoutubeSubscriptionSynchroniseConsumer>();
     config.AddConsumer<YoutubeVideoSynchroniseConsumer>();
-    config.AddConsumer<YoutubeActualVideoSynchroniseConsumer>();
     config.AddConsumer<YouTubeDownloadVideoConsumer>();
 
     config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();

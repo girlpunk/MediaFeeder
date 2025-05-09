@@ -21,6 +21,12 @@ public sealed class YouTubeDownloadVideoConsumer(
             .Include(static v => v.Subscription)
             .SingleAsync(v => v.Id == context.Message.VideoId);
 
+        if (video.IsDownloaded)
+        {
+            logger.LogInformation("Cancelling download of {}: Video is already downloaded ({})", video.Id, video.DownloadedPath);
+            return;
+        }
+
         var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
         var path = Path.Join(root, "downloads", string.Join("", (video.Subscription?.Name ?? "").Split(Path.GetInvalidFileNameChars())));
         Directory.CreateDirectory(path);

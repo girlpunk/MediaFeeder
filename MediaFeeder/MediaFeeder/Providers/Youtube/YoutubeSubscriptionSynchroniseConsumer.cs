@@ -29,6 +29,13 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         var subscription =
             await db.Subscriptions.SingleAsync(s => s.Id == context.Message.SubscriptionId, context.CancellationToken);
+
+        if (subscription.LastSynchronised < DateTimeOffset.Now - TimeSpan.FromHours(1))
+        {
+            logger.LogInformation("Subscription {} was already synchronised {} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
+            return;
+        }
+
         logger.LogInformation("Starting synchronize {}", subscription.Name);
 
         foreach (var video in await db.Videos
@@ -46,7 +53,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                          string.IsNullOrWhiteSpace(v.Thumb)
                      )
                  ))
-            await bus.PublishWithGuid(new YoutubeActualVideoSynchroniseContract(video.Id), context.CancellationToken);
+            await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), context.CancellationToken);
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
@@ -269,7 +276,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 db.Videos.Add(video);
                 await db.SaveChangesAsync(cancellationToken);
 
-                await bus.PublishWithGuid(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+                await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
             }
         }
 
@@ -346,6 +353,6 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         db.Videos.Add(video);
         await db.SaveChangesAsync(cancellationToken);
 
-        await bus.PublishWithGuid(new YoutubeActualVideoSynchroniseContract(video.Id), cancellationToken);
+        await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
     }
 }
