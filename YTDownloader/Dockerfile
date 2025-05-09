@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-editable
 
 # Copy the project into the image
-ADD . /app
+COPY . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --compile-bytecode
@@ -45,9 +45,6 @@ RUN set -x \
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 RUN uv run -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. downloadServer.proto
-
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-COPY --from=builder --chown=app:app /app /app
 
 ENV PYTHONUNBUFFERED=1
 
