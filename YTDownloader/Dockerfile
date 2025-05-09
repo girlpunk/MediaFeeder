@@ -16,6 +16,7 @@ RUN set -x \
         py3-mutagen \
         g++ \
         python3-dev \
+        py3-grpcio-pyc \
         linux-headers
 
 ENV UV_LINK_MODE=copy
