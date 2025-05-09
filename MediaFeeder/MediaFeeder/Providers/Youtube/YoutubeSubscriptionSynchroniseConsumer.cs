@@ -30,7 +30,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         var subscription =
             await db.Subscriptions.SingleAsync(s => s.Id == context.Message.SubscriptionId, context.CancellationToken);
 
-        if (subscription.LastSynchronised < DateTimeOffset.Now - TimeSpan.FromHours(1))
+        if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
         {
             logger.LogInformation("Subscription {} was already synchronised {} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
             return;
