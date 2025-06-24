@@ -127,6 +127,7 @@ message ShuffleRequest {
     int32 FolderId = 1;
     int32 SubscriptionId = 2;
   }
+  optional int32 DurationMinutes = 3;
 }
 
 message ShuffleReply {

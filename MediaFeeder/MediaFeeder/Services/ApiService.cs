@@ -289,7 +289,7 @@ public sealed class ApiService(
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var timeRemaining = TimeSpan.FromHours(1);
+        var timeRemaining = TimeSpan.FromMinutes(((int?) request.DurationMinutes) ?? 60);
         var reply = new ShuffleReply();
         List<Subscription> subscriptions;
 
