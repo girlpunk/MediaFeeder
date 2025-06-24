@@ -486,7 +486,7 @@ public sealed class ApiService(
                 {
                     if (requestStream.Current.VideoId != null)
                     {
-                        session.Video = db.Videos.Single(v => v.Id == requestStream.Current.VideoId);
+                        session.Video = db.Videos.Include(static v => v.Subscription).Single(v => v.Id == requestStream.Current.VideoId);
                     }
                     else
                     {
