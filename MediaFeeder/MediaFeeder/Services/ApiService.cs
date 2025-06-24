@@ -306,8 +306,13 @@ public sealed class ApiService(
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
 
-        var first = await db.Videos
-            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId))
+        var query = db.Videos
+            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId));
+
+        if (timeRemaining.TotalMinutes < 60)
+            query = query.Where(v => v.Duration <= timeRemaining.TotalSeconds);
+
+        var first = await query
             .OrderBy(static v => v.PublishDate)
             .FirstAsync();
 
