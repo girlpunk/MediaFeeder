@@ -28,7 +28,7 @@ class MyMediaStatusListener(MediaStatusListener):
         self.reset()
 
     def reset(self):
-        self.mark_watched = False
+        self.mark_watched = True
         self.last_is_idle.clear()
         self.last_status = None
 
@@ -51,7 +51,7 @@ class MyMediaStatusListener(MediaStatusListener):
         status_message = Api_pb2.PlaybackSessionRequest()
         status_message.Duration = int(status.current_time)
         if status.content_type == "x-youtube/video":
-            status_message.Provider = "youtube"
+            status_message.Provider = "Youtube"
         status_message.State = status.player_state
         status_message.Volume = int(status.volume_level * 100)
         status_message.Rate = status.playback_rate
@@ -66,29 +66,35 @@ class MyMediaStatusListener(MediaStatusListener):
         )
 
     def on_ses_rep(self, iterator):
-        for rep in iterator:
-            try:
-                if rep.ShouldPlayPause:
-                    if not self.last_status:
-                        print("can not play/pause without last_status.")
-                    elif self.last_status.player_is_paused:
-                        cast.media_controller.play()
-                        print("playing")
-                    elif self.last_status.player_is_playing:
-                        cast.media_controller.pause()
-                        print("paused")
-                    else:
-                        print(f"can not play/pause in state: {self.last_status.player_state}")
+        try:
+            for rep in iterator:
+                try:
+                    self.on_ses_rep_msg(rep)
+                except Exception as e:
+                    print(f"failed to handle msg {rep}: {e}")
+        except Exception as e:
+            print(f"failed to read stream: {e}")
 
-                elif rep.ShouldWatch:
-                    self.mark_watched = True
-                    self.last_is_idle.set()
+    def on_ses_rep_msg(self, rep):
+        if rep.ShouldPlayPause:
+            if not self.last_status:
+                print("can not play/pause without last_status.")
+            elif self.last_status.player_is_paused:
+                cast.media_controller.play()
+                print("playing")
+            elif self.last_status.player_is_playing:
+                cast.media_controller.pause()
+                print("paused")
+            else:
+                print(f"can not play/pause in state: {self.last_status.player_state}")
 
-                elif rep.ShouldSkip:
-                    self.mark_watched = False
-                    self.last_is_idle.set()
-            except Exception as e:
-                print(f"failed to handle msg {rep}: {e}")
+        elif rep.ShouldWatch:
+            self.mark_watched = True
+            self.last_is_idle.set()
+
+        elif rep.ShouldSkip:
+            self.mark_watched = False
+            self.last_is_idle.set()
 
 
 def message_queue_iterator(queue: Queue):
@@ -126,7 +132,7 @@ composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bear
 channel_options = [
     ("grpc.keepalive_time_ms", 8000),
     ("grpc.keepalive_timeout_ms", 5000),
-    ("grpc.http2.max_pings_without_data", 5),
+    ("grpc.http2.max_pings_without_data", 0),
     ("grpc.keepalive_permit_without_calls", 1),
 ]
 
