@@ -143,6 +143,7 @@ message PlaybackSessionRequest {
   optional int32 Volume = 7;
   optional float  Rate = 8;
   optional float Loaded = 9;
+  optional bool EndSession = 10;
 }
 
 message PlaybackSessionReply {

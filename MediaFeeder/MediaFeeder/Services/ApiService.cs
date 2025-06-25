@@ -501,6 +501,8 @@ public sealed class ApiService(
 
                 if (requestStream.Current.HasVolume)
                     session.Volume = requestStream.Current.Volume;
+
+                if (requestStream.Current.EndSession) return;
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), context.CancellationToken);

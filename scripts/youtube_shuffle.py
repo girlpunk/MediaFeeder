@@ -182,3 +182,9 @@ while len(videos) > 0:
 
 # Shut down discovery
 browser.stop_discovery()
+
+print("fin.")
+status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession = True))
+
+executor.shutdown(wait=True, cancel_futures=True)
+sys.exit(0)
