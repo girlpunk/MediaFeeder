@@ -283,6 +283,24 @@ public sealed class ApiService(
         return new WatchedReply();
     }
 
+    public override async Task<SearchReply> Search(SearchRequest request, ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+
+        var video = await db.Videos.SingleOrDefaultAsync(
+            v => v.Subscription.UserId == user.Id
+            && v.Subscription.Provider == request.Provider
+            && v.VideoId == request.ProviderVideoId,
+            context.CancellationToken);
+
+        var reply = new SearchReply();
+        if (video != null) reply.VideoId.Add(video.Id);
+        return reply;
+    }
+
     public override async Task<ShuffleReply> Shuffle(ShuffleRequest request, ServerCallContext context)
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);

@@ -15,6 +15,7 @@ service API {
   rpc GetVideo (GetVideoRequest) returns (stream GetVideoReply) {}
   rpc GetVideoThumbnail (GetVideoThumbnailRequest) returns (stream GetVideoThumbnailReply) {}
   rpc Watched (WatchedRequest) returns (WatchedReply) {}
+  rpc Search (SearchRequest) returns (SearchReply) {}
   rpc Shuffle (ShuffleRequest) returns (ShuffleReply) {}
   rpc PlaybackSession (stream PlaybackSessionRequest) returns (stream PlaybackSessionReply) {}
 }
@@ -120,6 +121,14 @@ message WatchedRequest {
 }
 
 message WatchedReply {
+}
+
+message SearchRequest {
+  optional string Provider = 1;
+  optional string ProviderVideoId = 2;
+}
+message SearchReply {
+  repeated int32 VideoId = 1;
 }
 
 message ShuffleRequest {
