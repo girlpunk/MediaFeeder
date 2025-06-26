@@ -6,6 +6,7 @@ import sys
 from threading import Event
 from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 
 import pychromecast
 from pychromecast.controllers.youtube import YouTubeController
@@ -145,6 +146,12 @@ if args.duration:
     shuffleRequest.DurationMinutes = args.duration
 videos = stub.Shuffle(shuffleRequest).Id
 
+print("Videos to play:")
+for video in videos:
+    info = stub.Video(Api_pb2.VideoRequest(Id=video))
+    dur = str(timedelta(seconds=info.Duration))
+    print(f"  - {dur} {info.Title} ({info.VideoId})")
+
 yt = YouTubeController()
 cast.register_handler(yt)
 
@@ -164,7 +171,7 @@ while len(videos) > 0:
     id_request = Api_pb2.VideoRequest(Id=video)
     id_response = stub.Video(id_request)
 
-    print(f"Playing {id_response.Title} ({id_response.VideoId})")
+    print(f"Playing: {id_response.Title} ({id_response.VideoId})")
 
     yt.play_video(id_response.VideoId)
     listenerMedia.reset()
