@@ -113,6 +113,7 @@ parser.add_argument("--cast",       help='Name of cast device')
 parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
 parser.add_argument("--folder",     help='Folder ID', required=True, type=int)
 parser.add_argument("--token",      help='Authentication token', required=True)
+parser.add_argument("--duration",   help='Target duration in minutes', required=False, type=int)
 args = parser.parse_args()
 
 chromecasts, browser = pychromecast.get_listed_chromecasts(friendly_names=[args.cast], known_hosts=args.known_host)
@@ -140,6 +141,8 @@ channel = grpc.secure_channel(args.server, composite_credentials, options=channe
 stub = Api_pb2_grpc.APIStub(channel)
 
 shuffleRequest = Api_pb2.ShuffleRequest(FolderId=args.folder)
+if args.duration:
+    shuffleRequest.DurationMinutes = args.duration
 videos = stub.Shuffle(shuffleRequest).Id
 
 yt = YouTubeController()
@@ -179,3 +182,9 @@ while len(videos) > 0:
 
 # Shut down discovery
 browser.stop_discovery()
+
+print("fin.")
+status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession = True))
+
+executor.shutdown(wait=True, cancel_futures=True)
+sys.exit(0)

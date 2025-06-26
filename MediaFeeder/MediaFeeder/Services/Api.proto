@@ -127,6 +127,7 @@ message ShuffleRequest {
     int32 FolderId = 1;
     int32 SubscriptionId = 2;
   }
+  optional int32 DurationMinutes = 3;
 }
 
 message ShuffleReply {
@@ -142,6 +143,7 @@ message PlaybackSessionRequest {
   optional int32 Volume = 7;
   optional float  Rate = 8;
   optional float Loaded = 9;
+  optional bool EndSession = 10;
 }
 
 message PlaybackSessionReply {

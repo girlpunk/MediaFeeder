@@ -289,7 +289,7 @@ public sealed class ApiService(
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var timeRemaining = TimeSpan.FromHours(1);
+        var timeRemaining = TimeSpan.FromMinutes(((int?) request.DurationMinutes) ?? 60);
         var reply = new ShuffleReply();
         List<Subscription> subscriptions;
 
@@ -306,8 +306,13 @@ public sealed class ApiService(
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
 
-        var first = await db.Videos
-            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId))
+        var query = db.Videos
+            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId));
+
+        if (timeRemaining.TotalMinutes < 60)
+            query = query.Where(v => v.Duration <= timeRemaining.TotalSeconds);
+
+        var first = await query
             .OrderBy(static v => v.PublishDate)
             .FirstAsync();
 
@@ -496,6 +501,8 @@ public sealed class ApiService(
 
                 if (requestStream.Current.HasVolume)
                     session.Volume = requestStream.Current.Volume;
+
+                if (requestStream.Current.EndSession) return;
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), context.CancellationToken);
