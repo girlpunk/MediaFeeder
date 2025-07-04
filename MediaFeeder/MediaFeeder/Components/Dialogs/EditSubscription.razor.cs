@@ -20,6 +20,7 @@ public sealed partial class EditSubscription
     public required Form<SubscriptionForm> Form { get; set; }
     private SubscriptionForm? Subscription { get; set; }
     [Inject] public required ILogger<EditSubscription> Logger { get; set; }
+    private IEnumerable<(string ProviderIdentifier, string Name)> providers { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -60,6 +61,12 @@ public sealed partial class EditSubscription
             .ToListAsync();
 
         await base.OnInitializedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+      if (ServiceProvider != null)
+        providers = ServiceProvider.GetServices<IProvider>().Select(provider => (provider.ProviderIdentifier, provider.Name));
     }
 
     /// <summary>

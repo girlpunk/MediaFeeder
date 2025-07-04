@@ -82,21 +82,13 @@
     </FormItem>
 
     <FormItem Label="Provider" Required="true">
-        @* <Select @bind-Value="@context.Provider" *@
-        @*         DataSource="@(ServiceProvider?.GetServices<IProvider>() ?? [])" *@
-        @*         ItemValue="@(static c => c.ProviderIdentifier)" *@
-        @*         ItemLabel="@(static c => c?.Name ?? "")" *@
-        @*         required="required" *@
-        @*         Placeholder="Please Select" *@
-        @* ></Select> *@
-
-        <InputSelect @bind-Value="context.Provider" class="form-control">
-            <option disabled="disabled" selected="@(context.Provider == null ? "selected" : "")">Please Select</option>
-            @foreach (var cnt in ServiceProvider?.GetServices<IProvider>() ?? [])
-            {
-                <option @key="cnt.Provider" value="@cnt.ProviderIdentifier" selected="@(string.Equals(context.Provider, cnt.ProviderIdentifier, StringComparison.OrdinalIgnoreCase) ? "selected" : "")">@cnt.Name</option>
-            }
-        </InputSelect>
+        <Select @bind-Value="@context.Provider"
+                DataSource="@providers"
+                ItemValue="@(static c => c.ProviderIdentifier)"
+                ItemLabel="@(static c => c.Name)"
+                required="required"
+                Placeholder="Please Select"
+        ></Select>
     </FormItem>
 
 </Form>
