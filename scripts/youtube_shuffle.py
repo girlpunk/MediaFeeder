@@ -3,6 +3,7 @@
 
 import argparse
 import sys
+import time
 from threading import Event
 from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
@@ -185,6 +186,8 @@ while len(videos) > 0:
     if listenerMedia.mark_watched:
         watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
         stub.Watched(watched_request)
+
+    time.sleep(1)
 
 
 # Shut down discovery
