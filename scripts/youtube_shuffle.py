@@ -34,8 +34,8 @@ class MyMediaStatusListener(MediaStatusListener):
         self.last_is_idle.clear()
         self.last_status = None
 
-    def wait(self):
-        self.last_is_idle.wait()
+    def wait(self, timeout):
+        return self.last_is_idle.wait(timeout)
 
     def new_media_status(self, status: MediaStatus) -> None:
         self.last_status = status
@@ -181,7 +181,8 @@ while len(videos) > 0:
     status_message.VideoId = video
     status_message_queue.put(status_message)
 
-    listenerMedia.wait()
+    while not listenerMedia.wait(5):
+        cast.media_controller.update_status()
 
     if listenerMedia.mark_watched:
         watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
