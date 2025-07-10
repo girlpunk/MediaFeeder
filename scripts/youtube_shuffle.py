@@ -98,6 +98,9 @@ class MyMediaStatusListener(MediaStatusListener):
             self.mark_watched = False
             self.last_is_idle.set()
 
+        elif rep.AddMinutes > 0:
+            RequestAddVideos(rep.AddMinutes)
+
 
 def message_queue_iterator(queue: Queue):
     while True:
@@ -142,16 +145,24 @@ channel_options = [
 channel = grpc.secure_channel(args.server, composite_credentials, options=channel_options)
 stub = Api_pb2_grpc.APIStub(channel)
 
-shuffleRequest = Api_pb2.ShuffleRequest(FolderId=args.folder)
-if args.duration:
-    shuffleRequest.DurationMinutes = args.duration
-videos = stub.Shuffle(shuffleRequest).Id
+video_queue = list()
 
-print("Videos to play:")
-for video in videos:
-    info = stub.Video(Api_pb2.VideoRequest(Id=video))
-    dur = str(timedelta(seconds=info.Duration))
-    print(f"  - {dur} {info.Title} ({info.VideoId})")
+def RequestAddVideos(minutes):
+    global video_queue
+
+    # TODO include IDs from current queue to avoid duplicates.
+    shuffleRequest = Api_pb2.ShuffleRequest(FolderId=args.folder)
+    shuffleRequest.DurationMinutes = minutes
+    video_queue += stub.Shuffle(shuffleRequest).Id
+
+    print("Videos to play:")
+    for video in video_queue:
+        info = stub.Video(Api_pb2.VideoRequest(Id=video))
+        dur = str(timedelta(seconds=info.Duration))
+        print(f"  - {dur} {info.Title} ({info.VideoId})")
+
+if args.duration:
+    RequestAddVideos(args.duration)
 
 yt = YouTubeController()
 cast.register_handler(yt)
@@ -166,30 +177,35 @@ executor = ThreadPoolExecutor()
 executor.submit(listenerMedia.on_ses_rep, state_response_iterator)
 
 
-while len(videos) > 0:
-    video = videos.pop(0)
+try:
+    while True:
+        video = video_queue.pop(0) if video_queue else None
+        if not video:
+            time.sleep(3)  # TODO use a wait-for thingy.
+            continue
 
-    id_request = Api_pb2.VideoRequest(Id=video)
-    id_response = stub.Video(id_request)
+        id_request = Api_pb2.VideoRequest(Id=video)
+        id_response = stub.Video(id_request)
 
-    print(f"Playing: {id_response.Title} ({id_response.VideoId})")
+        print(f"Playing: {id_response.Title} ({id_response.VideoId})")
 
-    yt.play_video(id_response.VideoId)
-    listenerMedia.reset()
+        yt.play_video(id_response.VideoId)
+        listenerMedia.reset()
 
-    status_message = Api_pb2.PlaybackSessionRequest()
-    status_message.VideoId = video
-    status_message_queue.put(status_message)
+        status_message = Api_pb2.PlaybackSessionRequest()
+        status_message.VideoId = video
+        status_message_queue.put(status_message)
 
-    while not listenerMedia.wait(5):
-        cast.media_controller.update_status()
+        while not listenerMedia.wait(5):
+            cast.media_controller.update_status()
 
-    if listenerMedia.mark_watched:
-        watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
-        stub.Watched(watched_request)
+        if listenerMedia.mark_watched:
+            watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
+            stub.Watched(watched_request)
 
-    time.sleep(1)
-
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("shuting down...")
 
 # Shut down discovery
 browser.stop_discovery()

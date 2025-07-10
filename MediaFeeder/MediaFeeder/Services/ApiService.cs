@@ -466,11 +466,13 @@ public sealed class ApiService(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
+        // TODO pass some kinda init block to this so listeners only see the ready object?
         using var session = playbackSessionManager.NewSession(user);
 
         session.PlayPauseEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPlayPause = true }, context.CancellationToken);
         session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
+        session.AddVideos += async minutes => await responseStream.WriteAsync(new PlaybackSessionReply { AddMinutes = minutes }, context.CancellationToken);
 
         while (!context.CancellationToken.IsCancellationRequested)
         {

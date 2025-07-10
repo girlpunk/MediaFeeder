@@ -159,6 +159,7 @@ message PlaybackSessionReply {
   optional bool ShouldPlayPause = 1;
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
+  optional int32 AddMinutes = 4;
 }
 
 message UnwatchedCounts {

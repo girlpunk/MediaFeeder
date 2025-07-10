@@ -19,6 +19,7 @@ public sealed class PlaybackSession : IDisposable
     public event Action? PlayPauseEvent;
     public event Action? WatchEvent;
     public event Action? SkipEvent;
+    public event Action<Int32>? AddVideos;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
     public void Watch() => WatchEvent?.Invoke();
@@ -124,5 +125,14 @@ public sealed class PlaybackSession : IDisposable
             _loaded = value;
             UpdateEvent?.Invoke();
         }
+    }
+
+    public bool HasAddVideosHandlers()
+    {
+        return AddVideos != null;
+    }
+    public void TriggerAddVideos(int count)
+    {
+        AddVideos?.Invoke(count);
     }
 }

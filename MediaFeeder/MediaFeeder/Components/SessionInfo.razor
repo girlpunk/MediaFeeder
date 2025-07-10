@@ -46,6 +46,26 @@
                 Pause
             </div>
         </CardAction>
+        @if (Session?.HasAddVideosHandlers() ?? false)
+        {
+            <CardAction>
+                <Dropdown>
+                    <Overlay>
+                        <Menu>
+                            <MenuItem @onclick="@(() => Session?.TriggerAddVideos(15))">15 minutes</MenuItem>
+                            <MenuItem @onclick="@(() => Session?.TriggerAddVideos(30))">30 minutes</MenuItem>
+                            <MenuItem @onclick="@(() => Session?.TriggerAddVideos(60))">60 minutes</MenuItem>
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>
+                        <div>
+                            <Icon Type="@IconType.Outline.Plus"/>
+                            Add Videos
+                        </div>
+                    </ChildContent>
+                </Dropdown>
+            </CardAction>
+        }
         <CardAction>
             <div @onclick="@(() => Session?.Watch())">
                 <Icon Type="@IconType.Outline.Eye"/>
