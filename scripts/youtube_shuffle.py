@@ -13,8 +13,8 @@ from pychromecast.controllers.youtube import YouTubeController
 import grpc
 
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
-import Api_pb2
-import Api_pb2_grpc
+from api import Api_pb2
+from api import Api_pb2_grpc
 
 
 class MyMediaStatusListener(MediaStatusListener):

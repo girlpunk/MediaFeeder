@@ -1,0 +1,74 @@
+// https://protobuf.dev/programming-guides/proto3/
+syntax = "proto3";
+
+package mediafeeder;
+
+service YTDownloader {
+  rpc About (AboutRequest) returns (AboutReply) {}
+  rpc Download (DownloadRequest) returns (DownloadReply) {}
+}
+
+message AboutRequest {
+  string VideoId = 1;
+}
+
+message DownloadRequest {
+  string VideoId = 1;
+  string OutputPath = 2;
+}
+
+message AboutReply {
+  string Title = 1;
+  string ThumbnailUrl = 2;
+  string Description = 3;
+  string ChannelId = 4;
+  uint32 Duration = 5;
+  uint64 Views = 6;
+  uint32 AgeLimit = 7;
+  repeated string Category = 8;
+  repeated string Tags = 9;
+  bool Embeddable = 10;
+  Availability Availability = 11;
+  uint32 FileSize = 12;
+
+  //TODO: Check if useful
+  LiveStatus LiveStatus = 13;
+  uint32 UploadDate = 14;
+  uint32 Timestamp = 15;
+  uint32 ReleaseDate = 16;
+  uint32 Released = 17;
+}
+
+message DownloadReply {
+  Status Status = 1;
+  // float Progress = 2;
+  optional string Filename = 3;
+  int32 ExitCode = 4;
+}
+
+enum Status {
+  STARTING = 0;
+  IN_PROGRESS = 1;
+  DONE = 2;
+  TEMPORARY_ERROR = 3;
+  PERMANENT_ERROR = 4;
+}
+
+enum LiveStatus {
+  UNKNOWN_LIVE = 0;
+  IS_LIVE = 1;
+  IS_UPCOMING = 2;
+  WAS_LIVE = 3;
+  NOT_LIVE = 4;
+  POST_LIVE = 5; // was live, but VOD is not yet processed
+}
+
+enum Availability {
+  UNKNOWN_AVAILABLE = 0;
+  PRIVATE = 1;
+  PREMIUM_ONLY = 2;
+  SUBSCRIBER_ONLY = 3;
+  NEEDS_AUTH = 4;
+  UNLISTED = 5;
+  PUBLIC = 6;
+}
