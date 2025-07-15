@@ -3,7 +3,7 @@
 
 <Card Loading="@(Session == null)" >
     <Cover>
-        <GridRow>
+        <GridRow Gutter="16">
             <GridCol Span="8">
                 <Image
                     Src="@($"api/video/{Session?.Video?.Id}/thumbnail/")"
@@ -14,7 +14,7 @@
             <GridCol Span="16">
                 <CardMeta
                     Title="@(Session?.Video?.Name ?? "Unknown")"
-                    Description="@(Session?.Video?.DurationSpan.ToString() ?? "Unknown")"/>
+                    Description="@(Session?.Video?.Subscription?.Name)"/>
             </GridCol>
         </GridRow>
     </Cover>
@@ -29,9 +29,9 @@
         @if (Session?.Video != null)
         {
             <CardMeta
-                Title="@($"{Session?.Provider?.Humanize()} - {Session?.CurrentPosition?.ToString()}/{Session?.Video?.DurationSpan.ToString()}")"
+                Title="@($"{Session?.Provider?.Humanize()} - {Session?.CurrentPosition?.ToString()} / {Session?.Video?.DurationSpan.ToString()}")"
                 Description="@($"{Session?.State} - {Session?.Quality} - {Session?.Rate}x - {Session?.Volume}% volume")"/>
-            <div>
+            <div style="padding-top: 16px;">
                 <Avatar Style="@("background-color: purple; vertical-align: middle;")" Size="AvatarSize.Large">
                     @Session?.User.UserName[0]
                 </Avatar>

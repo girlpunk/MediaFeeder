@@ -283,13 +283,31 @@ public sealed class ApiService(
         return new WatchedReply();
     }
 
+    public override async Task<SearchReply> Search(SearchRequest request, ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+
+        var video = await db.Videos.SingleOrDefaultAsync(
+            v => v.Subscription.UserId == user.Id
+            && v.Subscription.Provider == request.Provider
+            && v.VideoId == request.ProviderVideoId,
+            context.CancellationToken);
+
+        var reply = new SearchReply();
+        if (video != null) reply.VideoId.Add(video.Id);
+        return reply;
+    }
+
     public override async Task<ShuffleReply> Shuffle(ShuffleRequest request, ServerCallContext context)
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var timeRemaining = TimeSpan.FromHours(1);
+        var timeRemaining = TimeSpan.FromMinutes(((int?) request.DurationMinutes) ?? 60);
         var reply = new ShuffleReply();
         List<Subscription> subscriptions;
 
@@ -306,8 +324,13 @@ public sealed class ApiService(
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
 
-        var first = await db.Videos
-            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId))
+        var query = db.Videos
+            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId));
+
+        if (timeRemaining.TotalMinutes < 60)
+            query = query.Where(v => v.Duration <= timeRemaining.TotalSeconds);
+
+        var first = await query
             .OrderBy(static v => v.PublishDate)
             .FirstAsync();
 
@@ -486,7 +509,7 @@ public sealed class ApiService(
                 {
                     if (requestStream.Current.VideoId != null)
                     {
-                        session.Video = db.Videos.Single(v => v.Id == requestStream.Current.VideoId);
+                        session.Video = db.Videos.Include(static v => v.Subscription).Single(v => v.Id == requestStream.Current.VideoId);
                     }
                     else
                     {
@@ -496,6 +519,8 @@ public sealed class ApiService(
 
                 if (requestStream.Current.HasVolume)
                     session.Volume = requestStream.Current.Volume;
+
+                if (requestStream.Current.EndSession) return;
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), context.CancellationToken);
