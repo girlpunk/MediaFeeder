@@ -3,11 +3,12 @@
 
 import argparse
 import sys
+import queue
 import time
-from threading import Event
 from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from typing import NamedTuple
 
 import pychromecast
 from pychromecast.controllers.youtube import YouTubeController
@@ -19,36 +20,39 @@ from api import Api_pb2
 from api import Api_pb2_grpc
 
 
+class QueueEvent(NamedTuple):
+    next_video_id: int = None
+    go_next: bool = False
+    mark_watched: bool = False
+
+
 class MyMediaStatusListener(MediaStatusListener):
     """Status media listener"""
 
-    def __init__(self, name: str | None, cast: pychromecast.Chromecast, queue: Queue) -> None:
+    def __init__(self, name: str | None, cast: pychromecast.Chromecast, status_queue: Queue) -> None:
         self.name = name
         self.cast = cast
-        self.queue = queue
-        self.last_is_idle = Event()
-        self.reset()
-
-    def reset(self):
-        self.mark_watched = True
-        self.last_is_idle.clear()
+        self.status_queue = status_queue
+        self.event_queue = Queue()
         self.last_status = None
 
-    def wait(self, timeout):
-        return self.last_is_idle.wait(timeout)
+    def get_event(self, timeout):
+        try:
+            return self.event_queue.get(timeout=timeout)
+        except queue.Empty:
+            return None
 
     def new_media_status(self, status: MediaStatus) -> None:
         self.last_status = status
         #print(f"new_media_status: {status}")
 
-        if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
-            self.last_is_idle.set()
-        else:
-            self.last_is_idle.clear()
-
         # This is for adverts
         if not status.supports_pause:
             return
+
+        if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
+            print(f"FINISHED: {status}")
+            self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
 
         status_message = Api_pb2.PlaybackSessionRequest()
         status_message.Duration = int(status.current_time)
@@ -57,7 +61,7 @@ class MyMediaStatusListener(MediaStatusListener):
         status_message.State = status.player_state
         status_message.Volume = int(status.volume_level * 100)
         status_message.Rate = status.playback_rate
-        self.queue.put(status_message)
+        self.status_queue.put(status_message)
 
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
         print(
@@ -91,15 +95,13 @@ class MyMediaStatusListener(MediaStatusListener):
                 print(f"can not play/pause in state: {self.last_status.player_state}")
 
         elif rep.ShouldWatch:
-            self.mark_watched = True
-            self.last_is_idle.set()
+            self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
 
         elif rep.ShouldSkip:
-            self.mark_watched = False
-            self.last_is_idle.set()
+            self.event_queue.put(QueueEvent(go_next=True, mark_watched=False))
 
-        elif rep.AddMinutes > 0:
-            RequestAddVideos(rep.AddMinutes)
+        elif rep.NextVideoId > 0:
+            self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
 
 
 def message_queue_iterator(queue: Queue):
@@ -118,7 +120,6 @@ parser.add_argument("--cast",       help='Name of cast device')
 parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
 parser.add_argument("--folder",     help='Folder ID', required=True, type=int)
 parser.add_argument("--token",      help='Authentication token', required=True)
-parser.add_argument("--duration",   help='Target duration in minutes', required=False, type=int)
 args = parser.parse_args()
 
 chromecasts, browser = pychromecast.get_listed_chromecasts(friendly_names=[args.cast], known_hosts=args.known_host)
@@ -145,25 +146,6 @@ channel_options = [
 channel = grpc.secure_channel(args.server, composite_credentials, options=channel_options)
 stub = Api_pb2_grpc.APIStub(channel)
 
-video_queue = list()
-
-def RequestAddVideos(minutes):
-    global video_queue
-
-    # TODO include IDs from current queue to avoid duplicates.
-    shuffleRequest = Api_pb2.ShuffleRequest(FolderId=args.folder)
-    shuffleRequest.DurationMinutes = minutes
-    video_queue += stub.Shuffle(shuffleRequest).Id
-
-    print("Videos to play:")
-    for video in video_queue:
-        info = stub.Video(Api_pb2.VideoRequest(Id=video))
-        dur = str(timedelta(seconds=info.Duration))
-        print(f"  - {dur} {info.Title} ({info.VideoId})")
-
-if args.duration:
-    RequestAddVideos(args.duration)
-
 yt = YouTubeController()
 cast.register_handler(yt)
 
@@ -178,32 +160,24 @@ executor.submit(listenerMedia.on_ses_rep, state_response_iterator)
 
 
 try:
+    current_video_id = None
     while True:
-        video = video_queue.pop(0) if video_queue else None
-        if not video:
-            time.sleep(3)  # TODO use a wait-for thingy.
-            continue
+        event = listenerMedia.get_event(5)
+        cast.media_controller.update_status()
 
-        id_request = Api_pb2.VideoRequest(Id=video)
-        id_response = stub.Video(id_request)
+        if event and event.next_video_id:
+            current_video_id = event.next_video_id
+            id_response = stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
+            print(f"Playing {current_video_id}: {id_response.Title} [{id_response.VideoId}]")
+            status_message_queue.put(Api_pb2.PlaybackSessionRequest(VideoId = current_video_id))
+            yt.play_video(id_response.VideoId)
 
-        print(f"Playing: {id_response.Title} ({id_response.VideoId})")
-
-        yt.play_video(id_response.VideoId)
-        listenerMedia.reset()
-
-        status_message = Api_pb2.PlaybackSessionRequest()
-        status_message.VideoId = video
-        status_message_queue.put(status_message)
-
-        while not listenerMedia.wait(5):
-            cast.media_controller.update_status()
-
-        if listenerMedia.mark_watched:
-            watched_request = Api_pb2.WatchedRequest(Id=video, Watched=True)
-            stub.Watched(watched_request)
-
-        time.sleep(1)
+        elif event and event.go_next:
+            if current_video_id and event.mark_watched:
+                print(f"Marking {current_video_id} as watched...")
+                stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True))
+                current_video_id = None
+            status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
 except KeyboardInterrupt:
     print("shuting down...")
 

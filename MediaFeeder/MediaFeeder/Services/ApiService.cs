@@ -307,17 +307,34 @@ public sealed class ApiService(
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var timeRemaining = TimeSpan.FromMinutes(((int?) request.DurationMinutes) ?? 60);
+
+        var videos = await DoShuffle(
+            db,
+            user,
+            request.DurationMinutes,
+            request.HasFolderId ? request.FolderId : -1,
+            request.HasSubscriptionId ? request.SubscriptionId : -1);
         var reply = new ShuffleReply();
+        foreach (var video in videos)
+        {
+            reply.Id.Add(video.Id);
+        }
+        return reply;
+    }
+
+    private async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes, int folderId, int subscriptionId)
+    {
+        var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
+        List<Video> reply = [];
         List<Subscription> subscriptions;
 
-        if (request.HasFolderId)
+        if (folderId >= 0)
             subscriptions = await db.Subscriptions
-                .Where(s => s.ParentFolderId == request.FolderId && s.UserId == user.Id)
+                .Where(s => s.ParentFolderId == folderId && s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
-        else if (request.HasSubscriptionId)
-            subscriptions = [await db.Subscriptions.SingleAsync(s => s.Id == request.SubscriptionId && s.UserId == user.Id)];
+        else if (subscriptionId >= 0)
+            subscriptions = [await db.Subscriptions.SingleAsync(s => s.Id == subscriptionId && s.UserId == user.Id)];
         else
             subscriptions = await db.Subscriptions
                 .Where(s => s.UserId == user.Id)
@@ -334,7 +351,7 @@ public sealed class ApiService(
             .OrderBy(static v => v.PublishDate)
             .FirstAsync();
 
-        reply.Id.Add(first.Id);
+        reply.Add(first);
         timeRemaining -= first.DurationSpan ?? TimeSpan.Zero;
 
         var idleLoops = 0;
@@ -345,14 +362,14 @@ public sealed class ApiService(
             foreach (var subscription in subscriptions)
             {
                 var video = await db.Videos
-                    .Where(v => v.SubscriptionId == subscription.Id && v.Watched == false && !reply.Id.Contains(v.Id))
+                    .Where(v => v.SubscriptionId == subscription.Id && v.Watched == false && !reply.Contains(v))
                     .OrderBy(static v => v.PublishDate)
                     .FirstOrDefaultAsync();
 
                 if (video == null || video.DurationSpan > timeRemaining)
                     continue;
 
-                reply.Id.Add(video.Id);
+                reply.Add(video);
                 timeRemaining -= video.DurationSpan ?? TimeSpan.Zero;
                 addedVideo = true;
             }
@@ -472,12 +489,29 @@ public sealed class ApiService(
         session.PlayPauseEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPlayPause = true }, context.CancellationToken);
         session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
-        session.AddVideos += async minutes => await responseStream.WriteAsync(new PlaybackSessionReply { AddMinutes = minutes }, context.CancellationToken);
+        session.AddVideos += async minutes =>
+        {
+            var videos = await DoShuffle(
+                db,
+                user,
+                minutes,
+                1, // TODO
+                -1); // TODO
+            session.AddToPlaylist(videos);
+        };
 
         while (!context.CancellationToken.IsCancellationRequested)
         {
             if (await requestStream.MoveNext(context.CancellationToken))
             {
+                switch (requestStream.Current.Action)
+                {
+                    case PlaybackSessionAction.PopNextVideo:
+                        Video video = session.PopPlaylistHead();
+                        if (video != null) responseStream.WriteAsync(new PlaybackSessionReply { NextVideoId = video.Id }, context.CancellationToken);
+                        break;
+                }
+
                 if (requestStream.Current.HasDuration)
                     session.CurrentPosition = requestStream.Current.Duration != null ? TimeSpan.FromSeconds(requestStream.Current.Duration) : null;
 

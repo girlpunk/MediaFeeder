@@ -143,23 +143,29 @@ message ShuffleReply {
   repeated int32 Id = 1;
 }
 
+enum PlaybackSessionAction {
+  NO_SESSION_ACTION = 0;
+  POP_NEXT_VIDEO = 1;
+}
+
 message PlaybackSessionRequest {
+  PlaybackSessionAction Action = 1;
   optional int32 VideoId = 2;
   optional int32 Duration = 3;
   optional string Quality = 4;
   optional string Provider = 5;
   optional string State = 6;
   optional int32 Volume = 7;
-  optional float  Rate = 8;
+  optional float Rate = 8;
   optional float Loaded = 9;
-  optional bool EndSession = 10;
+  optional bool EndSession = 10;  // TODO move to Action.
 }
 
 message PlaybackSessionReply {
   optional bool ShouldPlayPause = 1;
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
-  optional int32 AddMinutes = 4;
+  optional int32 NextVideoId = 4;
 }
 
 message UnwatchedCounts {

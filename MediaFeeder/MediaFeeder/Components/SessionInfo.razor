@@ -1,4 +1,5 @@
 @using Humanizer
+@using MediaFeeder.Data.db
 @using MediaFeeder.PlaybackManager
 
 <Card Loading="@(Session == null)" >
@@ -31,13 +32,20 @@
             <CardMeta
                 Title="@($"{Session?.Provider?.Humanize()} - {Session?.CurrentPosition?.ToString()} / {Session?.Video?.DurationSpan.ToString()}")"
                 Description="@($"{Session?.State} - {Session?.Quality} - {Session?.Rate}x - {Session?.Volume}% volume")"/>
-            <div style="padding-top: 16px;">
-                <Avatar Style="@("background-color: purple; vertical-align: middle;")" Size="AvatarSize.Large">
-                    @Session?.User.UserName[0]
-                </Avatar>
-                <span>@Session?.User.UserName</span>
-            </div>
         }
+
+        <AntList Size="ListSize.Small" Style="margin-top: 16px; max-height: 300px; overflow-y: auto;" Bordered DataSource="@Session.Playlist">
+            <ChildContent Context="item">
+                <ListItem Actions="@plActions(item)">
+                    <ListItemMeta AvatarTemplate="@plThumbTpl(item)" DescriptionTemplate="@plDescTpl(item)">
+                        <TitleTemplate>
+                            @item.Name
+                        </TitleTemplate>
+                    </ListItemMeta>
+                </ListItem>
+            </ChildContent>
+        </AntList>
+
     </ChildContent>
     <ActionTemplate>
         <CardAction >
@@ -85,6 +93,11 @@
     [Parameter]
     [EditorRequired]
     public PlaybackSession? Session { get; set; }
+
+    RenderFragment plThumbTpl(Video v) => @<Avatar Shape="AvatarShape.Square" Size="AvatarSize.Large" Src="@($"api/video/{v.Id}/thumbnail/")"/>;
+    RenderFragment plDescTpl(Video v) => @<span>@(v.DurationSpan.ToString() ?? "??:??") • @(v.Subscription?.Name)</span>;
+    RenderFragment plRemove(Video v) => @<a key="remove" @onclick="@(() => Session?.RemoveFromPlaylist(v))">remove</a>;
+    RenderFragment[] plActions(Video v) => [ plRemove(v) ];
 
     protected override void OnParametersSet()
     {
