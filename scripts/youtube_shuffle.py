@@ -24,6 +24,7 @@ class QueueEvent(NamedTuple):
     next_video_id: int = None
     go_next: bool = False
     mark_watched: bool = False
+    content_id: str = None
 
 
 class MyMediaStatusListener(MediaStatusListener):
@@ -51,8 +52,8 @@ class MyMediaStatusListener(MediaStatusListener):
             return
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
-            print(f"FINISHED: {status}")
-            self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
+            print(f"Received finished event: {status.content_id}")
+            self.event_queue.put(QueueEvent(go_next=True, mark_watched=True, content_id=status.content_id))
 
         status_message = Api_pb2.PlaybackSessionRequest()
         status_message.Duration = int(status.current_time)
@@ -96,12 +97,15 @@ class MyMediaStatusListener(MediaStatusListener):
                 print(f"can not play/pause in state: {self.last_status.player_state}")
 
         elif rep.ShouldWatch:
+            print("Received mark as watched and skip command")
             self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
 
         elif rep.ShouldSkip:
+            print("Received skip command")
             self.event_queue.put(QueueEvent(go_next=True, mark_watched=False))
 
         elif rep.NextVideoId > 0:
+            print(f"Received next video ID: {rep.NextVideoId}")
             self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
 
 
@@ -169,6 +173,7 @@ def ConnectToServer():
 
 try:
     current_video_id = None
+    current_content_id = None
     while True:
         if not session_reader or not session_reader.running():
             ConnectToServer()
@@ -179,18 +184,25 @@ try:
         if event and event.next_video_id:
             current_video_id = event.next_video_id
             id_response = stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
-            print(f"Playing {current_video_id}: {id_response.Title} [{id_response.VideoId}]")
+            current_content_id = id_response.VideoId
+
+            print(f"Playing {current_video_id}: {id_response.Title} [{current_content_id}]")
             status_message_queue.put(Api_pb2.PlaybackSessionRequest(VideoId = current_video_id))
-            yt.play_video(id_response.VideoId)
+            yt.clear_playlist()
+            yt.play_video(current_content_id)
 
         elif event and event.go_next:
-            if current_video_id and event.mark_watched:
-                print(f"Marking {current_video_id} as watched...")
-                stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True))
-                current_video_id = None
-            status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
+            # this check is to protected against the chromecast sending multiple finished events.
+            if not event.content_id or event.content_id == current_content_id:
+                if current_video_id and event.mark_watched:
+                    print(f"Marking {current_video_id} as watched...")
+                    stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True))
+                    current_video_id = None
+                status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
+            else:
+                print(f"Ignoring event: {event}")
 except KeyboardInterrupt:
-    print("shuting down...")
+    print("Shuting down...")
 
 # Shut down discovery
 browser.stop_discovery()
