@@ -20,6 +20,8 @@ public sealed class PlaybackSession : IDisposable
     public event Action? PlayPauseEvent;
     public event Action? WatchEvent;
     public event Action? SkipEvent;
+    public List<Folder> AllFolders { get; set; } = [];
+    public int SelectedFolderId { get; set; }
     public event Action<Int32>? AddVideos;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
@@ -155,8 +157,8 @@ public sealed class PlaybackSession : IDisposable
     {
         return AddVideos != null;
     }
-    public void TriggerAddVideos(int count)
+    public void TriggerAddVideos(int minutes)
     {
-        AddVideos?.Invoke(count);
+        AddVideos?.Invoke(minutes);
     }
 }

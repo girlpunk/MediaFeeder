@@ -491,12 +491,13 @@ public sealed class ApiService(
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
         session.AddVideos += async minutes =>
         {
+            if (session.SelectedFolderId < 1) return;
             var videos = await DoShuffle(
                 db,
                 user,
                 minutes,
-                1, // TODO
-                -1); // TODO
+                session.SelectedFolderId,
+                -1);
             session.AddToPlaylist(videos);
         };
 

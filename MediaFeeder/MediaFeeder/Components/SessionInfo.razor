@@ -1,6 +1,8 @@
 @using Humanizer
+@using MediaFeeder.Data
 @using MediaFeeder.Data.db
 @using MediaFeeder.PlaybackManager
+@using Microsoft.EntityFrameworkCore;
 
 <Card Loading="@(Session == null)" >
     <Cover>
@@ -35,6 +37,39 @@
         }
 
         <AntList Size="ListSize.Small" Style="margin-top: 16px; max-height: 300px; overflow-y: auto;" Bordered DataSource="@Session.Playlist">
+            <Header>
+                <Flex Gap="FlexGap.Small">
+                    <TreeSelect
+                        DataSource="@Session.AllFolders"
+                        @bind-Value="@Session.SelectedFolderId"
+                        Placeholder="Please select folder"
+                        ItemValue="static item => item.Id"
+                        ItemLabel="static item => item.Name"
+                        AllowClear
+                        EnableSearch
+                        MatchedStyle="font-weight: bold"
+                        ChildrenExpression="static node => node.DataItem.Subfolders"
+                        TitleExpression="static node => node.DataItem.Name"
+                        TitleTemplate="static node => node.DataItem.Name.ToRenderFragment()"
+                        KeyExpression="static node => node.DataItem.Id.ToString()"
+                        IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"/>
+                    <DropdownButton OnClick="@(() => Session?.TriggerAddVideos(60))">
+                        <ChildContent>
+                            <div>
+                                <Icon Type="@IconType.Outline.Plus"/>
+                                Add 1 Hour
+                            </div>
+                        </ChildContent>
+                        <Overlay>
+                            <Menu>
+                                <MenuItem @onclick="@(() => Session?.TriggerAddVideos(15))">15 minutes</MenuItem>
+                                <MenuItem @onclick="@(() => Session?.TriggerAddVideos(30))">30 minutes</MenuItem>
+                                <MenuItem @onclick="@(() => Session?.TriggerAddVideos(120))">2 hours</MenuItem>
+                            </Menu>
+                        </Overlay>
+                    </DropdownButton>
+                </Flex>
+            </Header>
             <ChildContent Context="item">
                 <ListItem Actions="@plActions(item)">
                     <ListItemMeta AvatarTemplate="@plThumbTpl(item)" DescriptionTemplate="@plDescTpl(item)">
@@ -54,26 +89,6 @@
                 Pause
             </div>
         </CardAction>
-        @if (Session?.HasAddVideosHandlers() ?? false)
-        {
-            <CardAction>
-                <Dropdown>
-                    <Overlay>
-                        <Menu>
-                            <MenuItem @onclick="@(() => Session?.TriggerAddVideos(15))">15 minutes</MenuItem>
-                            <MenuItem @onclick="@(() => Session?.TriggerAddVideos(30))">30 minutes</MenuItem>
-                            <MenuItem @onclick="@(() => Session?.TriggerAddVideos(60))">60 minutes</MenuItem>
-                        </Menu>
-                    </Overlay>
-                    <ChildContent>
-                        <div>
-                            <Icon Type="@IconType.Outline.Plus"/>
-                            Add Videos
-                        </div>
-                    </ChildContent>
-                </Dropdown>
-            </CardAction>
-        }
         <CardAction>
             <div @onclick="@(() => Session?.Watch())">
                 <Icon Type="@IconType.Outline.Eye"/>
@@ -94,10 +109,23 @@
     [EditorRequired]
     public PlaybackSession? Session { get; set; }
 
+    [Inject] public required MediaFeederDataContext Context { get; set; }
+
     RenderFragment plThumbTpl(Video v) => @<Avatar Shape="AvatarShape.Square" Size="AvatarSize.Large" Src="@($"api/video/{v.Id}/thumbnail/")"/>;
     RenderFragment plDescTpl(Video v) => @<span>@(v.DurationSpan.ToString() ?? "??:??") • @(v.Subscription?.Name)</span>;
     RenderFragment plRemove(Video v) => @<a key="remove" @onclick="@(() => Session?.RemoveFromPlaylist(v))">remove</a>;
     RenderFragment[] plActions(Video v) => [ plRemove(v) ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Session != null)
+        {
+            Session.AllFolders = await Context.Folders
+                .Where(f => f.User == Session.User)
+                .Include(static f => f.Subfolders)
+                .ToListAsync();
+        }
+    }
 
     protected override void OnParametersSet()
     {
