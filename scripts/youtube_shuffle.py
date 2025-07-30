@@ -73,6 +73,7 @@ class MyMediaStatusListener(MediaStatusListener):
 
     def on_ses_rep(self, iterator):
         try:
+            print("Started streaming RPC.")
             for rep in iterator:
                 try:
                     self.on_ses_rep_msg(rep)
@@ -149,19 +150,29 @@ stub = Api_pb2_grpc.APIStub(channel)
 yt = YouTubeController()
 cast.register_handler(yt)
 
+executor = ThreadPoolExecutor()
 status_message_queue = Queue()
 
 listenerMedia = MyMediaStatusListener(cast.name, cast, status_message_queue)
 cast.media_controller.register_status_listener(listenerMedia)
+session_reader = None
 
-state_response_iterator = stub.PlaybackSession(message_queue_iterator(status_message_queue))
-executor = ThreadPoolExecutor()
-executor.submit(listenerMedia.on_ses_rep, state_response_iterator)
+def ConnectToServer():
+    global listenerMedia, status_message_queue, executor, session_reader
 
+    if session_reader:
+        session_reader.cancel()
+
+    print("Connecting to server...")
+    session_iterator = stub.PlaybackSession(message_queue_iterator(status_message_queue))
+    session_reader = executor.submit(listenerMedia.on_ses_rep, session_iterator)
 
 try:
     current_video_id = None
     while True:
+        if not session_reader or not session_reader.running():
+            ConnectToServer()
+
         event = listenerMedia.get_event(5)
         cast.media_controller.update_status()
 
