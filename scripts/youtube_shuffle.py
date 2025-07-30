@@ -199,6 +199,13 @@ try:
 
             print(f"Playing {current_video_id}: {id_response.Title} [{current_content_id}]")
             status_message_queue.put(Api_pb2.PlaybackSessionRequest(VideoId = current_video_id))
+
+            # if the chromecast has been used for other apps, cast lib might incorrectly think it is already launched.
+            # this makes sure it reconnects and is ready to receive play commands.  hopefully.
+            yt.update_screen_id()
+            yt.start_session_if_none()
+            time.sleep(1)
+
             yt.clear_playlist()
             yt.play_video(current_content_id)
 
@@ -213,7 +220,7 @@ try:
                 current_content_id = None
                 print("Requesting next video...")
                 status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
-                time.sleep(1)  # let chromecast finish before tring to play next video.
+                time.sleep(1)  # let chromecast finish before trying to play next video.
             else:
                 print(f"Ignoring event: {event}")
 except KeyboardInterrupt:
