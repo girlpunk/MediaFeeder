@@ -197,7 +197,10 @@ try:
                 if current_video_id and event.mark_watched:
                     print(f"Marking {current_video_id} as watched...")
                     stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True))
-                    current_video_id = None
+
+                current_video_id = None
+                current_content_id = None
+                print("Requesting next video...")
                 status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
             else:
                 print(f"Ignoring event: {event}")
