@@ -5,7 +5,7 @@
 @using Microsoft.EntityFrameworkCore;
 
 <Card Loading="@(Session == null)" >
-    <Cover>
+    <ChildContent>
         <GridRow Gutter="16">
             <GridCol Span="8">
                 <Image
@@ -20,8 +20,7 @@
                     Description="@(Session?.Video?.Subscription?.Name)"/>
             </GridCol>
         </GridRow>
-    </Cover>
-    <ChildContent>
+
         @if (Session?.CurrentPosition != null)
         {
             <Progress
