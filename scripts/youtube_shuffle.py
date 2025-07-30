@@ -171,6 +171,16 @@ def ConnectToServer():
     session_iterator = stub.PlaybackSession(message_queue_iterator(status_message_queue))
     session_reader = executor.submit(listenerMedia.on_ses_rep, session_iterator)
 
+def UpdateCast():
+    global cast
+    try:
+        cast.media_controller.update_status()
+        return True
+    except pychromecast.error.NotConnected:
+        print("Waiting for chromecast...")
+        time.sleep(3)
+        return False
+
 try:
     current_video_id = None
     current_content_id = None
@@ -178,9 +188,10 @@ try:
         if not session_reader or not session_reader.running():
             ConnectToServer()
 
-        event = listenerMedia.get_event(5)
-        cast.media_controller.update_status()
+        if current_video_id and not UpdateCast():
+            continue
 
+        event = listenerMedia.get_event(5)
         if event and event.next_video_id:
             current_video_id = event.next_video_id
             id_response = stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
@@ -202,6 +213,7 @@ try:
                 current_content_id = None
                 print("Requesting next video...")
                 status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
+                time.sleep(1)  # let chromecast finish before tring to play next video.
             else:
                 print(f"Ignoring event: {event}")
 except KeyboardInterrupt:
