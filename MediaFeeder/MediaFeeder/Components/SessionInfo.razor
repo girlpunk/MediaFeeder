@@ -31,8 +31,8 @@
         }
         @if (Session?.Video != null)
         {
-            <CardMeta
-                Title="@($"{Session?.Provider?.Humanize()} - {Session?.CurrentPosition?.ToString()} / {Session?.Video?.DurationSpan.ToString()}")"
+            <CardMeta Style="display: block;"
+                TitleTemplate="@titleTpl(Session)"
                 Description="@($"{Session?.State} - {Session?.Quality} - {Session?.Rate}x - {Session?.Volume}% volume")"/>
         }
 
@@ -110,6 +110,11 @@
     public PlaybackSession? Session { get; set; }
 
     [Inject] public required MediaFeederDataContext Context { get; set; }
+
+    RenderFragment titleTpl(PlaybackSession s) => @<Flex Justify="FlexJustify.SpaceBetween">
+      <span>@(s?.Provider?.Humanize())</span>
+      <span>@(s?.CurrentPosition?.ToString()) / @(s?.Video?.DurationSpan.ToString())</span>
+      </Flex>;
 
     RenderFragment plThumbTpl(Video v) => @<Avatar Shape="AvatarShape.Square" Size="AvatarSize.Large" Src="@($"api/video/{v.Id}/thumbnail/")"/>;
     RenderFragment plDescTpl(Video v) => @<span>@(v.DurationSpan.ToString() ?? "??:??") • @(v.Subscription?.Name)</span>;
