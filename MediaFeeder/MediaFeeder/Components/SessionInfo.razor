@@ -124,10 +124,11 @@
     {
         if (Session != null)
         {
-            Session.AllFolders = await Context.Folders
+            Session.AllFolders = Context.Folders
+                .AsNoTracking()
                 .Where(f => f.User == Session.User)
                 .Include(static f => f.Subfolders)
-                .ToListAsync();
+                .ToList();
         }
     }
 
