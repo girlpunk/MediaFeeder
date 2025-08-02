@@ -189,6 +189,10 @@ try:
         if not session_reader or not session_reader.running():
             ConnectToServer()
 
+            # if connection was lost, at least restore what is currently playing.
+            if current_video_id:
+                status_message_queue.put(Api_pb2.PlaybackSessionRequest(VideoId = current_video_id))
+
         if current_video_id and not UpdateCast():
             continue
 
