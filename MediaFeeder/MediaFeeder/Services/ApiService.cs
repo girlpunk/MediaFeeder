@@ -513,6 +513,9 @@ public sealed class ApiService(
                         break;
                 }
 
+                if (requestStream.Current.HasTitle)
+                    session.Title = requestStream.Current.Title;
+
                 if (requestStream.Current.HasDuration)
                     session.CurrentPosition = requestStream.Current.Duration != null ? TimeSpan.FromSeconds(requestStream.Current.Duration) : null;
 

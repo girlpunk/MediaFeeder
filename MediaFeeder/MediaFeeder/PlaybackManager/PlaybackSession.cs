@@ -16,6 +16,7 @@ public sealed class PlaybackSession : IDisposable
     private int? _volume;
     private float? _rate;
     private float? _loaded;
+    public string? Title { get; set; }
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
     public event Action? WatchEvent;

@@ -4,7 +4,7 @@
 @using MediaFeeder.PlaybackManager
 @using Microsoft.EntityFrameworkCore;
 
-<Card Loading="@(Session == null)" >
+<Card Loading="@(Session == null)" Title="@(Session?.Title)">
     <ChildContent>
         <GridRow Gutter="16">
             <GridCol Span="8">
