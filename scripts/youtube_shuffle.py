@@ -149,6 +149,10 @@ channel_options = [
 ]
 
 channel = grpc.secure_channel(args.server, composite_credentials, options=channel_options)
+def subscribe_callback(connectivity: grpc.ChannelConnectivity):
+    print(f"Channel: {connectivity}")
+channel.subscribe(subscribe_callback, try_to_connect=True)
+
 stub = Api_pb2_grpc.APIStub(channel)
 
 yt = YouTubeController()
@@ -162,15 +166,17 @@ cast.media_controller.register_status_listener(listenerMedia)
 session_reader = None
 
 def ConnectToServer():
-    global listenerMedia, status_message_queue, executor, session_reader, cast
+    global listenerMedia, status_message_queue, executor, session_reader, channel, args
 
     if session_reader:
         session_reader.cancel()
 
     print("Connecting to server...")
+    grpc.channel_ready_future(channel).result()
+
     session_iterator = stub.PlaybackSession(message_queue_iterator(status_message_queue))
     session_reader = executor.submit(listenerMedia.on_ses_rep, session_iterator)
-    status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title = cast.name))
+    status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title = args.cast))
 
 def UpdateCast():
     global cast
