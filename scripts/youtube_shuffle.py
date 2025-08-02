@@ -121,6 +121,8 @@ if not sys.warnoptions:
 
 parser = argparse.ArgumentParser(description="Example on how to use the Youtube Controller.")
 parser.add_argument("--server",     help='MediaFeeder server address and port', required=True)
+parser.add_argument("--server-cert", help='Path to .pem for server TLS cert.')
+parser.add_argument("--cert-host",  help='Server hostname to trust.')
 parser.add_argument("--cast",       help='Name of cast device')
 parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
 parser.add_argument("--folder",     help='Folder ID', required=True, type=int)
@@ -137,8 +139,13 @@ cast = chromecasts[0]
 # Start socket client's worker thread and wait for initial status update
 cast.wait()
 
-bearer_credentials = grpc.access_token_call_credentials(args.token)
 ssl_credentials = grpc.ssl_channel_credentials()
+if args.server_cert:
+    with open(args.server_cert, 'rb') as f:
+        root_certs = f.read()
+    ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
+
+bearer_credentials = grpc.access_token_call_credentials(args.token)
 composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
 
 channel_options = [
@@ -147,6 +154,9 @@ channel_options = [
     ("grpc.http2.max_pings_without_data", 0),
     ("grpc.keepalive_permit_without_calls", 1),
 ]
+
+if args.cert_host:
+    channel_options += [("grpc.ssl_target_name_override", args.cert_host)]
 
 channel = grpc.secure_channel(args.server, composite_credentials, options=channel_options)
 def subscribe_callback(connectivity: grpc.ChannelConnectivity):
