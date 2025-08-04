@@ -39,7 +39,7 @@
             <Header>
                 <Flex Gap="FlexGap.Small">
                     <TreeSelect
-                        DataSource="@Session.AllFolders"
+                        DataSource="@allFolders"
                         @bind-Value="@Session.SelectedFolderId"
                         Placeholder="Please select folder"
                         ItemValue="static item => item.Id"
@@ -110,6 +110,8 @@
 
     [Inject] public required MediaFeederDataContext Context { get; set; }
 
+    List<Folder> allFolders = [];
+
     RenderFragment titleTpl(PlaybackSession s) => @<Flex Justify="FlexJustify.SpaceBetween">
       <span>@(s?.Provider?.Humanize())</span>
       <span>@(s?.CurrentPosition?.ToString()) / @(s?.Video?.DurationSpan.ToString())</span>
@@ -124,7 +126,7 @@
     {
         if (Session != null)
         {
-            Session.AllFolders = Context.Folders
+            allFolders = Context.Folders
                 .AsNoTracking()
                 .Where(f => f.User == Session.User)
                 .Include(static f => f.Subfolders)
