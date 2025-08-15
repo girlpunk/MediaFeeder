@@ -72,12 +72,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
     var headerSettings = builder.Configuration.GetSection("ForwardedHeaders");
 
-    foreach(var proxy in headerSettings.GetSection("proxies").Get<string[]>()) {
+    foreach(var proxy in headerSettings?.GetSection("proxies")?.Get<string[]>() ?? []) {
         Console.WriteLine($"Adding known proxy: {proxy}");
         options.KnownProxies.Add(IPAddress.Parse(proxy));
     }
 
-    foreach(var network in headerSettings.GetSection("network").Get<List<string>>()) {
+    foreach(var network in headerSettings?.GetSection("network")?.Get<string[]>() ?? []) {
         Console.WriteLine($"Adding known proxy network: {network}");
         var parts = network.Split('/');
         options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
