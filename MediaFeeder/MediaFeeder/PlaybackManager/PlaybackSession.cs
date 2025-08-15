@@ -6,6 +6,7 @@ namespace MediaFeeder.PlaybackManager;
 public sealed class PlaybackSession : IDisposable
 {
     private readonly PlaybackSessionManager _manager;
+    private List<Video> _playlist = [];
     private Video? _video;
     private TimeSpan? _currentPosition;
     private AuthUser _user;
@@ -15,10 +16,13 @@ public sealed class PlaybackSession : IDisposable
     private int? _volume;
     private float? _rate;
     private float? _loaded;
+    public string? Title { get; set; }
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
     public event Action? WatchEvent;
     public event Action? SkipEvent;
+    public int SelectedFolderId { get; set; }
+    public event Action<Int32>? AddVideos;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
     public void Watch() => WatchEvent?.Invoke();
@@ -34,6 +38,29 @@ public sealed class PlaybackSession : IDisposable
     public void Dispose()
     {
         _manager.RemoveSession(this);
+    }
+
+    public List<Video> Playlist => _playlist;
+
+    public void AddToPlaylist(List<Video> items)
+    {
+        _playlist.AddRange(items);
+        UpdateEvent?.Invoke();
+    }
+
+    public void RemoveFromPlaylist(Video item)
+    {
+        _playlist.Remove(item);
+        UpdateEvent?.Invoke();
+    }
+
+    public Video PopPlaylistHead()
+    {
+        if (_playlist.Count < 1) return null;
+        Video video = _playlist[0];
+        _playlist.RemoveAt(0);
+        UpdateEvent?.Invoke();
+        return video;
     }
 
     public Video? Video
@@ -124,5 +151,14 @@ public sealed class PlaybackSession : IDisposable
             _loaded = value;
             UpdateEvent?.Invoke();
         }
+    }
+
+    public bool HasAddVideosHandlers()
+    {
+        return AddVideos != null;
+    }
+    public void TriggerAddVideos(int minutes)
+    {
+        AddVideos?.Invoke(minutes);
     }
 }
