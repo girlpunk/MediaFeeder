@@ -72,7 +72,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
     var headerSettings = builder.Configuration.GetSection("ForwardedHeaders");
 
-    foreach(var proxy in headerSettings.GetValue<string[]>("proxies")) {
+    foreach(var proxy in headerSettings.GetSection("proxies").Get<string[]>()) {
         Console.WriteLine($"Adding known proxy: {proxy}");
         options.KnownProxies.Add(IPAddress.Parse(proxy));
     }
