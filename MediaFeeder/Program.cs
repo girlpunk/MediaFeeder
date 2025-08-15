@@ -42,6 +42,8 @@ using Polly.Extensions.Http;
 using Quartz;
 using ResQueue;
 using ResQueue.Enums;
+using IPAddress = System.Net.IPAddress;
+using IPNetwork = System.Net.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +69,14 @@ builder.Services.AddRazorComponents()
 builder.Services.Configure<ForwardedHeadersOptions>(static options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.All;
+
+    var headerSettings = builder.Configuration.GetSection("ForwardedHeaders");
+
+    headerSettings.GetValue<List<string>>("proxies")?.ForEach((proxy) => options.KnownProxies.Add(IPAddress.Parse(proxy));
+    headerSettings.GetValue<List<string>>("networks)?.ForEach((network) => {
+        var parts = network.split('/');
+        options.KnownIPNetworks.Add(new IPNetwork(IPAddress.Parse(parts[0]), parts[1]));
+    });
 });
 
 builder.Services.AddGrpc(options =>
