@@ -1,0 +1,31 @@
+@inherits MainLayout
+
+<PageTitle>Home</PageTitle>
+
+<Layout>
+    <Header Style="background-color: white;">
+        <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.FlexStart">
+            <div class="top-row ps-3 navbar">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="/">
+                        <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
+                        <Title>MediaFeeder</Title>
+                    </a>
+                </div>
+            </div>
+            <div class="top-row px-4">
+                <AuthorizeView>
+                    <Authorized>
+                        Hello, @context.User.Identity?.Name!
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="Account/Login">Log in</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </Flex>
+    </Header>
+    <Layout>
+        @Body
+    </Layout>
+</Layout>

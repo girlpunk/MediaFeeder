@@ -1,0 +1,77 @@
+@using Humanizer
+
+<Flex Direction="FlexDirection.Vertical">
+    <Flex Justify="FlexJustify.SpaceEvenly">
+        <Tooltip Title="Add Subscription">
+            <Button Icon="@(IconType.Outline.AppstoreAdd)" OnClick="() => EditSubscription(null)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Add Folder">
+            <Button Icon="@(IconType.Outline.FolderAdd)" OnClick="() => EditFolder(null)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Import Subscriptions">
+            <Button Icon="@(IconType.Outline.Import)"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Edit">
+            <Button Icon="@(IconType.Outline.Edit)" OnClick="EditSelected"></Button>
+        </Tooltip>
+
+        <Tooltip Title="Delete">
+            <Button Icon="@(IconType.Outline.Delete)"></Button>
+        </Tooltip>
+    </Flex>
+
+    @if (Folders != null)
+    {
+        <span>
+            All Subscriptions
+            @if (UnwatchedCache?.Values.Sum(static f => f.unwatched) > 0)
+            {
+                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">
+                    @UnwatchedCache.Values.Sum(static f => f.unwatched).ToMetric(decimals: 1)
+                </sup>
+            }
+            @if (UnwatchedCache?.Values.Sum(static f => f.downloaded) > 0) {
+                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">
+                    @UnwatchedCache.Values.Sum(static f => f.downloaded).ToMetric(decimals: 1)
+                </sup>
+            }
+        </span>
+        <CascadingValue Value="UnwatchedCache" Name="@nameof(UnwatchedCache)">
+            <CascadingValue Value="SelectedFolder" Name="@nameof(SelectedFolder)">
+                <CascadingValue Value="SelectedSubscription" Name="@nameof(SelectedSubscription)">
+
+                    @* <Tree *@
+                    @*     ShowIcon="true" *@
+                    @*     ShowExpand="true" *@
+                    @*     BlockNode="true" *@
+                    @*     ShowLeafIcon="true" *@
+                    @*     Selectable="true" *@
+                    @*     TItem="ITreeSelectable" *@
+                    @*     DefaultExpandAll="true" *@
+                    @*     @ref="TreeRef"> *@
+                    @*     @foreach (var folder in Folders) *@
+                    @*     { *@
+                    @*         <TreeFolder Folder="@folder"/> *@
+                    @*     } *@
+                    @* </Tree> *@
+
+                    <div class="ant-tree">
+                        @foreach (var folder in Folders)
+                        {
+                            <TreeFolder @key="folder.Id" Folder="@folder"/>
+                        }
+                    </div>
+
+                </CascadingValue>
+            </CascadingValue>
+        </CascadingValue>
+    }
+    else
+    {
+        <span>Loading...</span>
+        <Skeleton/>
+    }
+</Flex>

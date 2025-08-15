@@ -1,0 +1,37 @@
+@using MediaFeeder.Data.db
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<AuthUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+@attribute [AllowAnonymous]
+
+<form class="form-horizontal" action="Account/PerformExternalLogin" method="post">
+    <div>
+        <AntiforgeryToken/>
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl"/>
+        <p>
+            @foreach (var provider in _externalLogins)
+            {
+                <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name"
+                        title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
+            }
+        </p>
+    </div>
+</form>
+
+@code {
+    private AuthenticationScheme[] _externalLogins = [];
+
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();
+
+        if (_externalLogins.Length == 1)
+        {
+            var url = $"Account/PerformExternalLogin/{_externalLogins[0].Name}?returnUrl={ReturnUrl}";
+            RedirectManager.RedirectTo(url);
+        }
+    }
+}

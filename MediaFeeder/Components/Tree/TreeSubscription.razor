@@ -1,0 +1,25 @@
+@using Humanizer
+
+@if (Subscription != null)
+{
+    <div style="padding-left: 24px;" class="@ContainerClasses">
+        <a href="subscription/@Subscription.Id">
+            <Image Src="@($"api/subscriptions/{Subscription.Id}/thumbnail/")" Alt="Subscription Icon"
+                   Style="max-width: 24px; max-height: 24px;"
+                   Preview="false" />
+            @Subscription.Name
+            @if (Unwatched > 0)
+            {
+                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #007bff;">@Unwatched.ToMetric(decimals: 1)</sup>
+            }
+            @if (Downloaded > 0)
+            {
+                <sup class="ant-scroll-number" style="padding: 0 6px; color: #fff; font-size: 12px; text-align: center; border-radius: 10px; background-color: #59b352">@Downloaded.ToMetric(decimals: 1)</sup>
+            }
+        </a>
+    </div>
+}
+else
+{
+    <Skeleton/>
+}

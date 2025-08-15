@@ -1,0 +1,12 @@
+@page "/auth"
+
+@attribute [Authorize]
+@attribute [StreamRendering]
+
+<PageTitle>Auth</PageTitle>
+
+<h1>You are authenticated</h1>
+
+<AuthorizeView>
+    Hello @context.User.Identity?.Name!
+</AuthorizeView>

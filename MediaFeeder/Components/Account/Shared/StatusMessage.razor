@@ -1,0 +1,31 @@
+@if (!string.IsNullOrEmpty(DisplayMessage))
+{
+    var statusMessageClass = DisplayMessage.StartsWith("Error", StringComparison.InvariantCultureIgnoreCase) ? "danger" : "success";
+    <div class="alert alert-@statusMessageClass" role="alert">
+        @DisplayMessage
+    </div>
+}
+
+@code {
+    private string? _messageFromCookie;
+
+    [Parameter] public string? Message { get; set; }
+
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? DisplayMessage => Message ?? _messageFromCookie;
+
+    protected override void OnParametersSet()
+    {
+        if (HttpContext != null)
+        {
+            _messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
+
+            if (_messageFromCookie is not null)
+            {
+                HttpContext.Response.Cookies.Delete(IdentityRedirectManager.StatusCookieName);
+            }
+        }
+    }
+
+}
