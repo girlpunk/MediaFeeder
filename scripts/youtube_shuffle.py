@@ -9,15 +9,20 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from typing import NamedTuple
+from threading import Event
+import json
+import os
+import sys
 
-import pychromecast
-from pychromecast.controllers.youtube import YouTubeController
-
-import grpc
-
+from oauthlib.oauth2 import DeviceClient
+from requests_oauthlib import OAuth2Session
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
-from api import Api_pb2
-from api import Api_pb2_grpc
+from pychromecast.controllers.youtube import YouTubeController
+import Api_pb2
+import Api_pb2_grpc
+import grpc
+import pychromecast
+import requests
 
 
 class QueueEvent(NamedTuple):
@@ -113,6 +118,61 @@ def message_queue_iterator(queue: Queue):
     while True:
         yield queue.get()
 
+
+def get_token():
+    with open('appsettings.json') as f:
+        settings = json.load(f)
+
+    authentik_url = settings["AUTH_URL"]
+    client_id = settings["AUTH_CLIENT_ID"]
+
+    if "AUTH_SECRET" in settings:
+        token = settings["AUTH_SECRET"]
+    else:
+        token = None
+
+    #TODO: Check token validity
+    if token is None or false:
+        client = DeviceClient(client_id)
+        oauth = OAuth2Session(client=client)
+        #TODO: Fetch from metadata
+        device_auth_response = oauth.post("https://authentik.home.foxocube.xyz/application/o/device/", data={
+          'client_id': client_id,
+        #  'scope': ' '.join(SCOPE)
+        })
+        darj = device_auth_response.json()
+        device_code = darj['device_code']
+
+        if "verification_uri_complete" in darj:
+            print(f"Please visit {darj['verification_uri_complete']}", flush=True)
+        else:
+            user_code = darj['user_code']
+            verification_url = darj['verification_uri']
+            print(f"Please visit {verification_url} and paste the code: {user_code}", flush=True)
+
+        time.sleep(30)
+
+        #TODO: Replace URI
+        token_response = oauth.post("https://authentik.home.foxocube.xyz/application/o/token/", data={
+          'client_id': client_id,
+        #  'client_secret': CLIENT_SECRET,
+          'device_code': device_code,
+          'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
+        })
+
+        print(token_response.json())
+
+        if token_response.status_code == 200:
+            # Successfully retrieved the token
+            token = token_response.json()
+
+            settings["token"] = token
+            with open("appsettings.json", "w") as f:
+                json.dump(settings, f)
+
+            return token
+
+get_token()
 
 # Enable deprecation warnings etc.
 if not sys.warnoptions:

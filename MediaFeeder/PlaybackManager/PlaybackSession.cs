@@ -6,7 +6,6 @@ namespace MediaFeeder.PlaybackManager;
 public sealed class PlaybackSession : IDisposable
 {
     private readonly PlaybackSessionManager _manager;
-    private List<Video> _playlist = [];
     private Video? _video;
     private TimeSpan? _currentPosition;
     private AuthUser _user;
@@ -40,25 +39,27 @@ public sealed class PlaybackSession : IDisposable
         _manager.RemoveSession(this);
     }
 
-    public List<Video> Playlist => _playlist;
+    public Queue<Video> Playlist { get; } = [];
 
     public void AddToPlaylist(List<Video> items)
     {
-        _playlist.AddRange(items);
+        foreach(item in items)
+            Playlist.Enqueue(item);
+
         UpdateEvent?.Invoke();
     }
 
     public void RemoveFromPlaylist(Video item)
     {
-        _playlist.Remove(item);
+        Playlist.Remove(item);
         UpdateEvent?.Invoke();
     }
 
-    public Video PopPlaylistHead()
+    public Video? PopPlaylistHead()
     {
-        if (_playlist.Count < 1) return null;
-        Video video = _playlist[0];
-        _playlist.RemoveAt(0);
+        if (Playlist.Count < 1)
+            return null;
+        Video video = Playlist.Dequeue();
         UpdateEvent?.Invoke();
         return video;
     }

@@ -312,8 +312,8 @@ public sealed class ApiService(
             db,
             user,
             request.DurationMinutes,
-            request.HasFolderId ? request.FolderId : -1,
-            request.HasSubscriptionId ? request.SubscriptionId : -1);
+            request.HasFolderId ? request.FolderId : null,
+            request.HasSubscriptionId ? request.SubscriptionId : null);
         var reply = new ShuffleReply();
         foreach (var video in videos)
         {
@@ -322,18 +322,18 @@ public sealed class ApiService(
         return reply;
     }
 
-    private async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes, int folderId, int subscriptionId)
+    private async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes, int? folderId, int? subscriptionId)
     {
         var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
         List<Video> reply = [];
         List<Subscription> subscriptions;
 
-        if (folderId >= 0)
+        if (folderId != null)
             subscriptions = await db.Subscriptions
                 .Where(s => s.ParentFolderId == folderId && s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
-        else if (subscriptionId >= 0)
+        else if (subscriptionId != null)
             subscriptions = [await db.Subscriptions.SingleAsync(s => s.Id == subscriptionId && s.UserId == user.Id)];
         else
             subscriptions = await db.Subscriptions
@@ -491,13 +491,13 @@ public sealed class ApiService(
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
         session.AddVideos += async minutes =>
         {
-            if (session.SelectedFolderId < 1) return;
+            if (session.SelectedFolderId == null) return;
             var videos = await DoShuffle(
                 db,
                 user,
                 minutes,
                 session.SelectedFolderId,
-                -1);
+                null);
             session.AddToPlaylist(videos);
         };
 
