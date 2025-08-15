@@ -39,12 +39,11 @@ public sealed class PlaybackSession : IDisposable
         _manager.RemoveSession(this);
     }
 
-    public Queue<Video> Playlist { get; } = [];
+    public List<Video> Playlist { get; } = [];
 
     public void AddToPlaylist(List<Video> items)
     {
-        foreach(item in items)
-            Playlist.Enqueue(item);
+        Playlist.AddRange(items);
 
         UpdateEvent?.Invoke();
     }
@@ -59,7 +58,8 @@ public sealed class PlaybackSession : IDisposable
     {
         if (Playlist.Count < 1)
             return null;
-        Video video = Playlist.Dequeue();
+        Video video = Playlist.First();
+        Playlist.Remove(video);
         UpdateEvent?.Invoke();
         return video;
     }

@@ -43,7 +43,7 @@ using Quartz;
 using ResQueue;
 using ResQueue.Enums;
 using IPAddress = System.Net.IPAddress;
-using IPNetwork = System.Net.IPNetwork;
+using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,16 +66,16 @@ builder.Services.AddRazorComponents()
     })
     .AddAuthenticationStateSerialization();
 
-builder.Services.Configure<ForwardedHeadersOptions>(static options =>
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.All;
 
     var headerSettings = builder.Configuration.GetSection("ForwardedHeaders");
 
-    headerSettings.GetValue<List<string>>("proxies")?.ForEach((proxy) => options.KnownProxies.Add(IPAddress.Parse(proxy));
-    headerSettings.GetValue<List<string>>("networks)?.ForEach((network) => {
-        var parts = network.split('/');
-        options.KnownIPNetworks.Add(new IPNetwork(IPAddress.Parse(parts[0]), parts[1]));
+    headerSettings.GetValue<List<string>>("proxies")?.ForEach((proxy) => options.KnownProxies.Add(IPAddress.Parse(proxy)));
+    headerSettings.GetValue<List<string>>("networks")?.ForEach((network) => {
+        var parts = network.Split('/');
+        options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
     });
 });
 

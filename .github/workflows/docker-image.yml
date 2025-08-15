@@ -116,7 +116,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: "./"
-          file: "./MediaFeeder/MediaFeeder/Dockerfile"
+          file: "./MediaFeeder/Dockerfile"
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

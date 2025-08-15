@@ -68,7 +68,7 @@
     <ItemGroup>
       <Protobuf Include="Services\Api.proto" GrpcServices="Server" />
       <Protobuf Include="Services\mediatoad.proto" GrpcServices="Server" />
-      <Protobuf Include="../../YTDownloader/downloadServer.proto" GrpcServices="Client" Link="Services/downloadServer.proto" />
+      <Protobuf Include="../YTDownloader/downloadServer.proto" GrpcServices="Client" Link="Services/downloadServer.proto" />
     </ItemGroup>
 
 </Project>

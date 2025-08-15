@@ -7,10 +7,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["MediaFeeder/MediaFeeder/MediaFeeder.csproj", "MediaFeeder/MediaFeeder/"]
-RUN dotnet restore "MediaFeeder/MediaFeeder/MediaFeeder.csproj"
+COPY ["MediaFeeder/MediaFeeder.csproj", "MediaFeeder/"]
+RUN dotnet restore "MediaFeeder/MediaFeeder.csproj"
 COPY . .
-WORKDIR "/src/MediaFeeder/MediaFeeder"
+WORKDIR "/src/MediaFeeder"
 RUN dotnet build "MediaFeeder.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

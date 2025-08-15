@@ -5,8 +5,8 @@
 @using Microsoft.EntityFrameworkCore;
 
 <Card Loading="@(Session == null)" Title="@(Session?.Title)">
-    @if( Session != null) {
-        <ChildContent>
+    <ChildContent>
+        @if( Session != null) {
             <GridRow Gutter="16">
                 <GridCol Span="8">
                     <Image
@@ -80,9 +80,12 @@
                     </ListItem>
                 </ChildContent>
             </AntList>
-
-        </ChildContent>
-        <ActionTemplate>
+        } else {
+            <span>Loading...</span>
+        }
+    </ChildContent>
+    <ActionTemplate>
+        @if( Session != null) {
             <CardAction >
                 <div @onclick="@(() => Session.PlayPause())">
                     <Icon Type="@IconType.Outline.Pause"/>
@@ -101,10 +104,10 @@
                     Skip
                 </div>
             </CardAction>
-        </ActionTemplate>
-    } else {
-        <span>Loading...</span>
-    }
+        } else {
+            <span>Loading...</span>
+        }
+    </ActionTemplate>
 </Card>
 
 @code {
