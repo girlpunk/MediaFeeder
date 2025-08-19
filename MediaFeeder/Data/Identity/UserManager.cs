@@ -24,7 +24,7 @@ public class UserManager(
 {
     public async Task<AuthUser?> GetUserAsync(ClaimsPrincipal principal)
     {
-        ArgumentNullThrowHelper.ThrowIfNull(principal);
+        ArgumentNullException.ThrowIfNull(principal);
         var id = GetUserId(principal);
 
         if (id == null)
