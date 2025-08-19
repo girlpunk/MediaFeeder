@@ -34,7 +34,7 @@ public class UserManager(
         if (findId != null)
             return findId;
 
-        logger.logDebug(JsonSerializer.Serialize(principal));
+        logger.LogDebug(JsonSerializer.Serialize(principal));
 
         return await FindByLoginAsync("PROVIDER", id);
     }
