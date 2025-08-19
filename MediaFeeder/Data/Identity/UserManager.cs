@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 
 using System;
 using System.Text.Json;
+using System.Security.Claims;
 
 namespace MediaFeeder.Data.Identity;
 
@@ -21,7 +22,7 @@ public class UserManager(
         errors,
         services, logger)
 {
-    public async Task<TUser?> GetUserAsync(ClaimsPrincipal principal)
+    public async Task<AuthUser?> GetUserAsync(ClaimsPrincipal principal)
     {
         ArgumentNullThrowHelper.ThrowIfNull(principal);
         var id = GetUserId(principal);
