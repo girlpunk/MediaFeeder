@@ -25,7 +25,7 @@ public sealed class ApiService(
     public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
     {
         logger.LogError(JsonSerializer.Serialize(context.GetHttpContext().User));
-        logger.LogDebug(userManager.GetType());
+        logger.LogDebug(userManager.GetType().ToString());
 
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
