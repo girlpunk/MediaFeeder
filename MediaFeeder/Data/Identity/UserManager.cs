@@ -21,9 +21,9 @@ public class UserManager(
         errors,
         services, logger)
 {
-    public async Task<AuthUser?> GetUserAsync(ClaimsPrincipal principal)
+    public override async Task<AuthUser?> GetUserAsync(ClaimsPrincipal principal)
     {
-        _logger.LogDebug("GetUserAsync {principal}", principal);
+        logger.LogDebug("GetUserAsync {principal}", principal);
 
         ArgumentNullException.ThrowIfNull(principal);
         var id = GetUserId(principal);
@@ -38,15 +38,15 @@ public class UserManager(
         return await FindByLoginAsync(OpenIdConnectDefaults.AuthenticationScheme, id);
     }
 
-    public Task<AuthUser?> FindByIdAsync(string userId)
+    public override Task<AuthUser?> FindByIdAsync(string userId)
     {
-        _logger.LogDebug("FindByIdAsync {userId}", userId);
+        logger.LogDebug("FindByIdAsync {userId}", userId);
         return base.FindByIdAsync(userId);
     }
 
-    public Task<AuthUser?> FindByLoginAsync(string loginProvider, string providerKey)
+    public override Task<AuthUser?> FindByLoginAsync(string loginProvider, string providerKey)
     {
-        _logger.LogDebug("FindByLoginAsync {loginProvider} {providerKey}", loginProvider, providerKey);
+        logger.LogDebug("FindByLoginAsync {loginProvider} {providerKey}", loginProvider, providerKey);
         return base.FindByLoginAsync(loginProvider, providerKey);
     }
 }
