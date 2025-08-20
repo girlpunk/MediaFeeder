@@ -8,6 +8,8 @@ using MediaFeeder.PlaybackManager;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Text.Json;
 
 namespace MediaFeeder.Services;
 
@@ -21,6 +23,9 @@ public sealed class ApiService(
 {
     public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
     {
+        logger.LogError(JsonSerializer.Serialize(context.GetHttpContext().User));
+        logger.LogDebug(userManager.GetType());
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
