@@ -19,6 +19,7 @@ public sealed class ApiService(
     UserManager<AuthUser> userManager,
     IServiceProvider serviceProvider,
     PlaybackSessionManager playbackSessionManager
+    ILogger<ApiService> logger
 ) : API.APIBase
 {
     public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
