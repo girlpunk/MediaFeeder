@@ -1,10 +1,9 @@
 using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-
 using System;
-using System.Text.Json;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 
 namespace MediaFeeder.Data.Identity;
 
@@ -27,8 +26,6 @@ public class UserManager(
         ArgumentNullException.ThrowIfNull(principal);
         var id = GetUserId(principal);
 
-        logger.LogError(JsonSerializer.Serialize(principal));
-
         if (id == null)
             return null;
 
@@ -36,6 +33,6 @@ public class UserManager(
         if (findId != null)
             return findId;
 
-        return await FindByLoginAsync("PROVIDER", id);
+        return await FindByLoginAsync(OpenIdConnectDefaults.AuthenticationScheme, id);
     }
 }
