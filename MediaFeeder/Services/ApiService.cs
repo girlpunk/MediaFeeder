@@ -18,7 +18,7 @@ public sealed class ApiService(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager<AuthUser> userManager,
     IServiceProvider serviceProvider,
-    PlaybackSessionManager playbackSessionManager
+    PlaybackSessionManager playbackSessionManager,
     ILogger<ApiService> logger
 ) : API.APIBase
 {
