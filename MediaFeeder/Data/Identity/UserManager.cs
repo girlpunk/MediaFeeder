@@ -27,7 +27,7 @@ public class UserManager(
         ArgumentNullException.ThrowIfNull(principal);
         var id = GetUserId(principal);
 
-        logger.LogDebug(JsonSerializer.Serialize(principal));
+        logger.LogError(JsonSerializer.Serialize(principal));
 
         if (id == null)
             return null;
