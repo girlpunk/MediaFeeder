@@ -27,14 +27,14 @@ public class UserManager(
         ArgumentNullException.ThrowIfNull(principal);
         var id = GetUserId(principal);
 
+        logger.LogDebug(JsonSerializer.Serialize(principal));
+
         if (id == null)
             return null;
 
         var findId = await FindByIdAsync(id);
         if (findId != null)
             return findId;
-
-        logger.LogDebug(JsonSerializer.Serialize(principal));
 
         return await FindByLoginAsync("PROVIDER", id);
     }
