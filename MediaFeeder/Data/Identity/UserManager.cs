@@ -17,7 +17,7 @@ public class UserManager(
     ILookupNormalizer keyNormalizer,
     IdentityErrorDescriber errors,
     IServiceProvider services,
-    ILogger<UserManager<AuthUser>> logger)
+    ILogger<UserManager> logger)
     : UserManager<AuthUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
         errors,
         services, logger)
