@@ -23,6 +23,8 @@ public class UserManager(
 {
     public async Task<AuthUser?> GetUserAsync(ClaimsPrincipal principal)
     {
+        _logger.LogDebug("GetUserAsync {principal}", principal);
+
         ArgumentNullException.ThrowIfNull(principal);
         var id = GetUserId(principal);
 
@@ -34,5 +36,17 @@ public class UserManager(
             return findId;
 
         return await FindByLoginAsync(OpenIdConnectDefaults.AuthenticationScheme, id);
+    }
+
+    public Task<TUser?> FindByIdAsync(string userId)
+    {
+        _logger.LogDebug("FindByIdAsync {userId}", userId);
+        return base.FindByIdAsync(userId);
+    }
+
+    public Task<TUser?> FindByLoginAsync(string loginProvider, string providerKey)
+    {
+        _logger.LogDebug("FindByLoginAsync {loginProvider} {providerKey}", loginProvider, providerKey);
+        return base.FindByLoginAsync(loginProvider, providerKey);
     }
 }
