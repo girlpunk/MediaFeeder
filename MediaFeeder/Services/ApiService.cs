@@ -23,6 +23,8 @@ public sealed class ApiService(
 {
     public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
     {
+        logger.LogError(userManager.GetType().ToString());
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
