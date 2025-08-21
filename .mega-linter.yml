@@ -37,3 +37,6 @@ SHOW_ELAPSED_TIME: true
 # GitLeaks: only scan the files in this commit, not the entire history
 # TODO review previous failures and add to .gitleaksignore
 REPOSITORY_GITLEAKS_ARGUMENTS: "--no-git"
+
+# use recommended config file https://stylelint.io/user-guide/configure/
+CSS_STYLELINT_CONFIG_FILE: stylelint.config.js
