@@ -16,7 +16,9 @@ dependencies = [
     "grpcio-tools (>=1.71.0,<2.0.0)",
     "streamdeck",
     "pillow",
-    "humanize"
+    "humanize",
+    "beautifulsoup4>=4.13.4",
+    "lxml>=6.0.0"
 ]
 
 [tool.hatch.build.hooks.protobuf]

@@ -7,6 +7,7 @@ package MediaFeeder;
 service API {
   rpc ListFolder (ListFolderRequest) returns (stream FolderReply) {}
   rpc Folder (FolderRequest) returns (FolderReply) {}
+  rpc AddSubscription (AddSubscriptionRequest) returns (AddSubscriptionReply) {}
   rpc ListSubscription (ListSubscriptionRequest) returns (stream SubscriptionReply) {}
   rpc Subscription (SubscriptionRequest) returns (SubscriptionReply) {}
   rpc GetSubscriptionThumbnail (GetSubscriptionThumbnailRequest) returns (stream GetSubscriptionThumbnailReply) {}
@@ -40,6 +41,17 @@ message FolderReply {
 
 message ListSubscriptionRequest {
   bool IncludeUnwatchedCounts = 2;
+}
+
+message AddSubscriptionRequest {
+  string Name = 1;
+  string ChannelId = 2;
+  string PlaylistId = 3;
+  string Provider = 4;
+  int32 FolderId = 5;
+}
+message AddSubscriptionReply {
+  int32 SubscriptionId = 1;
 }
 
 message SubscriptionRequest {
