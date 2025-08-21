@@ -45,10 +45,11 @@ stub = Api_pb2_grpc.APIStub(channel)
 history.reverse()
 entries_read = 0
 entries_matched = 0
+entries_modified = 0
 for entry in history:
     entries_read += 1
-    if entries_read % 100 == 0:
-        print(f"Read {entries_read} entries, matched {entries_matched}")
+    if entries_read % 500 == 0:
+        print(f"Read {entries_read} entries, matched {entries_matched}, modified {entries_modified}")
 
     rawUrl = entry.get('titleUrl')
     if not rawUrl:
@@ -66,7 +67,11 @@ for entry in history:
     video_id = query['v'][0]
 
     search = stub.Search(Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=video_id))
-    if len(search.VideoId) == 0:
+    if len(search.Videos) == 0:
         continue
     entries_matched += 1
-    stub.Watched(Api_pb2.WatchedRequest(Id=search.VideoId[0], Watched=True))
+
+    found = search.Videos[0]
+    if not found.Watched:
+        stub.Watched(Api_pb2.WatchedRequest(Id=found.VideoId, Watched=True))
+        entries_modified += 1
