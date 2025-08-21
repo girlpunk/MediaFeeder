@@ -51,6 +51,10 @@
                     Title="@Video.Name"
                     Description="@Video.Description.Truncate(120)"/>
                 <AntDesign.Text Type="TextElementType.Secondary">
+                    @Video.Subscription?.Name
+                </AntDesign.Text>
+                <br/>
+                <AntDesign.Text Type="TextElementType.Secondary">
                     @Video.Views?.ToMetric(decimals: 2) Views
                     •
                     @Video.PublishDate.Humanize()
