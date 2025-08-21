@@ -6,6 +6,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Change the working directory to the `app` directory
 WORKDIR /app
 
+ARG SERVICE_NAME=ytdownloader
+RUN addgroup --gid 10001 --system ${SERVICE_NAME} && \
+    adduser --ingroup ${SERVICE_NAME} --shell /bin/false \
+    --disabled-password --uid 10001 ${SERVICE_NAME}
+
 RUN set -x \
  && apk update \
  && apk upgrade -a \
@@ -39,4 +44,5 @@ RUN uv run -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out
 
 ENV PYTHONUNBUFFERED=1
 
+USER ${SERVICE_NAME}
 ENTRYPOINT ["uv", "run", "main.py"]
