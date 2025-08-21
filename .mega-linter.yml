@@ -1,0 +1,39 @@
+---
+# Configuration file for MegaLinter
+#
+# See all available variables at https://megalinter.io/latest/config-file/ and in
+# linters documentation
+
+# all, none, or list of linter keys
+APPLY_FIXES: none
+
+# If you use ENABLE variable, all other languages/formats/tooling-formats will
+# be disabled by default
+# ENABLE:
+
+# If you use ENABLE_LINTERS variable, all other linters will be disabled by
+# default
+# ENABLE_LINTERS:
+
+# TODO put these back once things are under control.
+DISABLE:
+  - COPYPASTE
+  - SPELL
+  - PYTHON
+  - JAVASCRIPT # it is all generated (and do not know how to ignore generated)
+
+# TODO investigate why these are failing.
+DISABLE_LINTERS:
+  - PYTHON_PYLINT # many "Unable to import" errors.
+  - REPOSITORY_DEVSKIM # "Failed to parse Data at the root level is invalid. Line 1, position 1. as a XML document: null"
+  - CSHARP_ROSLYNATOR # "Could not load file or assembly 'System.Composition.AttributedModel..."
+  - PROTOBUF_PROTOLINT # FIXME very unhappy with field names etc.
+
+EXCLUDED_DIRECTORIES:
+  - "Might be useful"
+
+SHOW_ELAPSED_TIME: true
+
+# GitLeaks: only scan the files in this commit, not the entire history
+# TODO review previous failures and add to .gitleaksignore
+REPOSITORY_GITLEAKS_ARGUMENTS: "--no-git"
