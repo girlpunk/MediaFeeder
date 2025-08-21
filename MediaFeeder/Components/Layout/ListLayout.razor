@@ -1,4 +1,5 @@
 @inherits MainLayout
+@inject IConfiguration Configuration
 
 <PageTitle>Home</PageTitle>
 
@@ -7,7 +8,7 @@
         <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.FlexStart">
             <div class="top-row ps-3 navbar">
                 <div class="container-fluid">
-                    <a class="navbar-brand" href="/">
+                    <a class="navbar-brand" href="@(Configuration.GetValue<string>("base_path", "/"))">
                         <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
                         <Title>MediaFeeder</Title>
                     </a>

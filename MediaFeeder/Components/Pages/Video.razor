@@ -2,13 +2,14 @@
 @page "/video/{id:int}"
 @using Humanizer
 @using MediaFeeder.Data
+@inject IConfiguration Configuration
 @inject MediaFeederDataContext Context
 @inject IServiceProvider ServiceProvider
 
 <Layout>
     <PageHeader Class="site-page-header">
         <TitleTemplate>
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand" href="@(Configuration.GetValue<string>("base_path", "/"))">
                 <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
                 MediaFeeder
             </a>
