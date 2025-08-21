@@ -31,6 +31,7 @@ DISABLE_LINTERS:
 
 EXCLUDED_DIRECTORIES:
   - "Might be useful"
+  - "megalinter-reports"
 
 SHOW_ELAPSED_TIME: true
 
@@ -40,3 +41,19 @@ REPOSITORY_GITLEAKS_ARGUMENTS: "--no-git"
 
 # use recommended config file https://stylelint.io/user-guide/configure/
 CSS_STYLELINT_CONFIG_FILE: stylelint.config.js
+
+# only fail the run on higher priority stuff.
+REPOSITORY_KICS_ARGUMENTS: "--fail-on critical,high"
+
+# these checks are also done by kics (where they are lower priority):
+# CKV_DOCKER_2: "Ensure that HEALTHCHECK instructions have been added to container images"
+# CKV_DOCKER_3: "Ensure that a user for the container has been created"
+# CKV_DOCKER_7: "Ensure the base image uses a non latest version tag"
+REPOSITORY_CHECKOV_ARGUMENTS: "--skip-check CKV_DOCKER_2,CKV_DOCKER_3,CKV_DOCKER_7"
+
+# these checks are also done by kics (where they are lower priority):
+# DL3007 using :latest
+DOCKERFILE_HADOLINT_ARGUMENTS: "--ignore DL3007"
+
+# only fail the run on higher priority stuff.
+REPOSITORY_TRIVY_ARGUMENTS: "--severity HIGH,CRITICAL"
