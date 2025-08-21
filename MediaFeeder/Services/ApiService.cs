@@ -110,6 +110,36 @@ public sealed class ApiService(
         return reply;
     }
 
+    public override async Task<AddSubscriptionReply> AddSubscription(AddSubscriptionRequest request, ServerCallContext context)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.Name);
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.ChannelId);
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.PlaylistId);
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.Provider);
+        ArgumentOutOfRangeException.ThrowIfLessThan(request.FolderId, 0);
+
+        var subscription = new Subscription
+        {
+            ChannelId = request.ChannelId,
+            ChannelName = request.Name,
+            Name = request.Name,
+            ParentFolderId = request.FolderId,
+            PlaylistId = request.PlaylistId,
+            Provider = request.Provider ?? throw new InvalidOperationException(),
+            Description = "",
+            UserId = user.Id
+        };
+
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        db.Subscriptions.Add(subscription);
+        await db.SaveChangesAsync(context.CancellationToken);
+
+        return new AddSubscriptionReply {SubscriptionId = subscription.Id};
+    }
+
     public override async Task ListSubscription(ListSubscriptionRequest request, IServerStreamWriter<SubscriptionReply> responseStream, ServerCallContext context)
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);

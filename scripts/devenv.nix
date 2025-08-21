@@ -12,21 +12,23 @@
   packages = with pkgs;
     [
       git
-      hello
       grpc_cli
+      hello
     ]
     ++ (with pkgs.python3.pkgs; [
-      pyyaml
-      ipython
       aiofiles
+      beautifulsoup4
       grpcio
       grpcio-tools
-      types-protobuf
+      ipython
+      lxml
       pyatv
       pychromecast
+      pydantic-settings
+      pyyaml
       pyytlounge
       requests
-      pydantic-settings
+      types-protobuf
     ]);
 
   # https://devenv.sh/scripts/

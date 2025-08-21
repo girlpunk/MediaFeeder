@@ -31,11 +31,10 @@ class ChanInfo(NamedTuple):
     pl_id: str = None
     name: str = None
 
-
 def get_chan_info(youtube_channel_url):
     headers = {
         # curl seems to work, but browser agent gets a 302 and the wrong page.
-        "User-Agent": "curl/8.14.1",
+        'User-Agent': 'curl/8.14.1'
     }
     response = requests.get(youtube_channel_url, headers=headers)
     if response.status_code != 200:
