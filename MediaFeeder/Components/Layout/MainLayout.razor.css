@@ -9,7 +9,7 @@ main {
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background-image: linear-gradient(180deg, rgb(5 39 103) 0%, #3a0647 70%);
 }
 
 .top-row {
@@ -36,7 +36,7 @@ main {
     text-overflow: ellipsis;
 }
 
-@media (max-width: 641px) {
+@media (width <= 641px) {
     .top-row {
         justify-content: space-between;
     }
@@ -46,7 +46,7 @@ main {
     }
 }
 
-@media (min-width: 641px) {
+@media (width >= 641px) {
     .page {
         flex-direction: row;
     }
@@ -80,11 +80,11 @@ main {
     color-scheme: light only;
     background: lightyellow;
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 -1px 2px rgb(0 0 0 / 0.2);
     box-sizing: border-box;
     display: none;
     left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    padding: 0.6rem 1.25rem 0.7rem;
     position: fixed;
     width: 100%;
     z-index: 1000;
