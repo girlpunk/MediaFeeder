@@ -47,9 +47,13 @@
         <a href="@($"video/{Video?.Id}")">
             @if (Video != null)
             {
-                <CardMeta
-                    Title="@Video.Name"
-                    Description="@Video.Description.Truncate(120)"/>
+                <CardMeta Description="@Video.Description.Truncate(120)">
+                  <TitleTemplate>
+                    <Tooltip Placement="Placement.BottomLeft" Style="width: 100%;" Title="@Video.Name">
+                      <div class="ant-card-meta-title">@Video.Name</div>
+                    </Tooltip>
+                  </TitleTemplate>
+                </CardMeta>
                 <AntDesign.Text Type="TextElementType.Secondary">
                     @Video.Subscription?.Name
                 </AntDesign.Text>
