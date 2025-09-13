@@ -12,6 +12,7 @@ public class Video
     [MaxLength(1000000000)] public required string Name { get; set; }
     [MaxLength(1000000000)] public required string Description { get; set; }
     public bool Watched { get; set; }
+    public DateTimeOffset? WatchedDate { get; set; }
     [MaxLength(1000000000)] public string? DownloadedPath { get; set; }
     public int? PlaylistIndex { get; set; }
     public DateTimeOffset? PublishDate { get; set; }

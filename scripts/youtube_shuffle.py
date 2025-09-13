@@ -312,9 +312,7 @@ try:
             if not event.content_id or event.content_id == current_content_id:
                 if current_video_id and event.mark_watched:
                     logger.info("Marking %s as watched...", current_video_id)
-                    stub.Watched(
-                        Api_pb2.WatchedRequest(Id=current_video_id, Watched=True),
-                    )
+                    stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
 
                 current_video_id = None
                 current_content_id = None

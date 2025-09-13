@@ -312,6 +312,10 @@ public sealed class ApiService(
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
         video.Watched = request.Watched;
+        if (request.ActuallyWatched)
+        {
+            video.WatchedDate = DateTimeOffset.Now;
+        }
 
         await db.SaveChangesAsync(context.CancellationToken);
         return new WatchedReply();

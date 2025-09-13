@@ -130,6 +130,7 @@ enum DownloadStatus {
 message WatchedRequest {
   int32 Id = 1;
   bool Watched = 2;
+  bool ActuallyWatched = 3;
 }
 
 message WatchedReply {
