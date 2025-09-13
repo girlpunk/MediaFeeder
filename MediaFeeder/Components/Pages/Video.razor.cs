@@ -89,6 +89,7 @@ public sealed partial class Video : IDisposable
         Console.WriteLine("Marking as watched");
 
         VideoObject.Watched = !VideoObject.Watched;
+        VideoObject.WatchedDate = DateTimeOffset.Now;
         await Context.SaveChangesAsync();
 
         StateHasChanged();
