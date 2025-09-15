@@ -1,36 +1,46 @@
 #!/usr/bin/env python3
-# pylint: disable=invalid-name
 
-import Api_pb2
-import Api_pb2_grpc
 import argparse
-import grpc
 import json
 import sys
 import urllib.parse
 
+import grpc
+
+import Api_pb2
+import Api_pb2_grpc
 
 # Enable deprecation warnings etc.
 if not sys.warnoptions:
     import warnings
+
     warnings.simplefilter("default")
 
-parser = argparse.ArgumentParser(description="Example on how to use the Youtube Controller.")
-parser.add_argument("--server",     help='MediaFeeder server address and port', required=True)
-parser.add_argument("--token",      help='Authentication token', required=True)
-parser.add_argument("--history",    help='YouTube watch history JSON file', required=True)
+parser = argparse.ArgumentParser(
+    description="Example on how to use the Youtube Controller.",
+)
+parser.add_argument(
+    "--server",
+    help="MediaFeeder server address and port",
+    required=True,
+)
+parser.add_argument("--token", help="Authentication token", required=True)
+parser.add_argument("--history", help="YouTube watch history JSON file", required=True)
 args = parser.parse_args()
 
 with open(args.history) as f:
     history = json.load(f)
-if not history[0]['titleUrl']:
+if not history[0]["titleUrl"]:
     print(f"Incorrect format: {args.history}")
     sys.exit(1)
 print(f"History entries: {len(history)}")
 
 bearer_credentials = grpc.access_token_call_credentials(args.token)
 ssl_credentials = grpc.ssl_channel_credentials()
-composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
+composite_credentials = grpc.composite_channel_credentials(
+    ssl_credentials,
+    bearer_credentials,
+)
 
 channel_options = [
     ("grpc.keepalive_time_ms", 8000),
@@ -39,7 +49,11 @@ channel_options = [
     ("grpc.keepalive_permit_without_calls", 1),
 ]
 
-channel = grpc.secure_channel(args.server, composite_credentials, options=channel_options)
+channel = grpc.secure_channel(
+    args.server,
+    composite_credentials,
+    options=channel_options,
+)
 stub = Api_pb2_grpc.APIStub(channel)
 
 history.reverse()
@@ -50,7 +64,7 @@ for entry in history:
     if entries_read % 100 == 0:
         print(f"Read {entries_read} entries, matched {entries_matched}")
 
-    rawUrl = entry.get('titleUrl')
+    rawUrl = entry.get("titleUrl")
     if not rawUrl:
         print(f"Unknown entry: {entry}")
         continue
@@ -60,12 +74,14 @@ for entry in history:
         continue
 
     query = urllib.parse.parse_qs(url.query)
-    if not 'v' in query:
+    if "v" not in query:
         print(f"Unknown URL: {rawUrl}")
         continue
-    video_id = query['v'][0]
+    video_id = query["v"][0]
 
-    search = stub.Search(Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=video_id))
+    search = stub.Search(
+        Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=video_id),
+    )
     if len(search.VideoId) == 0:
         continue
     entries_matched += 1

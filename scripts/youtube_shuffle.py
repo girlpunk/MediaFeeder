@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
-# pylint: disable=invalid-name
 
 import argparse
-import sys
+import logging
 import queue
-import time
-from queue import Queue
-from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
-from typing import NamedTuple
-from threading import Event
-import json
-import os
 import sys
+import time
+from collections.abc import Iterator
+from typing import TypeVar
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from queue import Queue
+from typing import NamedTuple
 
-from oauthlib.oauth2 import DeviceClient
-from requests_oauthlib import OAuth2Session
-from pychromecast.controllers.media import MediaStatus, MediaStatusListener
-from pychromecast.controllers.youtube import YouTubeController
-import Api_pb2
-import Api_pb2_grpc
 import grpc
 import pychromecast
-import requests
+from pychromecast.controllers.media import MediaStatus, MediaStatusListener
+from pychromecast.controllers.youtube import YouTubeController
 
+import Api_pb2
+import Api_pb2_grpc
+import common
+
+common.set_logging()
 
 class QueueEvent(NamedTuple):
     next_video_id: int = None
@@ -33,32 +31,47 @@ class QueueEvent(NamedTuple):
 
 
 class MyMediaStatusListener(MediaStatusListener):
-    """Status media listener"""
+    """Status media listener."""
 
-    def __init__(self, name: str | None, cast: pychromecast.Chromecast, status_queue: Queue) -> None:
+    def __init__(
+        self,
+        name: str | None,
+        cast: pychromecast.Chromecast,
+        status_queue: Queue,
+    ) -> None:
+        """Initial setup."""
         self.name = name
         self.cast = cast
         self.status_queue = status_queue
         self.event_queue = Queue()
         self.last_status = None
+        self._logger = logging.getLogger("MediaStatusListener")
 
-    def get_event(self, timeout):
+    def get_event(self, timeout: int) -> QueueEvent | None:
+        """Get next event in queue."""
         try:
             return self.event_queue.get(timeout=timeout)
         except queue.Empty:
             return None
 
     def new_media_status(self, status: MediaStatus) -> None:
+        """Process a new media status from youtube."""
         self.last_status = status
-        #print(f"new_media_status: {status}")
+        # print(f"new_media_status: {status}")
 
         # This is for adverts
         if not status.supports_pause:
             return
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
-            print(f"Received finished event: {status.content_id}")
-            self.event_queue.put(QueueEvent(go_next=True, mark_watched=True, content_id=status.content_id))
+            self._logger.info("Received finished event: %s", status.content_id)
+            self.event_queue.put(
+                QueueEvent(
+                    go_next=True,
+                    mark_watched=True,
+                    content_id=status.content_id,
+                ),
+            )
 
         status_message = Api_pb2.PlaybackSessionRequest()
         status_message.Duration = int(status.current_time)
@@ -70,129 +83,101 @@ class MyMediaStatusListener(MediaStatusListener):
         self.status_queue.put(status_message)
 
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
-        print(
-            "load media failed for queue item id: ",
+        """Process a media fail event from youtube."""
+        self._warning(
+            "load media failed for queue item id: %s with code %s",
             queue_item_id,
-            " with code: ",
             error_code,
         )
 
-    def on_ses_rep(self, iterator):
+    def on_ses_rep(self, iterator) -> None:
+        """Process incoming messages from MediaFeeder."""
         try:
-            print("Started streaming RPC.")
+            self._logger.info("Started streaming RPC.")
             for rep in iterator:
                 try:
                     self.on_ses_rep_msg(rep)
-                except Exception as e:
-                    print(f"failed to handle msg {rep}: {e}")
-        except Exception as e:
-            print(f"failed to read stream: {e}")
+                except Exception:
+                    self._logger.exception("failed to handle msg %s", rep)
+        except Exception:
+            self._logger.exception("failed to read stream")
 
-    def on_ses_rep_msg(self, rep):
+    def on_ses_rep_msg(self, rep) -> None:
+        """Process a single incoming message from MediaFeeder."""
         if rep.ShouldPlayPause:
             if not self.last_status:
-                print("can not play/pause without last_status.")
+                self._logger.error("can not play/pause without last_status.")
             elif self.last_status.player_is_paused:
                 cast.media_controller.play()
-                print("playing")
+                self._logger.info("playing")
             elif self.last_status.player_is_playing:
                 cast.media_controller.pause()
-                print("paused")
+                self._logger.info("paused")
             else:
-                print(f"can not play/pause in state: {self.last_status.player_state}")
+                self._logger.warning("can not play/pause in state: %s", self.last_status.player_state)
 
         elif rep.ShouldWatch:
-            print("Received mark as watched and skip command")
+            self._logger.info("Received mark as watched and skip command")
             self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
 
         elif rep.ShouldSkip:
-            print("Received skip command")
+            self._logger.info("Received skip command")
             self.event_queue.put(QueueEvent(go_next=True, mark_watched=False))
 
         elif rep.NextVideoId > 0:
-            print(f"Received next video ID: {rep.NextVideoId}")
+            self._logger.info("Received next video ID: %s", rep.NextVideoId)
             self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
 
 
-def message_queue_iterator(queue: Queue):
+T = TypeVar("T")
+
+
+def message_queue_iterator(queue: Queue[T]) -> Iterator[T]:
+    """Send queued messages to MediaFeeder.
+
+    Yields:
+        T: Items from queue
+
+    """
     while True:
         yield queue.get()
 
 
-def get_token():
-    with open('appsettings.json') as f:
-        settings = json.load(f)
-
-    authentik_url = settings["AUTH_URL"]
-    client_id = settings["AUTH_CLIENT_ID"]
-
-    if "AUTH_SECRET" in settings:
-        token = settings["AUTH_SECRET"]
-    else:
-        token = None
-
-    #TODO: Check token validity
-    if token is None or false:
-        client = DeviceClient(client_id)
-        oauth = OAuth2Session(client=client)
-        #TODO: Fetch from metadata
-        device_auth_response = oauth.post("https://authentik.home.foxocube.xyz/application/o/device/", data={
-          'client_id': client_id,
-        #  'scope': ' '.join(SCOPE)
-        })
-        darj = device_auth_response.json()
-        device_code = darj['device_code']
-
-        if "verification_uri_complete" in darj:
-            print(f"Please visit {darj['verification_uri_complete']}", flush=True)
-        else:
-            user_code = darj['user_code']
-            verification_url = darj['verification_uri']
-            print(f"Please visit {verification_url} and paste the code: {user_code}", flush=True)
-
-        time.sleep(30)
-
-        #TODO: Replace URI
-        token_response = oauth.post("https://authentik.home.foxocube.xyz/application/o/token/", data={
-          'client_id': client_id,
-        #  'client_secret': CLIENT_SECRET,
-          'device_code': device_code,
-          'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
-        })
-
-        print(token_response.json())
-
-        if token_response.status_code == 200:
-            # Successfully retrieved the token
-            token = token_response.json()
-
-            settings["token"] = token
-            with open("appsettings.json", "w") as f:
-                json.dump(settings, f)
-
-            return token
-
-get_token()
-
 # Enable deprecation warnings etc.
 if not sys.warnoptions:
     import warnings
+
     warnings.simplefilter("default")
 
-parser = argparse.ArgumentParser(description="Example on how to use the Youtube Controller.")
-parser.add_argument("--server",     help='MediaFeeder server address and port', required=True)
-parser.add_argument("--server-cert", help='Path to .pem for server TLS cert.')
-parser.add_argument("--cert-host",  help='Server hostname to trust.')
-parser.add_argument("--cast",       help='Name of cast device')
-parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
-parser.add_argument("--folder",     help='Folder ID', required=True, type=int)
-parser.add_argument("--token",      help='Authentication token', required=True)
+logger = logging.getLogger("Youtube_Shuffle")
+
+parser = argparse.ArgumentParser(
+    description="Example on how to use the Youtube Controller.",
+)
+parser.add_argument(
+    "--server",
+    help="MediaFeeder server address and port",
+    required=True,
+)
+parser.add_argument("--server-cert", help="Path to .pem for server TLS cert.")
+parser.add_argument("--cert-host", help="Server hostname to trust.")
+parser.add_argument("--cast", help="Name of cast device")
+parser.add_argument(
+    "--known-host",
+    help="Add known host (IP), can be used multiple times",
+    action="append",
+)
+parser.add_argument("--folder", help="Folder ID", required=True, type=int)
+parser.add_argument("--token", help="Authentication token", required=True)
 args = parser.parse_args()
 
-chromecasts, browser = pychromecast.get_listed_chromecasts(friendly_names=[args.cast], known_hosts=args.known_host)
+chromecasts, browser = pychromecast.get_listed_chromecasts(
+    friendly_names=[args.cast],
+    known_hosts=args.known_host,
+)
 
 if not chromecasts:
-    print(f'No chromecast with name "{args.cast}" discovered')
+    logger.error('No chromecast with name "%s" discovered', args.cast)
     sys.exit(1)
 
 cast = chromecasts[0]
@@ -201,12 +186,15 @@ cast.wait()
 
 ssl_credentials = grpc.ssl_channel_credentials()
 if args.server_cert:
-    with open(args.server_cert, 'rb') as f:
+    with Path(args.server_cert).read_bytes() as f:
         root_certs = f.read()
     ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
 bearer_credentials = grpc.access_token_call_credentials(args.token)
-composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
+composite_credentials = grpc.composite_channel_credentials(
+    ssl_credentials,
+    bearer_credentials
+)
 
 channel_options = [
     ("grpc.keepalive_time_ms", 8000),
@@ -218,9 +206,18 @@ channel_options = [
 if args.cert_host:
     channel_options += [("grpc.ssl_target_name_override", args.cert_host)]
 
-channel = grpc.secure_channel(args.server, composite_credentials, options=channel_options)
-def subscribe_callback(connectivity: grpc.ChannelConnectivity):
-    print(f"Channel: {connectivity}")
+channel = grpc.secure_channel(
+    args.server,
+    composite_credentials,
+    options=channel_options,
+)
+
+
+def subscribe_callback(connectivity: grpc.ChannelConnectivity) -> None:
+    """Recieve connection status updates from GRPC."""
+    logger.info("Channel: %s", connectivity)
+
+
 channel.subscribe(subscribe_callback, try_to_connect=True)
 
 stub = Api_pb2_grpc.APIStub(channel)
@@ -231,55 +228,75 @@ cast.register_handler(yt)
 executor = ThreadPoolExecutor()
 status_message_queue = Queue()
 
-listenerMedia = MyMediaStatusListener(cast.name, cast, status_message_queue)
-cast.media_controller.register_status_listener(listenerMedia)
+listener_media = MyMediaStatusListener(cast.name, cast, status_message_queue)
+cast.media_controller.register_status_listener(listener_media)
 session_reader = None
 
-def ConnectToServer():
-    global listenerMedia, status_message_queue, executor, session_reader, channel, args
+
+def connect_to_server() -> None:
+    """Connect to MediaFeeder."""
+    global session_reader
 
     if session_reader:
         session_reader.cancel()
 
-    print("Connecting to server...")
+    logger.info("Connecting to server...")
     grpc.channel_ready_future(channel).result()
 
-    session_iterator = stub.PlaybackSession(message_queue_iterator(status_message_queue))
-    session_reader = executor.submit(listenerMedia.on_ses_rep, session_iterator)
-    status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title = args.cast))
+    session_iterator = stub.PlaybackSession(
+        message_queue_iterator(status_message_queue),
+    )
+    session_reader = executor.submit(listener_media.on_ses_rep, session_iterator)
+    status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title=args.cast))
 
-def UpdateCast():
-    global cast
+
+def update_cast() -> bool:
+    """Update status from ChromeCast.
+
+    Returns:
+        bool: Update success
+
+    """
     try:
         cast.media_controller.update_status()
-        return True
     except pychromecast.error.NotConnected:
-        print("Waiting for chromecast...")
+        logger.warning("Waiting for chromecast...")
         time.sleep(3)
         return False
+    else:
+        return True
+
 
 try:
     current_video_id = None
     current_content_id = None
+    connect_to_server()
     while True:
         if not session_reader or not session_reader.running():
-            ConnectToServer()
+            connect_to_server()
 
             # if connection was lost, at least restore what is currently playing.
             if current_video_id:
-                status_message_queue.put(Api_pb2.PlaybackSessionRequest(VideoId = current_video_id))
+                status_message_queue.put(
+                    Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
+                )
 
-        if current_video_id and not UpdateCast():
+        if current_video_id and not update_cast():
             continue
 
-        event = listenerMedia.get_event(5)
+        event = listener_media.get_event(5)
         if event and event.next_video_id:
             current_video_id = event.next_video_id
             id_response = stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
             current_content_id = id_response.VideoId
 
-            print(f"Playing {current_video_id}: {id_response.Title} [{current_content_id}]")
-            status_message_queue.put(Api_pb2.PlaybackSessionRequest(VideoId = current_video_id))
+            logger.info(
+                "Playing %s: %s [%s]",
+                current_video_id, id_response.Title, current_content_id,
+            )
+            status_message_queue.put(
+                Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
+            )
 
             # if the chromecast has been used for other apps, cast lib might incorrectly think it is already launched.
             # this makes sure it reconnects and is ready to receive play commands.  hopefully.
@@ -294,24 +311,28 @@ try:
             # this check is to protected against the chromecast sending multiple finished events.
             if not event.content_id or event.content_id == current_content_id:
                 if current_video_id and event.mark_watched:
-                    print(f"Marking {current_video_id} as watched...")
-                    stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True))
+                    logger.info("Marking %s as watched...", current_video_id)
+                    stub.Watched(
+                        Api_pb2.WatchedRequest(Id=current_video_id, Watched=True),
+                    )
 
                 current_video_id = None
                 current_content_id = None
-                print("Requesting next video...")
-                status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action = Api_pb2.POP_NEXT_VIDEO))
+                logger.info("Requesting next video...")
+                status_message_queue.put(
+                    Api_pb2.PlaybackSessionRequest(Action=Api_pb2.POP_NEXT_VIDEO),
+                )
                 time.sleep(1)  # let chromecast finish before trying to play next video.
             else:
-                print(f"Ignoring event: {event}")
+                logger.info("Ignoring event: %s", event)
 except KeyboardInterrupt:
-    print("Shuting down...")
+    logger.info("Shuting down...")
 
 # Shut down discovery
 browser.stop_discovery()
 
-print("fin.")
-status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession = True))
+logger.info("fin.")
+status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession=True))
 
 executor.shutdown(wait=True, cancel_futures=True)
 sys.exit(0)

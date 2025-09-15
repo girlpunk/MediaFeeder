@@ -1,0 +1,8 @@
+Auth:
+  Device:
+    ClientId: 
+  Server:
+    ClientId: 
+  Url: https://   /application/o/mediafeeder-network-playback-agent/
+MediaFeederUrl: :443
+Players:

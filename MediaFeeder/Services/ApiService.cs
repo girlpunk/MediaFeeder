@@ -505,8 +505,10 @@ public sealed class ApiService(
             session.AddToPlaylist(videos);
         };
 
-        while (!context.CancellationToken.IsCancellationRequested)
+        while (true)
         {
+            context.CancellationToken.ThrowIfCancellationRequested();
+
             if (await requestStream.MoveNext(context.CancellationToken))
             {
                 switch (requestStream.Current.Action)
