@@ -29,7 +29,7 @@ class MyMediaStatusListener(MediaStatusListener):
 
     def new_media_status(self, status: MediaStatus) -> None:
         self.last_status = status
-        #print(f"new_media_status: {status}")
+        # print(f"new_media_status: {status}")
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
             self.last_is_idle.set()
@@ -83,12 +83,13 @@ class MyMediaStatusListener(MediaStatusListener):
 # Enable deprecation warnings etc.
 if not sys.warnoptions:
     import warnings
+
     warnings.simplefilter("default")
 
 parser = argparse.ArgumentParser(description="Example on how to use the Youtube Controller.")
-parser.add_argument("--cast",       help="Name of cast device")
+parser.add_argument("--cast", help="Name of cast device")
 parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
-parser.add_argument("--videos",     help="YouTube video IDs to play", nargs="+", default=[], required=True)
+parser.add_argument("--videos", help="YouTube video IDs to play", nargs="+", default=[], required=True)
 args = parser.parse_args()
 
 chromecasts, browser = pychromecast.get_listed_chromecasts(friendly_names=[args.cast], known_hosts=args.known_host)

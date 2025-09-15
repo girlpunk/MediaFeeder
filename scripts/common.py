@@ -1,5 +1,7 @@
 """MediaFeeder Common client API."""
 
+from __future__ import annotations
+
 import abc
 import asyncio
 import logging
@@ -86,7 +88,7 @@ class Shuffler:
 
     def __init__(self, name: str, player: PlayerBase) -> None:
         """Prepare state only."""
-        self._logger = logging.getLogger(f"Shuffler")
+        self._logger = logging.getLogger("Shuffler")
         self._logger.debug("Shuffler Init")
 
         self.name = name
@@ -118,7 +120,7 @@ class Shuffler:
         self._channel = grpc.aio.secure_channel(self._settings.get_server(), composite_credentials, options=channel_options)
         self._stub = Api_pb2_grpc.APIStub(self._channel)
 
-    async def __aenter__(self) -> "Shuffler":
+    async def __aenter__(self) -> Shuffler:
         await self._channel.__aenter__()
         return self
 
@@ -132,8 +134,8 @@ class Shuffler:
             self._session_reader.cancel()
 
         self._logger.info("Connecting to server...")
-        #channel_ready = grpc.channel_ready_future(self._channel)
-        #channel_ready.add_done_callback(self._on_connected)
+        # channel_ready = grpc.channel_ready_future(self._channel)
+        # channel_ready.add_done_callback(self._on_connected)
         self._logger.debug("Conneting")
 
         await self._channel.channel_ready()

@@ -10,10 +10,9 @@ from urllib.parse import urljoin
 
 import requests
 import yaml
-from yamlable import YamlAble, yaml_info
 
-#@yaml_info(yaml_tag_ns='MediaFeederPlayerConfig')
-#class Config(YamlAble):
+# @yaml_info(yaml_tag_ns='MediaFeederPlayerConfig')
+# class Config(YamlAble):
 #    """Network Player Configuration."""
 #
 #    yaml_loader = yaml.SafeLoader
@@ -48,6 +47,7 @@ from yamlable import YamlAble, yaml_info
 #    Players: dict[str, Any] = {}
 #
 #    Certificate: str | None = None
+
 
 class MediaFeederConfig:
     """Configuration for MediaFeeder clients."""
@@ -125,9 +125,11 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Get Server Token")
-        if self._settings["Auth"]["Server"]["Token"] is not None and \
-            self._settings["Auth"]["Server"]["Expiry"] is not None and \
-            self._settings["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0):
+        if (
+            self._settings["Auth"]["Server"]["Token"] is not None
+            and self._settings["Auth"]["Server"]["Expiry"] is not None
+            and self._settings["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
+        ):
             return self._settings["Auth"]["Server"]["Token"]
 
         token_endpoint = self._metadata["token_endpoint"]
@@ -165,9 +167,11 @@ class MediaFeederConfig:
         """
         self._logger.debug("Get Token")
         # Check if we have a token already
-        if self._settings["Auth"]["Device"]["Token"] is not None and \
-            self._settings["Auth"]["Device"]["Expiry"] is not None and \
-            self._settings["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0):
+        if (
+            self._settings["Auth"]["Device"]["Token"] is not None
+            and self._settings["Auth"]["Device"]["Expiry"] is not None
+            and self._settings["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
+        ):
             return self._settings["Auth"]["Device"]["Token"]
 
         return self._use_refresh()
