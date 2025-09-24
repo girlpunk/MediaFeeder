@@ -335,7 +335,7 @@ public sealed class ApiService(
             context.CancellationToken);
 
         var reply = new SearchReply();
-        if (video != null) reply.VideoId.Add(video.Id);
+        if (video != null) reply.Videos.Add(new FoundVideo { VideoId = video.Id, Watched = video.Watched });
         return reply;
     }
 

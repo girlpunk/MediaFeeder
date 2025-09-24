@@ -140,8 +140,13 @@ message SearchRequest {
   optional string Provider = 1;
   optional string ProviderVideoId = 2;
 }
+// TODO use same video message as other APIs?
+message FoundVideo {
+  int32 VideoId = 1;
+  bool Watched = 2;
+}
 message SearchReply {
-  repeated int32 VideoId = 1;
+  repeated FoundVideo Videos = 1;
 }
 
 message ShuffleRequest {
