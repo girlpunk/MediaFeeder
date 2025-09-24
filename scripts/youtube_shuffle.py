@@ -128,6 +128,10 @@ class MyMediaStatusListener(MediaStatusListener):
             self._logger.info("Received next video ID: %s", rep.NextVideoId)
             self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
 
+    def pause_if_playing(self):
+      if self.last_status.player_is_playing:
+        cast.media_controller.pause()
+        self._logger.info("paused")
 
 T = TypeVar("T")
 
@@ -312,6 +316,7 @@ try:
                 if current_video_id and event.mark_watched:
                     logger.info("Marking %s as watched...", current_video_id)
                     stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
+                    listener_media.pause_if_playing() # so playback stops if last video in queue
 
                 current_video_id = None
                 current_content_id = None
