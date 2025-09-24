@@ -186,8 +186,7 @@ cast.wait()
 
 ssl_credentials = grpc.ssl_channel_credentials()
 if args.server_cert:
-    with Path(args.server_cert).read_bytes() as f:
-        root_certs = f.read()
+    root_certs = Path(args.server_cert).read_bytes()
     ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
 bearer_credentials = grpc.access_token_call_credentials(args.token)
