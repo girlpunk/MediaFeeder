@@ -351,7 +351,8 @@ public sealed class ApiService(
             user,
             request.DurationMinutes,
             request.HasFolderId ? request.FolderId : null,
-            request.HasSubscriptionId ? request.SubscriptionId : null);
+            request.HasSubscriptionId ? request.SubscriptionId : null,
+            null);
         var reply = new ShuffleReply();
         foreach (var video in videos)
         {
@@ -360,9 +361,11 @@ public sealed class ApiService(
         return reply;
     }
 
-    private async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes, int? folderId, int? subscriptionId)
+    private async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes,
+        int? folderId, int? subscriptionId, List<Video>? exclude)
     {
         var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
+        var excludeOrEmpty = exclude ??= [];
         List<Video> reply = [];
         List<Subscription> subscriptions;
 
@@ -380,7 +383,9 @@ public sealed class ApiService(
                 .ToListAsync();
 
         var query = db.Videos
-            .Where(v => v.Watched == false && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId));
+            .Where(v => v.Watched == false
+                        && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId)
+                        && !excludeOrEmpty.Contains(v));
 
         if (timeRemaining.TotalMinutes < 60)
             query = query.Where(v => v.Duration <= timeRemaining.TotalSeconds);
@@ -400,7 +405,10 @@ public sealed class ApiService(
             foreach (var subscription in subscriptions)
             {
                 var video = await db.Videos
-                    .Where(v => v.SubscriptionId == subscription.Id && v.Watched == false && !reply.Contains(v))
+                    .Where(v => v.SubscriptionId == subscription.Id
+                                && v.Watched == false
+                                && !reply.Contains(v)
+                                && !excludeOrEmpty.Contains(v))
                     .OrderBy(static v => v.PublishDate)
                     .FirstOrDefaultAsync();
 
@@ -535,7 +543,8 @@ public sealed class ApiService(
                 user,
                 minutes,
                 session.SelectedFolderId,
-                null);
+                null,
+                session.Playlist);
             session.AddToPlaylist(videos);
         };
 
