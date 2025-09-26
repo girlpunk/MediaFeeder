@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import yt_dlp
 import yt_dlp.version
 from concurrent import futures
@@ -16,71 +17,63 @@ from grpc_reflection.v1alpha import reflection
 
 YDL_DOWNLOAD_OPTS = {
     # 'progress_hooks': [my_hook],
-    'format': "(bv[vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) / "
-              "(bv[vcodec~='^(vp9)']+ba[acodec=opus])",
-    'format_sort': ['res:1080'],
-    'fragment_retries': 10,
-    'ignoreerrors': 'only_download',
-    'outtmpl': {'default': 'test'},
-    'postprocessors': [
+    "format": "(bv[vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) / "
+    "(bv[vcodec~='^(vp9)']+ba[acodec=opus])",
+    "format_sort": ["res:1080"],
+    "fragment_retries": 10,
+    "ignoreerrors": "only_download",
+    "outtmpl": {"default": "test"},
+    "postprocessors": [
         {
-            'key': 'SponsorBlock',
-            'api': 'https://sponsor.ajay.app',
-            'categories': {
-                'chapter',
-                'filler',
-                'interaction',
-                'intro',
-                'music_offtopic',
-                'outro',
-                'poi_highlight',
-                'preview',
-                'selfpromo',
-                'sponsor'
+            "key": "SponsorBlock",
+            "api": "https://sponsor.ajay.app",
+            "categories": {
+                "chapter",
+                "filler",
+                "interaction",
+                "intro",
+                "music_offtopic",
+                "outro",
+                "poi_highlight",
+                "preview",
+                "selfpromo",
+                "sponsor",
             },
-            'when': 'after_filter'
+            "when": "after_filter",
+        },
+        {"key": "FFmpegEmbedSubtitle", "already_have_subtitle": False},
+        {
+            "key": "ModifyChapters",
+            "force_keyframes": False,
+            "remove_chapters_patterns": [],
+            "remove_ranges": [],
+            "remove_sponsor_segments": {"interaction", "selfpromo", "sponsor"},
+            "sponsorblock_chapter_title": "[SponsorBlock]: %(category_names)l",
         },
         {
-            'key': 'FFmpegEmbedSubtitle',
-            'already_have_subtitle': False
+            "key": "FFmpegMetadata",
+            "add_chapters": True,
+            "add_metadata": True,
         },
-        {
-            'key': 'ModifyChapters',
-            'force_keyframes': False,
-            'remove_chapters_patterns': [],
-            'remove_ranges': [],
-            'remove_sponsor_segments': {
-                'interaction',
-                'selfpromo',
-                'sponsor'
-            },
-            'sponsorblock_chapter_title': '[SponsorBlock]: %(category_names)l'
-        },
-        {
-            'key': 'FFmpegMetadata',
-            'add_chapters': True,
-            'add_metadata': True,
-        },
-        {
-            'key': 'EmbedThumbnail',
-            'already_have_thumbnail': False
-        }
+        {"key": "EmbedThumbnail", "already_have_thumbnail": False},
     ],
-    'retries': 10,
-    'writeautomaticsub': True
+    "retries": 10,
+    "writeautomaticsub": True,
 }
 
 YDL_OPTS = {
-    'fragment_retries': 10,
-    'ignoreerrors': 'only_download',
-    'outtmpl': {'default': 'test', 'pl_thumbnail': ''},
-    'retries': 10
+    "fragment_retries": 10,
+    "ignoreerrors": "only_download",
+    "outtmpl": {"default": "test", "pl_thumbnail": ""},
+    "retries": 10,
 }
 
-class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
 
-    def About(self, request: downloadServer_pb2.AboutRequest, context: grpc.ServicerContext) -> downloadServer_pb2.AboutReply:
-        with (yt_dlp.YoutubeDL(YDL_OPTS) as ydl):
+class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
+    def About(
+        self, request: downloadServer_pb2.AboutRequest, context: grpc.ServicerContext
+    ) -> downloadServer_pb2.AboutReply:
+        with yt_dlp.YoutubeDL(YDL_OPTS) as ydl:
             info = ydl.sanitize_info(ydl.extract_info(request.VideoUrl, download=False))
 
             response = downloadServer_pb2.AboutReply()
@@ -96,13 +89,21 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
                 response.Released = info["release_timestamp"]
 
             if "release_date" in info:
-                response.ReleaseDate = int(datetime.datetime.timestamp(datetime.datetime.strptime(info["release_date"], "%Y%M%d")))
+                response.ReleaseDate = int(
+                    datetime.datetime.timestamp(
+                        datetime.datetime.strptime(info["release_date"], "%Y%M%d")
+                    )
+                )
 
             response.Tags.extend(info["tags"])
             response.ThumbnailUrl = info["thumbnail"]
             response.Timestamp = info["timestamp"]
             response.Title = info["title"]
-            response.UploadDate = int(datetime.datetime.timestamp(datetime.datetime.strptime(info["upload_date"], "%Y%M%d")))
+            response.UploadDate = int(
+                datetime.datetime.timestamp(
+                    datetime.datetime.strptime(info["upload_date"], "%Y%M%d")
+                )
+            )
             response.Views = info["view_count"]
 
             match info["availability"]:
@@ -133,37 +134,39 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
 
             return response
 
-    def Download(self, request: downloadServer_pb2.DownloadRequest, context: grpc.ServicerContext) -> downloadServer_pb2.DownloadReply:
+    def Download(
+        self, request: downloadServer_pb2.DownloadRequest, context: grpc.ServicerContext
+    ) -> downloadServer_pb2.DownloadReply:
         opts = YDL_DOWNLOAD_OPTS
 
         response = downloadServer_pb2.DownloadReply()
         response.Status = downloadServer_pb2.STARTING
 
-        #def status_hook(d):
+        # def status_hook(d):
         #    if response.Filename != d["Filename"]:
         #        print(d["Filename"])
         #        response.Filename = d["filename"]
-            #if "downloaded_bytes" in d and "total_bytes" in d and d["downloaded_bytes"] is not None and d["total_bytes"] is not None:
-            #    response.Progress = float(d["downloaded_bytes"])/d["total_bytes"]
+        # if "downloaded_bytes" in d and "total_bytes" in d and d["downloaded_bytes"] is not None and d["total_bytes"] is not None:
+        #    response.Progress = float(d["downloaded_bytes"])/d["total_bytes"]
 
-        #opts["progress_hooks"] = [status_hook]
-        opts["outtmpl"] = {'default': request.OutputPath}
+        # opts["progress_hooks"] = [status_hook]
+        opts["outtmpl"] = {"default": request.OutputPath}
 
         status = -1
 
-        #async def download():
-        with (yt_dlp.YoutubeDL(YDL_DOWNLOAD_OPTS) as ydl):
+        # async def download():
+        with yt_dlp.YoutubeDL(YDL_DOWNLOAD_OPTS) as ydl:
             status = ydl.download(request.VideoUrl)
 
-        #loop = asyncio.new_event_loop()
-        #task = loop.create_task(download())
-        #loop.run_forever()
+        # loop = asyncio.new_event_loop()
+        # task = loop.create_task(download())
+        # loop.run_forever()
 
-        #while not task.done():
+        # while not task.done():
         #    yield response
         #    time.sleep(1)
 
-        #loop.close()
+        # loop.close()
 
         if status == 0:
             response.Status = downloadServer_pb2.DONE
@@ -172,12 +175,12 @@ class Downloader(downloadServer_pb2_grpc.YTDownloaderServicer):
             response.Status = downloadServer_pb2.TEMPORARY_ERROR
             response.ExitCode = status
 
-        #response.Progress = 1
+        # response.Progress = 1
 
         return response
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
 
@@ -187,9 +190,7 @@ if __name__ == '__main__':
     # Create a health check servicer
     health_servicer = health.HealthServicer(
         experimental_non_blocking=True,
-        experimental_thread_pool=futures.ThreadPoolExecutor(
-            max_workers=2
-        ),
+        experimental_thread_pool=futures.ThreadPoolExecutor(max_workers=2),
     )
 
     downloadServer_pb2_grpc.add_YTDownloaderServicer_to_server(Downloader(), server)

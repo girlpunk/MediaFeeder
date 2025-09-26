@@ -1,4 +1,4 @@
-﻿using MediaFeeder.Models;
+using MediaFeeder.Models;
 using MediatR;
 
 namespace MediaFeeder.Services;

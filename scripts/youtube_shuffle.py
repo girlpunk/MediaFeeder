@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
+"""Standard Player for the YouTube App over ChromeCast APIs."""
+
+from __future__ import annotations
 
 import argparse
 import logging
 import queue
 import sys
 import time
+import warnings
 from collections.abc import Iterator
-from typing import TypeVar
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from queue import Queue
-from typing import NamedTuple
+from typing import NamedTuple, TypeVar
 
 import grpc
 import pychromecast
@@ -23,7 +26,10 @@ import common
 
 common.set_logging()
 
+
 class QueueEvent(NamedTuple):
+    """Events for the player to process."""
+
     next_video_id: int = None
     go_next: bool = False
     mark_watched: bool = False
@@ -90,7 +96,7 @@ class MyMediaStatusListener(MediaStatusListener):
             error_code,
         )
 
-    def on_ses_rep(self, iterator) -> None:
+    def on_ses_rep(self, iterator: Iterator[Api_pb2.PlaybackSessionReply]) -> None:
         """Process incoming messages from MediaFeeder."""
         try:
             self._logger.info("Started streaming RPC.")
@@ -102,16 +108,16 @@ class MyMediaStatusListener(MediaStatusListener):
         except Exception:
             self._logger.exception("failed to read stream")
 
-    def on_ses_rep_msg(self, rep) -> None:
+    def on_ses_rep_msg(self, rep: Api_pb2.PlaybackSessionReply) -> None:
         """Process a single incoming message from MediaFeeder."""
         if rep.ShouldPlayPause:
             if not self.last_status:
                 self._logger.error("can not play/pause without last_status.")
             elif self.last_status.player_is_paused:
-                cast.media_controller.play()
+                self.cast.media_controller.play()
                 self._logger.info("playing")
             elif self.last_status.player_is_playing:
-                cast.media_controller.pause()
+                self.cast.media_controller.pause()
                 self._logger.info("paused")
             else:
                 self._logger.warning("can not play/pause in state: %s", self.last_status.player_state)
@@ -128,209 +134,220 @@ class MyMediaStatusListener(MediaStatusListener):
             self._logger.info("Received next video ID: %s", rep.NextVideoId)
             self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
 
+    def pause_if_playing(self):
+      if self.last_status.player_is_playing:
+        cast.media_controller.pause()
+        self._logger.info("paused")
 
 T = TypeVar("T")
 
 
-def message_queue_iterator(queue: Queue[T]) -> Iterator[T]:
-    """Send queued messages to MediaFeeder.
+class Player:
+    """Main Player."""
 
-    Yields:
-        T: Items from queue
+    def message_queue_iterator(self, queue: Queue[T]) -> Iterator[T]:
+        """Send queued messages to MediaFeeder.
 
-    """
-    while True:
-        yield queue.get()
+        Yields:
+            T: Items from queue
 
+        """
+        while True:
+            yield queue.get()
 
-# Enable deprecation warnings etc.
-if not sys.warnoptions:
-    import warnings
+    def subscribe_callback(self, connectivity: grpc.ChannelConnectivity) -> None:
+        """Recieve connection status updates from GRPC."""
+        self.logger.info("Channel: %s", connectivity)
 
-    warnings.simplefilter("default")
+    def connect_to_server(self) -> None:
+        """Connect to MediaFeeder."""
+        if self.session_reader:
+            self.session_reader.cancel()
 
-logger = logging.getLogger("Youtube_Shuffle")
+        self.logger.info("Connecting to server...")
+        grpc.channel_ready_future(self.channel).result()
 
-parser = argparse.ArgumentParser(
-    description="Example on how to use the Youtube Controller.",
-)
-parser.add_argument(
-    "--server",
-    help="MediaFeeder server address and port",
-    required=True,
-)
-parser.add_argument("--server-cert", help="Path to .pem for server TLS cert.")
-parser.add_argument("--cert-host", help="Server hostname to trust.")
-parser.add_argument("--cast", help="Name of cast device")
-parser.add_argument(
-    "--known-host",
-    help="Add known host (IP), can be used multiple times",
-    action="append",
-)
-parser.add_argument("--folder", help="Folder ID", required=True, type=int)
-parser.add_argument("--token", help="Authentication token", required=True)
-args = parser.parse_args()
+        session_iterator = self.stub.PlaybackSession(
+            self.message_queue_iterator(self.status_message_queue),
+        )
+        self.session_reader = self.executor.submit(self.listener_media.on_ses_rep, session_iterator)
+        self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.args.cast))
 
-chromecasts, browser = pychromecast.get_listed_chromecasts(
-    friendly_names=[args.cast],
-    known_hosts=args.known_host,
-)
+    def update_cast(self) -> bool:
+        """Update status from ChromeCast.
 
-if not chromecasts:
-    logger.error('No chromecast with name "%s" discovered', args.cast)
-    sys.exit(1)
+        Returns:
+            bool: Update success
 
-cast = chromecasts[0]
-# Start socket client's worker thread and wait for initial status update
-cast.wait()
+        """
+        try:
+            self.cast.media_controller.update_status()
+        except pychromecast.error.NotConnected:
+            self.logger.warning("Waiting for chromecast...")
+            time.sleep(3)
+            return False
+        else:
+            return True
 
-ssl_credentials = grpc.ssl_channel_credentials()
-if args.server_cert:
-    with Path(args.server_cert).read_bytes() as f:
-        root_certs = f.read()
-    ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
+    def main(self) -> None:
+        """Main player setup."""
+        # Enable deprecation warnings etc.
+        if not sys.warnoptions:
+            warnings.simplefilter("default")
 
-bearer_credentials = grpc.access_token_call_credentials(args.token)
-composite_credentials = grpc.composite_channel_credentials(
-    ssl_credentials,
-    bearer_credentials
-)
+        self.logger = logging.getLogger("Youtube_Shuffle")
 
-channel_options = [
-    ("grpc.keepalive_time_ms", 8000),
-    ("grpc.keepalive_timeout_ms", 5000),
-    ("grpc.http2.max_pings_without_data", 0),
-    ("grpc.keepalive_permit_without_calls", 1),
-]
+        parser = argparse.ArgumentParser(
+            description="Example on how to use the Youtube Controller.",
+        )
+        parser.add_argument(
+            "--server",
+            help="MediaFeeder server address and port",
+            required=True,
+        )
+        parser.add_argument("--server-cert", help="Path to .pem for server TLS cert.")
+        parser.add_argument("--cert-host", help="Server hostname to trust.")
+        parser.add_argument("--cast", help="Name of cast device")
+        parser.add_argument(
+            "--known-host",
+            help="Add known host (IP), can be used multiple times",
+            action="append",
+        )
+        parser.add_argument("--folder", help="Folder ID", required=True, type=int)
+        parser.add_argument("--token", help="Authentication token", required=True)
+        self.args = parser.parse_args()
 
-if args.cert_host:
-    channel_options += [("grpc.ssl_target_name_override", args.cert_host)]
+        chromecasts, browser = pychromecast.get_listed_chromecasts(
+            friendly_names=[self.args.cast],
+            known_hosts=self.args.known_host,
+        )
 
-channel = grpc.secure_channel(
-    args.server,
-    composite_credentials,
-    options=channel_options,
-)
+        if not chromecasts:
+            self.logger.error('No chromecast with name "%s" discovered', self.args.cast)
+            sys.exit(1)
 
+        self.cast = chromecasts[0]
+        # Start socket client's worker thread and wait for initial status update
+        self.cast.wait()
 
-def subscribe_callback(connectivity: grpc.ChannelConnectivity) -> None:
-    """Recieve connection status updates from GRPC."""
-    logger.info("Channel: %s", connectivity)
+        ssl_credentials = grpc.ssl_channel_credentials()
+        if self.args.server_cert:
+            root_certs = Path(args.server_cert).read_bytes()
+            ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
+        bearer_credentials = grpc.access_token_call_credentials(self.args.token)
+        composite_credentials = grpc.composite_channel_credentials(
+            ssl_credentials,
+            bearer_credentials,
+        )
 
-channel.subscribe(subscribe_callback, try_to_connect=True)
+        channel_options = [
+            ("grpc.keepalive_time_ms", 8000),
+            ("grpc.keepalive_timeout_ms", 5000),
+            ("grpc.http2.max_pings_without_data", 0),
+            ("grpc.keepalive_permit_without_calls", 1),
+        ]
 
-stub = Api_pb2_grpc.APIStub(channel)
+        if self.args.cert_host:
+            channel_options += [("grpc.ssl_target_name_override", self.args.cert_host)]
 
-yt = YouTubeController()
-cast.register_handler(yt)
+        self.channel = grpc.secure_channel(
+            self.args.server,
+            composite_credentials,
+            options=channel_options,
+        )
 
-executor = ThreadPoolExecutor()
-status_message_queue = Queue()
+        self.channel.subscribe(self.subscribe_callback, try_to_connect=True)
 
-listener_media = MyMediaStatusListener(cast.name, cast, status_message_queue)
-cast.media_controller.register_status_listener(listener_media)
-session_reader = None
+        self.stub = Api_pb2_grpc.APIStub(self.channel)
 
+        self.yt = YouTubeController()
+        self.cast.register_handler(self.yt)
 
-def connect_to_server() -> None:
-    """Connect to MediaFeeder."""
-    global session_reader
+        self.executor = ThreadPoolExecutor()
+        self.status_message_queue = Queue()
 
-    if session_reader:
-        session_reader.cancel()
+        self.listener_media = MyMediaStatusListener(self.cast.name, self.cast, self.status_message_queue)
+        self.cast.media_controller.register_status_listener(self.listener_media)
+        self.session_reader = None
 
-    logger.info("Connecting to server...")
-    grpc.channel_ready_future(channel).result()
+        try:
+            self.connect_to_server()
 
-    session_iterator = stub.PlaybackSession(
-        message_queue_iterator(status_message_queue),
-    )
-    session_reader = executor.submit(listener_media.on_ses_rep, session_iterator)
-    status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title=args.cast))
+            self.loop()
 
+        except KeyboardInterrupt:
+            self.logger.info("Shuting down...")
 
-def update_cast() -> bool:
-    """Update status from ChromeCast.
+        # Shut down discovery
+        browser.stop_discovery()
 
-    Returns:
-        bool: Update success
+        self.logger.info("fin.")
+        self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession=True))
 
-    """
-    try:
-        cast.media_controller.update_status()
-    except pychromecast.error.NotConnected:
-        logger.warning("Waiting for chromecast...")
-        time.sleep(3)
-        return False
-    else:
-        return True
+        self.executor.shutdown(wait=True, cancel_futures=True)
+        sys.exit(0)
 
+    def loop(self) -> None:
+        """Main event loop."""
+        current_video_id = None
+        current_content_id = None
 
-try:
-    current_video_id = None
-    current_content_id = None
-    connect_to_server()
-    while True:
-        if not session_reader or not session_reader.running():
-            connect_to_server()
+        while True:
+            if not self.session_reader or not self.session_reader.running():
+                self.connect_to_server()
 
-            # if connection was lost, at least restore what is currently playing.
-            if current_video_id:
-                status_message_queue.put(
+                # if connection was lost, at least restore what is currently playing.
+                if current_video_id:
+                    self.status_message_queue.put(
+                        Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
+                    )
+
+            if current_video_id and not self.update_cast():
+                continue
+
+            event = self.listener_media.get_event(5)
+            if event and event.next_video_id:
+                current_video_id = event.next_video_id
+                id_response = self.stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
+                current_content_id = id_response.VideoId
+
+                self.logger.info(
+                    "Playing %s: %s [%s]",
+                    current_video_id,
+                    id_response.Title,
+                    current_content_id,
+                )
+                self.status_message_queue.put(
                     Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
                 )
 
-        if current_video_id and not update_cast():
-            continue
+                # if the chromecast has been used for other apps, cast lib might incorrectly think it is already launched.
+                # this makes sure it reconnects and is ready to receive play commands.  hopefully.
+                self.yt.update_screen_id()
+                self.yt.start_session_if_none()
+                time.sleep(1)
 
-        event = listener_media.get_event(5)
-        if event and event.next_video_id:
-            current_video_id = event.next_video_id
-            id_response = stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
-            current_content_id = id_response.VideoId
+                self.yt.clear_playlist()
+                self.yt.play_video(current_content_id)
 
-            logger.info(
-                "Playing %s: %s [%s]",
-                current_video_id, id_response.Title, current_content_id,
-            )
-            status_message_queue.put(
-                Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
-            )
+            elif event and event.go_next:
+                # this check is to protected against the chromecast sending multiple finished events.
+                if not event.content_id or event.content_id == current_content_id:
+                    if current_video_id and event.mark_watched:
+                        self.logger.info("Marking %s as watched...", current_video_id)
+                        self.stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
+                        listener_media.pause_if_playing() # so playback stops if last video in queue
 
-            # if the chromecast has been used for other apps, cast lib might incorrectly think it is already launched.
-            # this makes sure it reconnects and is ready to receive play commands.  hopefully.
-            yt.update_screen_id()
-            yt.start_session_if_none()
-            time.sleep(1)
+                    current_video_id = None
+                    current_content_id = None
+                    self.logger.info("Requesting next video...")
+                    self.status_message_queue.put(
+                        Api_pb2.PlaybackSessionRequest(Action=Api_pb2.POP_NEXT_VIDEO),
+                    )
+                    time.sleep(1)  # let chromecast finish before trying to play next video.
+                else:
+                    self.logger.info("Ignoring event: %s", event)
 
-            yt.clear_playlist()
-            yt.play_video(current_content_id)
 
-        elif event and event.go_next:
-            # this check is to protected against the chromecast sending multiple finished events.
-            if not event.content_id or event.content_id == current_content_id:
-                if current_video_id and event.mark_watched:
-                    logger.info("Marking %s as watched...", current_video_id)
-                    stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
-
-                current_video_id = None
-                current_content_id = None
-                logger.info("Requesting next video...")
-                status_message_queue.put(
-                    Api_pb2.PlaybackSessionRequest(Action=Api_pb2.POP_NEXT_VIDEO),
-                )
-                time.sleep(1)  # let chromecast finish before trying to play next video.
-            else:
-                logger.info("Ignoring event: %s", event)
-except KeyboardInterrupt:
-    logger.info("Shuting down...")
-
-# Shut down discovery
-browser.stop_discovery()
-
-logger.info("fin.")
-status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession=True))
-
-executor.shutdown(wait=True, cancel_futures=True)
-sys.exit(0)
+Player().main()

@@ -1,4 +1,4 @@
-﻿namespace MediaFeeder.DTOs.DTOs;
+namespace MediaFeeder.DTOs.DTOs;
 
 public class FolderGet
 {

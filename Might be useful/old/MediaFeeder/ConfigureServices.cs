@@ -1,4 +1,4 @@
-﻿using MediaFeeder.Data;
+using MediaFeeder.Data;
 using MediaFeeder.Models.db;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

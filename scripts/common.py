@@ -219,8 +219,8 @@ class Shuffler:
 
     async def search(self, request: Api_pb2.SearchRequest) -> int | None:
         results = await self._stub.Search(request)
-        if results.VideoId is not None and len(results.VideoId) > 0:
-            return results.VideoId[0]
+        if results.Videos is not None and len(results.Videos) > 0:
+            return results.Videos[0].VideoId
         return None
 
     async def finished(self) -> None:

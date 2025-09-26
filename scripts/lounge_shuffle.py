@@ -161,7 +161,8 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         if event.enabled:
             asyncio.get_event_loop().create_task(self._disable_autoplay())
 
-    async def _disable_autoplay(self):
+    async def _disable_autoplay(self) -> None:
+        """Disable autoplay in the app."""
         await asyncio.sleep(10)
         await self._api._command(
             "setAutoplayMode",

@@ -47,6 +47,7 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
         return Ok(new
         {
             Published = newPublished,
+            Watched = newWatched,
             Subscriptions = subscriptions,
             VideosTracked = trackedVideos,
             VideosWatched = watchedVideos,

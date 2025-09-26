@@ -46,11 +46,3 @@ public class SynchroniseAllConsumer(
         }
     }
 }
-
-public class SynchroniseAllSchedule : DefaultRecurringSchedule
-{
-    public SynchroniseAllSchedule()
-    {
-        CronExpression = "25 * * * *"; // this means every minute
-    }
-}
