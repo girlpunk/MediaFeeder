@@ -9,6 +9,7 @@ public sealed class Metrics : IDisposable
     private readonly Meter _meter;
 
     private ObservableGauge<int> PublishedGauge { get; }
+    private ObservableGauge<int> WatchedRecentlyGauge { get; }
     private ObservableGauge<int> SubscriptionsGauge { get; }
     private ObservableGauge<int> VideosGauge { get; }
     private ObservableGauge<int> WatchedGauge { get; }
@@ -28,6 +29,16 @@ public sealed class Metrics : IDisposable
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
                 return new Measurement<int>(context.Videos.Count(video => video.PublishDate >= lastHour));
+            },
+            "Video");
+
+        WatchedRecentlyGauge = _meter.CreateObservableGauge(
+            "watched-recently",
+            () =>
+            {
+                var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
+                using var context = contextFactory.CreateDbContext();
+                return new Measurement<int>(context.Videos.Count(video => video.Watched && video.WatchedDate >= lastHour));
             },
             "Video");
 

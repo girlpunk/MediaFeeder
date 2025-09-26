@@ -8,8 +8,6 @@ using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authorization;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
@@ -25,6 +23,7 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
 
         var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
         var newPublished = await context.Videos.CountAsync(video => video.PublishDate >= lastHour);
+        var newWatched   = await context.Videos.CountAsync(video => video.Watched && video.WatchedDate >= lastHour);
 
         var subscriptions = await context.Subscriptions.CountAsync();
         var trackedVideos = await context.Videos.CountAsync();
