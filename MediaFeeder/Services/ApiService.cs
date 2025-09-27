@@ -312,7 +312,11 @@ public sealed class ApiService(
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
         video.Watched = request.Watched;
-        if (request.ActuallyWatched)
+        if (request.WhenSeconds != null)
+        {
+            video.WatchedDate = DateTimeOffset.FromUnixTimeSeconds(request.WhenSeconds);
+        }
+        else if (request.ActuallyWatched)
         {
             video.WatchedDate = DateTimeOffset.Now;
         }
@@ -335,7 +339,11 @@ public sealed class ApiService(
             context.CancellationToken);
 
         var reply = new SearchReply();
-        if (video != null) reply.Videos.Add(new FoundVideo { VideoId = video.Id, Watched = video.Watched });
+        if (video != null) {
+            var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched, };
+            if (video.WatchedDate != null) found.WatchedWhenSeconds = video.WatchedDate.Value.ToUnixTimeSeconds();
+            reply.Videos.Add(found);
+        }
         return reply;
     }
 

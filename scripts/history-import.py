@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from datetime import datetime
 import json
 import sys
 import urllib.parse
@@ -80,6 +81,8 @@ for entry in history:
         continue
     video_id = query["v"][0]
 
+    when_seconds = int(datetime.fromisoformat(entry.get("time")).timestamp())
+
     search = stub.Search(
         Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=video_id),
     )
@@ -91,6 +94,6 @@ for entry in history:
     entries_matched += 1
 
     found = search.Videos[0]
-    if not found.Watched:
-        stub.Watched(Api_pb2.WatchedRequest(Id=found.VideoId, Watched=True))
+    if not found.Watched or found.WatchedWhenSeconds < when_seconds:
+        stub.Watched(Api_pb2.WatchedRequest(Id=found.VideoId, Watched=True, WhenSeconds=when_seconds))
         entries_modified += 1
