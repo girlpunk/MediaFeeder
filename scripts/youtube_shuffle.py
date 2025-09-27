@@ -232,7 +232,7 @@ class Player:
 
         ssl_credentials = grpc.ssl_channel_credentials()
         if self.args.server_cert:
-            root_certs = Path(args.server_cert).read_bytes()
+            root_certs = Path(self.args.server_cert).read_bytes()
             ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
         bearer_credentials = grpc.access_token_call_credentials(self.args.token)
