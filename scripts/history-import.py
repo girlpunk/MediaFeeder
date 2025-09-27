@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-from datetime import datetime
 import json
 import sys
 import urllib.parse
+from datetime import datetime
 
 import grpc
 
