@@ -267,7 +267,7 @@ class Shuffler:
 def set_logging() -> None:
     """Set up logging in a standardised mannor."""
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.StreamHandler(),
