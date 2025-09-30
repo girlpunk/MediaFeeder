@@ -136,7 +136,7 @@ class MyMediaStatusListener(MediaStatusListener):
 
     def pause_if_playing(self):
         if self.last_status.player_is_playing:
-            cast.media_controller.pause()
+            self.cast.media_controller.pause()
             self._logger.info("paused")
 
 
