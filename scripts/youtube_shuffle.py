@@ -338,7 +338,7 @@ class Player:
                     if current_video_id and event.mark_watched:
                         self.logger.info("Marking %s as watched...", current_video_id)
                         self.stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
-                        listener_media.pause_if_playing()  # so playback stops if last video in queue
+                        self.listener_media.pause_if_playing()  # so playback stops if last video in queue
 
                     current_video_id = None
                     current_content_id = None
