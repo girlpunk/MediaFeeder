@@ -546,13 +546,17 @@ public sealed class ApiService(
         session.AddVideos += async minutes =>
         {
             if (session.SelectedFolderId == null) return;
+
+            var exclude = new List<Video>(session.Playlist);
+            if (session.Video != null) exclude.Add(session.Video);
+
             var videos = await DoShuffle(
                 db,
                 user,
                 minutes,
                 session.SelectedFolderId,
                 null,
-                session.Playlist);
+                exclude);
             session.AddToPlaylist(videos);
         };
 
