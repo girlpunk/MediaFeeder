@@ -24,7 +24,7 @@
             <TreeFolder @key="subfolder.Id" Folder="subfolder" Parent="@(this)"/>
         }
         @if (Folder != null)
-            @foreach (var subscription in Folder.Subscriptions)
+            @foreach (var subscription in Folder.Subscriptions.OrderBy(static f => f.Name))
         {
             <TreeSubscription @key="subscription.Id" Subscription="@subscription" Parent="this"/>
         }
