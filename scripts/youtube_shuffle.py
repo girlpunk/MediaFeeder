@@ -172,7 +172,17 @@ class Player:
             self.message_queue_iterator(self.status_message_queue),
         )
         self.session_reader = self.executor.submit(self.listener_media.on_ses_rep, session_iterator)
+        self.send_player_title()
+
+        # hack to work around grpc sometimes dropping early msgs.
+        self.executor.submit(self.send_player_title_again)
+
+    def send_player_title(self):
         self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.args.cast))
+
+    def send_player_title_again(self):
+        time.sleep(2)
+        self.send_player_title()
 
     def update_cast(self) -> bool:
         """Update status from ChromeCast.
