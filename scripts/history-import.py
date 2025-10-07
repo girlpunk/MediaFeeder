@@ -68,6 +68,8 @@ for entry in history:
 
     rawUrl = entry.get("titleUrl")
     if not rawUrl:
+        if entry.get("title") in ["Viewed Ads On YouTube Homepage", "Answered survey question"]:
+            continue
         print(f"Unknown entry: {entry}")
         continue
 
@@ -77,6 +79,8 @@ for entry in history:
 
     query = urllib.parse.parse_qs(url.query)
     if "v" not in query:
+        if url.netloc == "www.google.com":
+            continue
         print(f"Unknown URL: {rawUrl}")
         continue
     video_id = query["v"][0]
