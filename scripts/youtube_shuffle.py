@@ -350,6 +350,7 @@ class Player:
                         self.stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
                         self.listener_media.pause_if_playing()  # so playback stops if last video in queue
 
+                    self.yt.clear_playlist()
                     current_video_id = None
                     current_content_id = None
                     self.logger.info("Requesting next video...")
