@@ -184,6 +184,7 @@ message PlaybackSessionRequest {
 
 message PlaybackSessionReply {
   optional bool ShouldPlayPause = 1;
+  optional int32 ShouldSeekRelativeSeconds = 5;
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
   optional int32 NextVideoId = 4;

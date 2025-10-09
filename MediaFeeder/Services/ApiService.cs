@@ -541,6 +541,7 @@ public sealed class ApiService(
         using var session = playbackSessionManager.NewSession(user);
 
         session.PlayPauseEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPlayPause = true }, context.CancellationToken);
+        session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
         session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
         session.AddVideos += async minutes =>

@@ -18,12 +18,14 @@ public sealed class PlaybackSession : IDisposable
     public string? Title { get; set; }
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
+    public event Action<Int32>? SeekRelativeEvent;
     public event Action? WatchEvent;
     public event Action? SkipEvent;
     public int SelectedFolderId { get; set; }
     public event Action<Int32>? AddVideos;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
+    public void SeekRelative(int seconds) => SeekRelativeEvent?.Invoke(seconds);
     public void Watch() => WatchEvent?.Invoke();
     public void Skip() => SkipEvent?.Invoke();
 

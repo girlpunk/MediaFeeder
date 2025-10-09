@@ -80,6 +80,11 @@
                     </ListItem>
                 </ChildContent>
             </AntList>
+
+            <Flex style="margin: 1em 0 0 0;" Gap="FlexGap.Middle" Justify="FlexJustify.SpaceAround" >
+                <Button @onclick="@(() => Session.SeekRelative(-30))" style="width:40%;">&lt;- 30s</Button>
+                <Button @onclick="@(() => Session.SeekRelative(+30))" style="width:40%;">30s -&gt;</Button>
+            </Flex>
         } else {
             <span>Loading...</span>
         }

@@ -122,6 +122,12 @@ class MyMediaStatusListener(MediaStatusListener):
             else:
                 self._logger.warning("can not play/pause in state: %s", self.last_status.player_state)
 
+        if rep.ShouldSeekRelativeSeconds:
+            if not self.last_status:
+                self._logger.error("can not seek without last_status.")
+            elif self.last_status.player_is_playing:
+                self.cast.media_controller.seek(self.last_status.current_time + rep.ShouldSeekRelativeSeconds)
+
         elif rep.ShouldWatch:
             self._logger.info("Received mark as watched and skip command")
             self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
