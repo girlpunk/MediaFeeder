@@ -148,4 +148,16 @@
         if (Session != null)
             Session.UpdateEvent += () => InvokeAsync(StateHasChanged);
     }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Session != null && Session.SelectedFolderId == null && allFolders.Any())
+        {
+            Session.SelectedFolderId = allFolders.First().Id;
+            StateHasChanged();
+        }
+
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
 }
