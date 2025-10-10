@@ -11,7 +11,8 @@ public enum SortOrders
     ReversePlaylistOrder,
     Popularity,
     TopRated,
-    Duration,
+    Longest,
+    Shortest,
     WatchedDate
 }
 
@@ -26,7 +27,8 @@ public static class VideoExtensions
             SortOrders.ReversePlaylistOrder => source.OrderByDescending(static v => v.PlaylistIndex),
             SortOrders.Popularity => source.OrderByDescending(static v => v.Views),
             SortOrders.TopRated => source.OrderByDescending(static v => v.Rating),
-            SortOrders.Duration => source.OrderByDescending(static v => v.Duration),
+            SortOrders.Longest => source.OrderByDescending(static v => v.Duration),
+            SortOrders.Shortest => source.OrderBy(static v => v.Duration),
             SortOrders.WatchedDate => source.Where(static v => v.WatchedDate != null).OrderByDescending(static v => v.WatchedDate),
             _ => source
         };
