@@ -73,7 +73,7 @@ public sealed partial class VideoCard : ComponentBase
         {
             video.Watched = !video.Watched;
             await context.SaveChangesAsync();
-            await MessageService.Success($"Marked {(video.Watched ? "Watched" : "Unwatched")}");
+            await MessageService.SuccessAsync($"Marked {(video.Watched ? "Watched" : "Unwatched")}");
         }
 
         Video = video;
@@ -94,7 +94,7 @@ public sealed partial class VideoCard : ComponentBase
 
             if (providerType == null)
             {
-                await MessageService.Error($"Could not find a provider for {Video.Subscription.Provider}");
+                await MessageService.ErrorAsync($"Could not find a provider for {Video.Subscription.Provider}");
                 return;
             }
 
@@ -103,7 +103,7 @@ public sealed partial class VideoCard : ComponentBase
             ArgumentNullException.ThrowIfNull(contract);
 
             await Bus.PublishWithGuid(contract);
-            await MessageService.Info("Sent for download");
+            await MessageService.InfoAsync("Sent for download");
         }
         else
         {
@@ -115,7 +115,7 @@ public sealed partial class VideoCard : ComponentBase
             video.DownloadedPath = null;
 
             await context.SaveChangesAsync();
-            await MessageService.Success("Deleted Download");
+            await MessageService.SuccessAsync("Deleted Download");
         }
 
         StateHasChanged();

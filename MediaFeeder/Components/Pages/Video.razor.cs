@@ -122,7 +122,7 @@ public sealed partial class Video : IDisposable
 
     private async Task Download()
     {
-        await MessageService.Info("Not Implemented");
+        await MessageService.InfoAsync("Not Implemented");
     }
 
     public void Dispose()

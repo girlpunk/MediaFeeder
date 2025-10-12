@@ -1,19 +1,28 @@
 @page "/Sessions"
 @using MediaFeeder.PlaybackManager
+@inject IConfiguration Configuration
 
-<h3>Sessions</h3>
-
-<GridRow Gutter="(16, 16)" Justify="RowJustify.SpaceAround">
-@if (SessionManager != null)
-{
-    @foreach (var session in SessionManager.PlaybackSessions)
-    {
-        <GridCol Md="12" Sm="24" Xs="24">
-            <SessionInfo Session="@session"/>
-        </GridCol>
-    }
-}
-</GridRow>
+<Card Title="Sessions">
+    <Extra>
+        <a href="@(Configuration.GetValue<string>("base_path", "/"))">Home</a>
+    </Extra>
+    <ChildContent>
+        <Tabs StandaloneInCard>
+            @if (SessionManager != null)
+            {
+                @foreach (var session in SessionManager.PlaybackSessions)
+                {
+                    <TabPane>
+                        <TabTemplate>@(session.Title)</TabTemplate>
+                        <ChildContent>
+                            <SessionInfo Session="@session"/>
+                        </ChildContent>
+                    </TabPane>
+                }
+            }
+        </Tabs>
+    </ChildContent>
+</Card>
 
 @code {
     [Inject] public PlaybackSessionManager? SessionManager { get; set; }

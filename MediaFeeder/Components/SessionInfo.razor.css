@@ -1,0 +1,10 @@
+::deep .control_bar {
+    padding: 1em 0;
+}
+::deep .control_bar .ant-col {
+    flex-grow: 1;
+}
+::deep .control_bar .ant-btn {
+    width: 100%;
+    min-width: 10ex;
+}
