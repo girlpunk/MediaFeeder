@@ -15,7 +15,7 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, ILogger<VideoController> logger) : ControllerBase
+public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, IConfiguration configuration, ILogger<VideoController> logger) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
     [Authorize(Roles = "Download", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -75,7 +75,9 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
 
         try
         {
-            var stream = (new PhysicalFileInfo(new FileInfo(video.Thumb))).CreateReadStream();
+            var relativePath = video.Thumb;
+            var absolutePath = Path.Join(configuration.GetValue<string>("MediaRoot"), relativePath);
+            var stream = (new PhysicalFileInfo(new FileInfo(absolutePath))).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(video.Thumb, out var mimeType);
             return File(stream, mimeType ?? "application/octet-stream");
         }

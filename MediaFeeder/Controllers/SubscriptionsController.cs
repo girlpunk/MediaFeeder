@@ -13,7 +13,7 @@ namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SubscriptionsController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
+public class SubscriptionsController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, IConfiguration configuration) : ControllerBase
 {
     // GET: api/Subscriptions
     [HttpGet]
@@ -145,7 +145,9 @@ public class SubscriptionsController(IDbContextFactory<MediaFeederDataContext> c
 
         try
         {
-            var stream = new PhysicalFileInfo(new FileInfo(subscription.Thumb)).CreateReadStream();
+            var relativePath = subscription.Thumb;
+            var absolutePath = Path.Join(configuration.GetValue<string>("MediaRoot"), relativePath);
+            var stream = new PhysicalFileInfo(new FileInfo(absolutePath)).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(subscription.Thumb, out var mimeType);
             return File(stream, mimeType ?? "application/octet-stream");
         }
