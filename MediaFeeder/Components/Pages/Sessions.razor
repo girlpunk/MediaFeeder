@@ -13,7 +13,16 @@
                 @foreach (var session in SessionManager.PlaybackSessions)
                 {
                     <TabPane>
-                        <TabTemplate>@(session.Title)</TabTemplate>
+                        <TabTemplate>
+                            <span style="font-size: 120%;">@(session.State switch {
+                                            "PLAYING" =>"⏵",
+                                            "PAUSED" => "⏸",
+                                            "BUFFERING" => "⧖",
+                                            _ => "⏹"
+                                        })
+                            </span>
+                            @(session.Title)
+                        </TabTemplate>
                         <ChildContent>
                             <SessionInfo Session="@session"/>
                         </ChildContent>

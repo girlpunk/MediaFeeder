@@ -9,6 +9,7 @@ public sealed class PlaybackSessionManager
     internal PlaybackSession NewSession(AuthUser user)
     {
         var session = new PlaybackSession(this, user);
+        session.UpdateEvent += () => UpdateEvent?.Invoke();
         PlaybackSessions.Add(session);
 
         UpdateEvent?.Invoke();
