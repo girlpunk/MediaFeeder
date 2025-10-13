@@ -16,8 +16,13 @@
             </GridCol>
             <GridCol Span="16">
                 <CardMeta
-                    Title="@(Session.Video?.Name ?? "Unknown")"
-                    Description="@(Session.Video?.Subscription?.Name)"/>
+                    Description="@(Session.Video?.Subscription?.Name)">
+                    <TitleTemplate>
+                        <span style="text-wrap-mode: wrap;">
+                            @(Session.Video?.Name ?? "Unknown")
+                        </span>
+                    </TitleTemplate>
+                </CardMeta>
             </GridCol>
         </GridRow>
 
@@ -31,8 +36,14 @@
         @if (Session.Video != null)
         {
             <CardMeta Style="display: block;"
-                TitleTemplate="@titleTpl(Session)"
-                Description="@($"{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume")"/>
+                      Description="@($"{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume")">
+                <TitleTemplate>
+                    <Flex Justify="FlexJustify.SpaceBetween">
+                        <span>@(Session.Provider?.Humanize())</span>
+                        <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
+                    </Flex>
+                </TitleTemplate>
+            </CardMeta>
         }
 
         <GridRow Justify="RowJustify.Center" Gutter="(16, 16)" Class="control_bar">
@@ -88,12 +99,21 @@
                 </Flex>
             </Header>
             <ChildContent Context="item">
-                <ListItem Actions="@plActions(item)">
-                    <ListItemMeta AvatarTemplate="@plThumbTpl(item)" DescriptionTemplate="@plDescTpl(item)">
+                <ListItem>
+                    <ListItemMeta>
+                        <AvatarTemplate>
+                            <Avatar Shape="AvatarShape.Square" Size="AvatarSize.Large" Src="@($"api/video/{item.Id}/thumbnail/")"/>
+                        </AvatarTemplate>
                         <TitleTemplate>
                             @item.Name
                         </TitleTemplate>
+                        <DescriptionTemplate>
+                            <span>@(item.DurationSpan.ToString() ?? "??:??") • @(item.Subscription?.Name)</span>
+                        </DescriptionTemplate>
                     </ListItemMeta>
+                    <Actions>
+                        <a key="remove" @onclick="@(() => Session?.RemoveFromPlaylist(item))">remove</a>
+                    </Actions>
                 </ListItem>
             </ChildContent>
         </AntList>
@@ -110,16 +130,6 @@
     [Inject] public required MediaFeederDataContext Context { get; set; }
 
     List<Folder> allFolders = [];
-
-    RenderFragment titleTpl(PlaybackSession s) => @<Flex Justify="FlexJustify.SpaceBetween">
-      <span>@(s.Provider?.Humanize())</span>
-      <span>@(s.CurrentPosition?.ToString()) / @(s.Video?.DurationSpan.ToString())</span>
-      </Flex>;
-
-    RenderFragment plThumbTpl(Video v) => @<Avatar Shape="AvatarShape.Square" Size="AvatarSize.Large" Src="@($"api/video/{v.Id}/thumbnail/")"/>;
-    RenderFragment plDescTpl(Video v) => @<span>@(v.DurationSpan.ToString() ?? "??:??") • @(v.Subscription?.Name)</span>;
-    RenderFragment plRemove(Video v) => @<a key="remove" @onclick="@(() => Session?.RemoveFromPlaylist(v))">remove</a>;
-    RenderFragment[] plActions(Video v) => [ plRemove(v) ];
 
     protected override async Task OnParametersSetAsync()
     {
