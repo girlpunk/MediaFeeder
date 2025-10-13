@@ -1,5 +1,5 @@
 ::deep .control_bar {
-    padding: 1em 0;
+    padding: 1em 0 0 0;
 }
 ::deep .control_bar .ant-col {
     flex-grow: 1;

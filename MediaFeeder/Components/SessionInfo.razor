@@ -35,6 +35,24 @@
                 Description="@($"{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume")"/>
         }
 
+        <GridRow Justify="RowJustify.Center" Gutter="(16, 16)" Class="control_bar">
+            <GridCol>
+                <Button @onclick="@(() => Session.SeekRelative(-30))" Icon="@IconType.Outline.FastBackward">30s</Button>
+            </GridCol>
+            <GridCol>
+                <Button Style="min-width: 12ex;" @onclick="@(() => Session.PlayPause())" Icon="@IconType.Outline.Pause">Pause</Button>
+            </GridCol>
+            <GridCol>
+                <Button @onclick="@(() => Session.SeekRelative(+30))" Icon="@IconType.Outline.FastForward">30s</Button>
+            </GridCol>
+            <GridCol>
+                <Button Style="min-width: 22ex;" @onclick="@(() => Session.Watch())" Icon="@IconType.Outline.Eye">Mark Watched</Button>
+            </GridCol>
+            <GridCol>
+                <Button Style="min-width: 12ex;" @onclick="@(() => Session.Skip())" Icon="@IconType.Outline.FastForward">Skip</Button>
+            </GridCol>
+        </GridRow>
+
         <AntList Size="ListSize.Small" Style="margin-top: 16px; max-height: 300px; overflow-y: auto;" Bordered DataSource="@Session.Playlist">
             <Header>
                 <Flex Gap="FlexGap.Small">
@@ -79,24 +97,6 @@
                 </ListItem>
             </ChildContent>
         </AntList>
-
-        <GridRow Justify="RowJustify.Center" Gutter="(16, 16)" Class="control_bar">
-            <GridCol>
-                <Button @onclick="@(() => Session.SeekRelative(-30))" Icon="@IconType.Outline.FastBackward">30s</Button>
-            </GridCol>
-            <GridCol>
-                <Button Style="min-width: 12ex;" @onclick="@(() => Session.PlayPause())" Icon="@IconType.Outline.Pause">Pause</Button>
-            </GridCol>
-            <GridCol>
-                <Button @onclick="@(() => Session.SeekRelative(+30))" Icon="@IconType.Outline.FastForward">30s</Button>
-            </GridCol>
-            <GridCol>
-                <Button Style="min-width: 22ex;" @onclick="@(() => Session.Watch())" Icon="@IconType.Outline.Eye">Mark Watched</Button>
-            </GridCol>
-            <GridCol>
-                <Button Style="min-width: 12ex;" @onclick="@(() => Session.Skip())" Icon="@IconType.Outline.FastForward">Skip</Button>
-            </GridCol>
-        </GridRow>
     } else {
         <span>Loading...</span>
     }
