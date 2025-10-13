@@ -65,7 +65,7 @@ public sealed partial class TreeView
 
         Folders = await context.Folders
             .TagWith("TreeView Folders")
-            .Where(f => f.UserId == user.Id && f.ParentId == null)
+            .Where(f => f.UserId == user.Id)
             .Include(static f => f.Subfolders)
             .Include(static f => f.Subscriptions)
             .ToListAsync();
