@@ -20,6 +20,7 @@ public sealed partial class TreeView
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
+    [Inject] public required MessageService MessageService { get; set; }
     [Inject] public required ModalService ModalService { get; set; }
     [Inject] public required ILogger<TreeView> Logger { get; set; }
 
@@ -32,6 +33,7 @@ public sealed partial class TreeView
     public int? SelectedSubscription { get; set; }
 
     private List<Folder>? Folders { get; set; }
+    private int userId;
 
     // private SemaphoreSlim Updating { get; } = new(1);
     // private Tree<ITreeSelectable>? TreeRef { get; set; }
@@ -49,6 +51,7 @@ public sealed partial class TreeView
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
         ArgumentNullException.ThrowIfNull(user);
+        userId = user.Id;
 
         await using var context = await ContextFactory.CreateDbContextAsync();
 
@@ -116,6 +119,58 @@ public sealed partial class TreeView
         else
         {
             Logger.LogWarning("Edit clicked when both SelectedFolder and SelectedSubscription are null");
+        }
+    }
+
+    private async Task DeleteSelected()
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        if (SelectedFolder != null)
+        {
+            Folder folder = await context.Folders
+                .Include(folder => folder.Subfolders)
+                .Include(folder => folder.Subscriptions)
+                .SingleAsync(f => f.Id == SelectedFolder && f.UserId == userId);
+
+            if (folder.Subfolders.Count > 0 || folder.Subscriptions.Count > 0)
+            {
+                await MessageService.WarnAsync($"Can not delete a folder that contains subfolders({folder.Subfolders.Count}) or subscriptions({folder.Subscriptions.Count}).");
+                Logger.LogWarning("Folder {} contains: {} {}", folder.Id, folder.Subfolders.FirstOrDefault()?.Id, folder.Subscriptions.FirstOrDefault()?.Id);
+                return;
+            }
+
+            await ModalService.ConfirmAsync(new ConfirmOptions
+            {
+                Title = "Confirm Folder Deletion",
+                Content = $"Delete folder '{folder.Name}'?",
+                OnOk = async _ => {
+                    context.Folders.Remove(folder);
+                    await context.SaveChangesAsync();
+                    await UpdateTree();
+                },
+                OkButtonProps = new ButtonProps
+                {
+                    Danger = true
+                }
+            });
+        }
+        else if (SelectedSubscription != null)
+        {
+            Subscription subscription = await context.Subscriptions.SingleAsync(f => f.Id == SelectedSubscription && f.UserId == userId);
+            await ModalService.ConfirmAsync(new ConfirmOptions
+            {
+                Title = "Confirm Subscription Deletion",
+                Content = $"Delete subscription '{subscription.Name}'?",
+                OnOk = async _ => {
+                    context.Subscriptions.Remove(subscription);
+                    await context.SaveChangesAsync();
+                    await UpdateTree();
+                },
+                OkButtonProps = new ButtonProps
+                {
+                    Danger = true
+                }
+            });
         }
     }
 }
