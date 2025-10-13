@@ -1,37 +1,34 @@
 @page "/Sessions"
+@using MediaFeeder.Components.Layout
 @using MediaFeeder.PlaybackManager
-@inject IConfiguration Configuration
 
-<Card Title="Sessions">
-    <Extra>
-        <a href="@(Configuration.GetValue<string>("base_path", "/"))">Home</a>
-    </Extra>
-    <ChildContent>
-        <Tabs StandaloneInCard>
-            @if (SessionManager != null)
+@layout ListLayout
+
+<Content Style="background: #fff; padding: 1em;">
+    <Tabs StandaloneInCard>
+        @if (SessionManager != null)
+        {
+            @foreach (var session in SessionManager.PlaybackSessions)
             {
-                @foreach (var session in SessionManager.PlaybackSessions)
-                {
-                    <TabPane>
-                        <TabTemplate>
-                            <span style="font-size: 120%;">@(session.State switch {
-                                            "PLAYING" =>"⏵",
-                                            "PAUSED" => "⏸",
-                                            "BUFFERING" => "⧖",
-                                            _ => "⏹"
-                                        })
-                            </span>
-                            @(session.Title)
-                        </TabTemplate>
-                        <ChildContent>
-                            <SessionInfo Session="@session"/>
-                        </ChildContent>
-                    </TabPane>
-                }
+                <TabPane>
+                    <TabTemplate>
+                        <span style="font-size: 120%;">@(session.State switch {
+                                                           "PLAYING" =>"⏵",
+                                                           "PAUSED" => "⏸",
+                                                           "BUFFERING" => "⧖",
+                                                           _ => "⏹"
+                                                       })
+                        </span>
+                        @(session.Title)
+                    </TabTemplate>
+                    <ChildContent>
+                        <SessionInfo Session="@session"/>
+                    </ChildContent>
+                </TabPane>
             }
-        </Tabs>
-    </ChildContent>
-</Card>
+        }
+    </Tabs>
+</Content>
 
 @code {
     [Inject] public PlaybackSessionManager? SessionManager { get; set; }

@@ -1,91 +1,89 @@
 @page "/video/{id:int}/{next}"
 @page "/video/{id:int}"
 @using Humanizer
+@using MediaFeeder.Components.Layout
 @using MediaFeeder.Data
-@inject IConfiguration Configuration
 @inject MediaFeederDataContext Context
 @inject IServiceProvider ServiceProvider
 
+@layout ListLayout
+
+<SectionContent SectionName="TitleTemplate">
+    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
+        @if (VideoObject != null)
+        {
+            @VideoObject.Name
+        }
+        else
+        {
+            <Skeleton/>
+        }
+    </span>
+</SectionContent>
+
+<SectionContent SectionName="SubtitleTemplate">
+    <span class="ant-page-header-heading-sub-title">
+        <a href="@($"folder/{VideoObject?.Subscription?.ParentFolder?.Id}")">@VideoObject?.Subscription?.ParentFolder?.Name</a>
+        &gt;
+        <a href="@($"subscription/{VideoObject?.Subscription?.Id}")">@VideoObject?.Subscription?.Name</a>
+    </span>
+</SectionContent>
+
+<SectionContent SectionName="PageHeaderExtra">
+    <div style="margin: auto 0;">
+        @if (VideoObject != null && Provider != null)
+        {
+            <Tooltip Title="@($"Watch on {Provider.Name}")">
+                <a href="@Provider.GetUrl(VideoObject)">
+                    <Button Icon="@Provider.Icon"></Button>
+                </a>
+            </Tooltip>
+        }
+
+        @if (VideoObject?.Watched ?? false)
+        {
+            <Tooltip Title="Mark as not watched">
+                <Button Icon="@IconType.Outline.EyeInvisible" Color="@Color.Green10" OnClick="@MarkWatched"></Button>
+            </Tooltip>
+        }
+        else
+        {
+            <Tooltip Title="Mark as watched">
+                <Button Icon="@IconType.Outline.Eye" OnClick="@MarkWatched"></Button>
+            </Tooltip>
+        }
+
+
+        @if (Next != null)
+        {
+            <Tooltip Title="Go to next video">
+                <Button Icon="@IconType.Outline.FastForward" OnClick="@GoNext"></Button>
+            </Tooltip>
+        }
+
+        @if (VideoObject?.DownloadedPath == null)
+        {
+            <Tooltip Title="Download">
+                <Button Icon="@IconType.Outline.Download" OnClick="@Download"></Button>
+            </Tooltip>
+        }
+        else
+        {
+            <Tooltip Title="Delete Download">
+                <Button Icon="@IconType.Outline.Delete" Color="@Color.Green10" OnClick="@Download"></Button>
+            </Tooltip>
+        }
+
+        @if (Next != null)
+        {
+            <Tooltip Title="Remaining">
+                <Button>@UpNextCount, @TotalDuration.Humanize(2)</Button>
+            </Tooltip>
+        }
+    </div>
+</SectionContent>
+
 <Layout>
-    <PageHeader Class="site-page-header">
-        <TitleTemplate>
-            <a class="navbar-brand" href="@(Configuration.GetValue<string>("base_path", "/"))">
-                <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
-                MediaFeeder
-            </a>
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
-                @if (VideoObject != null)
-                {
-                    @VideoObject.Name
-                }
-                else
-                {
-                    <Skeleton/>
-                }
-            </span>
-            </TitleTemplate>
-            <SubtitleTemplate>
-                <span class="ant-page-header-heading-sub-title">
-                    <a href="@($"folder/{VideoObject?.Subscription?.ParentFolder?.Id}")">@VideoObject?.Subscription?.ParentFolder?.Name</a>
-                    &gt;
-                    <a href="@($"subscription/{VideoObject?.Subscription?.Id}")">@VideoObject?.Subscription?.Name</a>
-                </span>
-            </SubtitleTemplate>
-
-        <PageHeaderExtra>
-            <div style="margin: auto 0;">
-                @if (VideoObject != null && Provider != null)
-                {
-                    <Tooltip Title="@($"Watch on {Provider.Name}")">
-                        <a href="@Provider.GetUrl(VideoObject)">
-                            <Button Icon="@Provider.Icon"></Button>
-                        </a>
-                    </Tooltip>
-                }
-
-                @if (VideoObject?.Watched ?? false)
-                {
-                    <Tooltip Title="Mark as not watched">
-                        <Button Icon="@IconType.Outline.EyeInvisible" Color="@Color.Green10" OnClick="@MarkWatched"></Button>
-                    </Tooltip>
-                }
-                else
-                {
-                    <Tooltip Title="Mark as watched">
-                        <Button Icon="@IconType.Outline.Eye" OnClick="@MarkWatched"></Button>
-                    </Tooltip>
-                }
-
-
-                @if (Next != null)
-                {
-                    <Tooltip Title="Go to next video">
-                        <Button Icon="@IconType.Outline.FastForward" OnClick="@GoNext"></Button>
-                    </Tooltip>
-                }
-
-                @if (VideoObject?.DownloadedPath == null)
-                {
-                    <Tooltip Title="Download">
-                        <Button Icon="@IconType.Outline.Download" OnClick="@Download"></Button>
-                    </Tooltip>
-                }
-                else
-                {
-                    <Tooltip Title="Delete Download">
-                        <Button Icon="@IconType.Outline.Delete" Color="@Color.Green10" OnClick="@Download"></Button>
-                    </Tooltip>
-                }
-
-                @if (Next != null)
-                {
-                    <Tooltip Title="Remaining">
-                        <Button>@UpNextCount, @TotalDuration.Humanize(2)</Button>
-                    </Tooltip>
-                }
-            </div>
-        </PageHeaderExtra>
-    </PageHeader>
     <Content>
         @if (VideoObject != null && Provider != null && PlaybackSession != null)
         {

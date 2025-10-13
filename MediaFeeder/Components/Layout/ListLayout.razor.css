@@ -1,0 +1,19 @@
+@media (width <= 641px) {
+    ::deep .title {
+        display: none;
+    }
+    ::deep .ant-page-header {
+        padding: 4px 10px;
+    }
+}
+
+::deep .ant-menu {
+    margin-right: 1em;
+}
+::deep .ant-menu-item {
+    padding: 0 10px !important;
+}
+::deep .ant-menu-item::after {
+    right: 10px;
+    left: 10px;
+}
