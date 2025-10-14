@@ -57,6 +57,37 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
+        if (subscription.LastSynchronised == null || subscription.LastSynchronised.Value.DayOfYear != DateTimeOffset.Now.DayOfYear)
+        {
+            var channelRequest = youTubeService.Channels.List("snippet");
+            channelRequest.Id = subscription.ChannelId;
+            var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
+            var channelResult = channelResponse?.Items?.SingleOrDefault();
+
+            if (channelResult == null)
+                logger.LogError("Could not load channel details for {} (channel {})", subscription.Id,
+                    subscription.ChannelId);
+
+            if (channelResult?.Snippet?.Title != null)
+            {
+                if (subscription.Name == subscription.ChannelName)
+                    subscription.Name = channelResult.Snippet.Title;
+
+                subscription.ChannelName = channelResult.Snippet.Title;
+            }
+
+            if (channelResult?.Snippet?.Thumbnails != null)
+                subscription.Thumb = await utils.LoadResourceThumbnail(
+                    subscription.PlaylistId,
+                    "sub",
+                    channelResult.Snippet.Thumbnails,
+                    logger,
+                    context.CancellationToken);
+
+            if (channelResult?.Snippet?.Description != null)
+                subscription.Description = channelResult.Snippet.Description;
+        }
+
         if (subscription.LastSynchronised == null)
         {
             logger.LogInformation("New subscription, forcing full sync for {}", subscription.Name);
@@ -64,37 +95,6 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         }
         else
         {
-            if (subscription.LastSynchronised.Value.DayOfYear != DateTimeOffset.Now.DayOfYear)
-            {
-                var channelRequest = youTubeService.Channels.List("snippet");
-                channelRequest.Id = subscription.ChannelId;
-                var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
-                var channelResult = channelResponse?.Items?.SingleOrDefault();
-
-                if (channelResult == null)
-                    logger.LogError("Could not load channel details for {} (channel {})", subscription.Id,
-                        subscription.ChannelId);
-
-                if (channelResult?.Snippet?.Title != null)
-                {
-                    if (subscription.Name == subscription.ChannelName)
-                        subscription.Name = channelResult.Snippet.Title;
-
-                    subscription.ChannelName = channelResult.Snippet.Title;
-                }
-
-                if (channelResult?.Snippet?.Thumbnails != null)
-                    subscription.Thumb = await utils.LoadResourceThumbnail(
-                        subscription.PlaylistId,
-                        "sub",
-                        channelResult.Snippet.Thumbnails,
-                        logger,
-                        context.CancellationToken);
-
-                if (channelResult?.Snippet?.Description != null)
-                    subscription.Description = channelResult.Snippet.Description;
-            }
-
             try
             {
                 await CheckRssVideos(subscription, db, context.CancellationToken);
