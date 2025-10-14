@@ -1,3 +1,7 @@
+::deep .title {
+    vertical-align: middle;
+}
+
 @media (width <= 641px) {
     ::deep .title {
         display: none;

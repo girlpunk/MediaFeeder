@@ -4,6 +4,8 @@
 
 @layout ListLayout
 
+<PageTitle>MediaFeeder Sessions</PageTitle>
+
 <Content Style="background: #fff; padding: 1em;">
     <Tabs StandaloneInCard DefaultActiveKey="@(SessionManager?.PlaybackSessions.FirstOrDefault(s => s.State == "PLAYING")?.Title)">
         @if (SessionManager != null)
