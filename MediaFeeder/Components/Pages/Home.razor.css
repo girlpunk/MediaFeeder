@@ -8,3 +8,7 @@
 ::deep .grow.ant-col {
     flex-grow: 1;
 }
+
+::deep .ant-layout-sider-zero-width-trigger {
+    top: 0;
+}

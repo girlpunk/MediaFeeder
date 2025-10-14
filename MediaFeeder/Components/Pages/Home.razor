@@ -10,9 +10,12 @@
 
 <PageTitle>@Title</PageTitle>
 
-<Sider Width="300" Breakpoint="BreakpointType.Lg" CollapsedWidth="0" Style="background-color: white;">
-    <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId" />
-</Sider>
+<div>
+    <Sider Width="300" Breakpoint="BreakpointType.Lg" CollapsedWidth="0" Style="background-color: white;">
+        <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId"/>
+    </Sider>
+</div>
+
 <Content>
     <div>
         <GridRow Gutter="8" Class="main-toolbar">
