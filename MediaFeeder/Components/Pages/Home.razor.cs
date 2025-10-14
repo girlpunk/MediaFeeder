@@ -31,7 +31,7 @@ public sealed partial class Home
     private int PageNumber { get; set; } = 1;
     private int ItemsAvailable { get; set; }
     private TimeSpan Duration { get; set; }
-    private string Title { get; set; } = "Home";
+    private string Title { get; set; } = "MediaFeeder";
     private int FilterHash { get; set; }
 
     private SemaphoreSlim Updating { get; } = new(1);

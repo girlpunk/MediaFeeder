@@ -1,0 +1,14 @@
+::deep .main-toolbar.ant-row {
+    align-items: end;
+    padding: 0 1em;
+}
+::deep .main-toolbar.ant-col {
+    margin: 0.5em 0;
+}
+::deep .grow.ant-col {
+    flex-grow: 1;
+}
+
+::deep .ant-layout-sider-zero-width-trigger {
+    top: 0;
+}

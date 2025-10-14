@@ -1,32 +1,50 @@
 @inherits MainLayout
 @inject IConfiguration Configuration
 
-<PageTitle>Home</PageTitle>
+<PageTitle>MediaFeeder</PageTitle>
 
-<Layout>
-    <Header Style="background-color: white;">
-        <Flex Justify="FlexJustify.SpaceBetween" Align="FlexAlign.FlexStart">
-            <div class="top-row ps-3 navbar">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="@(Configuration.GetValue<string>("base_path", "/"))">
-                        <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
-                        <Title>MediaFeeder</Title>
-                    </a>
-                </div>
-            </div>
-            <div class="top-row px-4">
-                <AuthorizeView>
-                    <Authorized>
-                        Hello, @context.User.Identity?.Name!
-                    </Authorized>
-                    <NotAuthorized>
-                        <a href="Account/Login">Log in</a>
-                    </NotAuthorized>
-                </AuthorizeView>
-            </div>
-        </Flex>
-    </Header>
+<!-- need a div around everything for the isolated CSS to work. -->
+<div>
     <Layout>
-        @Body
+        <PageHeader Class="site-page-header">
+            <TitleTemplate>
+                <a class="navbar-brand" href="@(Configuration.GetValue<string>("base_path", "/"))">
+                    <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
+                    <span class="title">MediaFeeder</span>
+                </a>
+                <SectionOutlet SectionName="TitleTemplate" />
+            </TitleTemplate>
+            <SubtitleTemplate>
+                <SectionOutlet SectionName="SubtitleTemplate" />
+            </SubtitleTemplate>
+            <PageHeaderExtra>
+                <SectionOutlet SectionName="PageHeaderExtra" />
+            </PageHeaderExtra>
+        </PageHeader>
+        <Layout>
+            @Body
+        </Layout>
     </Layout>
-</Layout>
+</div>
+
+<SectionContent SectionName="PageHeaderExtra">
+    <Flex Direction="FlexDirection.Horizontal" Justify="FlexJustify.SpaceBetween" Align="FlexAlign.Center">
+        <Menu Mode="MenuMode.Horizontal">
+            <MenuItem>
+                <MenuLink Href="">Home</MenuLink>
+            </MenuItem>
+            <MenuItem>
+                <MenuLink Href="sessions">Sessions</MenuLink>
+            </MenuItem>
+        </Menu>
+
+        <AuthorizeView>
+            <Authorized>
+                @context.User.Identity?.Name
+            </Authorized>
+            <NotAuthorized>
+                <a href="Account/Login">Log in</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </Flex>
+</SectionContent>
