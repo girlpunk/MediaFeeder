@@ -15,13 +15,19 @@
                     Preview="false"/>
             </GridCol>
             <GridCol Span="16">
-                <CardMeta
-                    Description="@(Session.Video?.Subscription?.Name)">
+                <CardMeta>
                     <TitleTemplate>
                         <span style="text-wrap-mode: wrap;">
                             @(Session.Video?.Name ?? "Unknown")
                         </span>
                     </TitleTemplate>
+                    <DescriptionTemplate>
+                        <span>
+                            @(Session.Video?.Subscription?.Name)
+                            •
+                            @(Session.Video?.PublishDate.Humanize() ?? "")
+                        </span>
+                    </DescriptionTemplate>
                 </CardMeta>
             </GridCol>
         </GridRow>
