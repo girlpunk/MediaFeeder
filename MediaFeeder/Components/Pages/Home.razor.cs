@@ -17,7 +17,7 @@ public sealed partial class Home
 
     private List<Data.db.Video>? Videos { get; set; }
 
-    [Inject] public MediaFeederDataContext DataContext { get; init; } = null!;
+    [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
     [Inject] public NavigationManager NavigationManager { get; init; } = null!;
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; } = null!;
 
@@ -56,8 +56,6 @@ public sealed partial class Home
 
     private async Task Update(bool force = false)
     {
-        ArgumentNullException.ThrowIfNull(DataContext);
-
         // if (force || !UpdateHash())
         //     return;
 
@@ -73,20 +71,21 @@ public sealed partial class Home
             Videos = null;
             StateHasChanged();
 
-            var source = DataContext.Videos
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var source = context.Videos
                 .AsQueryable()
                 .Where(v => v.Subscription!.UserId == user.Id);
 
             if (FolderId != null)
             {
                 source = source.Where(v => v.Subscription!.ParentFolderId == FolderId);
-                Title = (await DataContext.Folders.FindAsync(FolderId))?.Name ?? "";
+                Title = (await context.Folders.FindAsync(FolderId))?.Name ?? "";
             }
 
             if (SubscriptionId != null)
             {
                 source = source.Where(v => v.SubscriptionId == SubscriptionId);
-                Title = (await DataContext.Subscriptions.FindAsync(SubscriptionId))?.Name ?? "";
+                Title = (await context.Subscriptions.FindAsync(SubscriptionId))?.Name ?? "";
             }
 
             source = source.SortVideos(SortOrder);
@@ -137,13 +136,13 @@ public sealed partial class Home
 
     private async Task MarkAllWatched()
     {
-        ArgumentNullException.ThrowIfNull(DataContext);
         ArgumentNullException.ThrowIfNull(Videos);
 
         foreach (var video in Videos)
             video.Watched = true;
 
-        await DataContext.SaveChangesAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        await context.SaveChangesAsync();
         await Update(true);
     }
 
