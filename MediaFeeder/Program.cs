@@ -182,7 +182,7 @@ builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>((sp, options)
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     options.UseNpgsql(connectionString, static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
     options.AddInterceptors(new SlowQueryDetectionHelper(sp.GetRequiredService<ILogger<SlowQueryDetectionHelper>>()));
-});
+}, /* poolSize= */ 50);
 
 builder.Services.AddScoped<MediaFeederDataContext>(static p => p.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContext());
 
