@@ -14,129 +14,130 @@
     <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId" />
 </Sider>
 <Content>
-<GridRow Gutter="8">
-    <GridCol Class="gutter-row" Span="5">
-        <Search Placeholder="Search" Size="@InputSize.Large" EnterButton="@("Search")" @bind-Value="@SearchValue"
-                OnSearch="OnParametersSetAsync"/>
-    </GridCol>
-
-    <GridCol Class="gutter-row" Span="3">
-        <label>Sort</label>
-        <Select TItem="SortOrders"
-                TItemValue="SortOrders"
-                DataSource="@(
-                            [
-                                SortOrders.Newest,
-                                SortOrders.Oldest,
-                                SortOrders.PlaylistOrder,
-                                SortOrders.ReversePlaylistOrder,
-                                SortOrders.Popularity,
-                                SortOrders.TopRated,
-                                SortOrders.Longest,
-                                SortOrders.Shortest,
-                                SortOrders.WatchedDate
-                            ])"
-                @bind-Value="@SortOrder"
-                ItemLabel="static c => c.Humanize()"
-                DefaultActiveFirstOption
-                Placeholder="Make a selection..."
-                OnSelectedItemChanged="OnParametersSetAsync">
-        </Select>
-    </GridCol>
-
-    <GridCol Class="gutter-row" Span="3">
-        <div>Show Only</div>
-        <Select
-            TItem="bool?"
-            TItemValue="bool?"
-            DefaultValue="null"
-            @bind-Value="@ShowWatched"
-            OnSelectedItemChanged="OnParametersSetAsync">
-            <SelectOptions>
-                <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
-                <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Watched"/>
-                <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Watched"/>
-            </SelectOptions>
-        </Select>
-    </GridCol>
-
-    <GridCol Class="gutter-row" Span="3">
-        <span>Show Only</span>
-        <Select
-            TItem="bool?"
-            TItemValue="bool?"
-            DefaultValue="null"
-            @bind-Value="@ShowDownloaded"
-            OnSelectedItemChanged="OnParametersSetAsync">
-            <SelectOptions>
-                <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
-                <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Downloaded"/>
-                <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Downloaded"/>
-            </SelectOptions>
-        </Select>
-    </GridCol>
-
-    <GridCol Class="gutter-row" Span="2">
-        <span>Results per page</span>
-        <Select
-            TItem="int"
-            TItemValue="int"
-            @bind-Value="@ResultsPerPage"
-            OnSelectedItemChanged="OnParametersSetAsync">
-            <SelectOptions>
-                <SelectOption Value="25" Label="25"/>
-                <SelectOption Value="50" Label="50"/>
-                <SelectOption Value="100" Label="100"/>
-                <SelectOption Value="200" Label="200"/>
-            </SelectOptions>
-        </Select>
-    </GridCol>
-
-    <GridCol Class="gutter-row" Span="8">
-        <Flex Justify="FlexJustify.SpaceEvenly">
-            <Tooltip Title="Watch All Now">
-                <Button Icon="@(IconType.Outline.PlayCircle)" OnClick="WatchAll"></Button>
-            </Tooltip>
-
-            <Tooltip Title="Mark All as Watched">
-                <Button Icon="@(IconType.Outline.CheckCircle)" OnClick="MarkAllWatched"></Button>
-            </Tooltip>
-
-            <Button Icon="@(IconType.Outline.ClockCircle)">
-                @Duration.Humanize(3)
-            </Button>
-
-            <Tooltip Title="Shuffle">
-                <Button Icon="@(IconType.Outline.Swap)" OnClick="Shuffle"></Button>
-            </Tooltip>
-        </Flex>
-    </GridCol>
-</GridRow>
-
-<GridRow Gutter="(16, 16)" Style="padding: 16px;" Justify="RowJustify.SpaceAround">
-    @if (Videos != null)
-    {
-        @foreach (var video in Videos)
-        {
-            <GridCol @key="video.Id" Xl="4" Lg="6" Md="6" Sm="8" Xs="24">
-                <VideoCard Video="video"/>
+    <div>
+        <GridRow Gutter="8" Class="main-toolbar">
+            <GridCol Class="main-toolbar grow">
+                <Search Placeholder="Search" Size="@InputSize.Large" EnterButton="@("Search")" @bind-Value="@SearchValue"
+                        OnSearch="OnParametersSetAsync"/>
             </GridCol>
-        }
-    }
-    else
-    {
-        <VideoCard Video="null"/>
-        <VideoCard Video="null"/>
-        <VideoCard Video="null"/>
-        <VideoCard Video="null"/>
-        <VideoCard Video="null"/>
-        <VideoCard Video="null"/>
-    }
-</GridRow>
 
-<Flex Justify="FlexJustify.Center">
-    <Pagination Current="@PageNumber" Total="@ItemsAvailable" PageSize="@ResultsPerPage"
-                OnChange="@PageChange" PageSizeOptions="[25, 50, 100, 200]"/>
-</Flex>
+            <GridCol Class="main-toolbar grow">
+                <label>Sort</label>
+                <Select TItem="SortOrders"
+                        TItemValue="SortOrders"
+                        DataSource="@(
+                                    [
+                                        SortOrders.Newest,
+                                        SortOrders.Oldest,
+                                        SortOrders.PlaylistOrder,
+                                        SortOrders.ReversePlaylistOrder,
+                                        SortOrders.Popularity,
+                                        SortOrders.TopRated,
+                                        SortOrders.Longest,
+                                        SortOrders.Shortest,
+                                        SortOrders.WatchedDate
+                                    ])"
+                        @bind-Value="@SortOrder"
+                        ItemLabel="static c => c.Humanize()"
+                        DefaultActiveFirstOption
+                        Placeholder="Make a selection..."
+                        OnSelectedItemChanged="OnParametersSetAsync">
+                </Select>
+            </GridCol>
 
+            <GridCol Class="main-toolbar grow">
+                <div>Show Only</div>
+                <Select
+                    TItem="bool?"
+                    TItemValue="bool?"
+                    DefaultValue="null"
+                    @bind-Value="@ShowWatched"
+                    OnSelectedItemChanged="OnParametersSetAsync">
+                    <SelectOptions>
+                        <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
+                        <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Watched"/>
+                        <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Watched"/>
+                    </SelectOptions>
+                </Select>
+            </GridCol>
+
+            <GridCol Class="main-toolbar grow">
+                <span>Show Only</span>
+                <Select
+                    TItem="bool?"
+                    TItemValue="bool?"
+                    DefaultValue="null"
+                    @bind-Value="@ShowDownloaded"
+                    OnSelectedItemChanged="OnParametersSetAsync">
+                    <SelectOptions>
+                        <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
+                        <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Downloaded"/>
+                        <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Downloaded"/>
+                    </SelectOptions>
+                </Select>
+            </GridCol>
+
+            <GridCol Class="main-toolbar">
+                <span>Per Page</span>
+                <Select
+                    TItem="int"
+                    TItemValue="int"
+                    @bind-Value="@ResultsPerPage"
+                    OnSelectedItemChanged="OnParametersSetAsync">
+                    <SelectOptions>
+                        <SelectOption Value="25" Label="25"/>
+                        <SelectOption Value="50" Label="50"/>
+                        <SelectOption Value="100" Label="100"/>
+                        <SelectOption Value="200" Label="200"/>
+                    </SelectOptions>
+                </Select>
+            </GridCol>
+
+            <GridCol Class="main-toolbar">
+                <Flex Justify="FlexJustify.SpaceEvenly">
+                    <Tooltip Title="Watch All Now">
+                        <Button Icon="@(IconType.Outline.PlayCircle)" OnClick="WatchAll"></Button>
+                    </Tooltip>
+
+                    <Tooltip Title="Mark All as Watched">
+                        <Button Icon="@(IconType.Outline.CheckCircle)" OnClick="MarkAllWatched"></Button>
+                    </Tooltip>
+
+                    <Button Icon="@(IconType.Outline.ClockCircle)">
+                        @Duration.Humanize(3)
+                    </Button>
+
+                    <Tooltip Title="Shuffle">
+                        <Button Icon="@(IconType.Outline.Swap)" OnClick="Shuffle"></Button>
+                    </Tooltip>
+                </Flex>
+            </GridCol>
+        </GridRow>
+
+        <GridRow Gutter="(16, 16)" Style="padding: 16px;" Justify="RowJustify.SpaceAround">
+            @if (Videos != null)
+            {
+                @foreach (var video in Videos)
+                {
+                    <GridCol @key="video.Id" Xl="4" Lg="6" Md="6" Sm="8" Xs="24">
+                        <VideoCard Video="video"/>
+                    </GridCol>
+                }
+            }
+            else
+            {
+                <VideoCard Video="null"/>
+                <VideoCard Video="null"/>
+                <VideoCard Video="null"/>
+                <VideoCard Video="null"/>
+                <VideoCard Video="null"/>
+                <VideoCard Video="null"/>
+            }
+        </GridRow>
+
+        <Flex Justify="FlexJustify.Center">
+            <Pagination Current="@PageNumber" Total="@ItemsAvailable" PageSize="@ResultsPerPage"
+                        OnChange="@PageChange" PageSizeOptions="[25, 50, 100, 200]"/>
+        </Flex>
+    </div>
 </Content>
