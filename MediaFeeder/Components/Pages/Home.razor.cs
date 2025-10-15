@@ -138,10 +138,12 @@ public sealed partial class Home
     {
         ArgumentNullException.ThrowIfNull(Videos);
 
-        foreach (var video in Videos)
-            video.Watched = true;
-
         await using var context = await ContextFactory.CreateDbContextAsync();
+        foreach (var video in Videos) {
+            context.Attach(video);
+            video.Watched = true;
+        }
+
         await context.SaveChangesAsync();
         await Update(true);
     }
