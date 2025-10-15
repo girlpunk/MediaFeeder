@@ -27,17 +27,18 @@ import common
 
 common.set_logging()
 
+
 # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py#L26
 def pycast_status_to_mf_state(status: MediaStatus):
-  if not status.supports_seek:
-    return Api_pb2.ADVERT
-  return {
-    "UNKNOWN":   Api_pb2.UNKNOWN,
-    "BUFFERING": Api_pb2.LOADING,
-    "PLAYING":   Api_pb2.PLAYING,
-    "PAUSED":    Api_pb2.PAUSED,
-    "IDLE":      Api_pb2.IDLE,
-  }[status.player_state]
+    if not status.supports_seek:
+        return Api_pb2.ADVERT
+    return {
+        "UNKNOWN": Api_pb2.UNKNOWN,
+        "BUFFERING": Api_pb2.LOADING,
+        "PLAYING": Api_pb2.PLAYING,
+        "PAUSED": Api_pb2.PAUSED,
+        "IDLE": Api_pb2.IDLE,
+    }[status.player_state]
 
 
 class QueueEvent(NamedTuple):
@@ -334,9 +335,9 @@ class Player:
                 if current_video_id:
                     self.status_message_queue.put(
                         Api_pb2.PlaybackSessionRequest(
-                          VideoId=current_video_id,
-                          State=Api_pb2.UNKNOWN,  # reset any previous state
-                          ),
+                            VideoId=current_video_id,
+                            State=Api_pb2.UNKNOWN,  # reset any previous state
+                        ),
                     )
 
             if current_video_id and not self.update_cast():
