@@ -247,7 +247,6 @@ class Player:
             help="Add known host (IP), can be used multiple times",
             action="append",
         )
-        parser.add_argument("--folder", help="Folder ID", required=True, type=int)
         parser.add_argument("--token", help="Authentication token", required=True)
         self.args = parser.parse_args()
 
