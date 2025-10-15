@@ -17,6 +17,9 @@ public class Video
     public int? PlaylistIndex { get; set; }
     public DateTimeOffset? PublishDate { get; set; }
 
+    public bool Star { get; set; }
+    public DateTimeOffset? StarDate { get; set; }
+
     [Obsolete]
     [MaxLength(1000000000)]
     public string? Thumbnail { get; set; }
