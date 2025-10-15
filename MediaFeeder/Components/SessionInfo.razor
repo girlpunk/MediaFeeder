@@ -6,6 +6,11 @@
 
 <div>
     @if( Session != null) {
+        @if (Session.Message != null)
+        {
+            <Alert Message="@Session.Message" Type="AlertType.Error" />
+        }
+
         <GridRow Gutter="16">
             <GridCol Span="8">
                 <Image

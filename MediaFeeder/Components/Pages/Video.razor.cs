@@ -42,6 +42,7 @@ public sealed partial class Video : IDisposable
         if (PlaybackSession == null)
         {
             PlaybackSession = SessionManager.NewSession(user);
+            PlaybackSession.Title = "Web Player";
             PlaybackSession.SkipEvent += async () => await InvokeAsync(() => GoNext(false));
             PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
         }

@@ -7,7 +7,7 @@
 <PageTitle>MediaFeeder Sessions</PageTitle>
 
 <Content Style="background: #fff; padding: 1em;">
-    <Tabs StandaloneInCard DefaultActiveKey="@(SessionManager?.PlaybackSessions.FirstOrDefault(s => s.State == "PLAYING")?.Title)">
+    <Tabs StandaloneInCard DefaultActiveKey="@(SessionManager?.PlaybackSessions.FirstOrDefault(s => s.State == PlayerState.Playing)?.Title)">
         @if (SessionManager != null)
         {
             @foreach (var session in SessionManager.PlaybackSessions)
@@ -15,9 +15,10 @@
                 <TabPane Key="@session.Title">
                     <TabTemplate>
                         <span style="font-size: 120%;">@(session.State switch {
-                                                           "PLAYING" =>"⏵",
-                                                           "PAUSED" => "⏸",
-                                                           "BUFFERING" => "⧖",
+                                                           PlayerState.Playing =>"⏵",
+                                                           PlayerState.Advert =>"⏵",
+                                                           PlayerState.Paused => "⏸",
+                                                           PlayerState.Loading => "⧖",
                                                            _ => "⏹"
                                                        })
                         </span>
