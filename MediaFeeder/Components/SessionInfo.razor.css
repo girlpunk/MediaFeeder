@@ -4,7 +4,7 @@
 ::deep .control-bar .ant-col {
     flex-grow: 1;
 }
-::deep .control-bar .ant-btn {
+::deep .control-bar .control-btn {
     width: 100%;
     min-width: 10ex;
 }
