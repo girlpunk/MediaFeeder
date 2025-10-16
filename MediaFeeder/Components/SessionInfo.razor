@@ -66,7 +66,10 @@
                       Description="@($"{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume")">
                 <TitleTemplate>
                     <Flex Justify="FlexJustify.SpaceBetween">
-                        <span>@(Session.Provider?.Humanize())</span>
+                        @if (Session is { Video: not null, Provider: not null })
+                        {
+                            <span><a href="@(getProviderUrl())">@(Session.Provider.Humanize())</a></span>
+                        }
                         <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
                     </Flex>
                 </TitleTemplate>
@@ -185,6 +188,7 @@
     [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
     [Inject] public required MediaFeederDataContext Context { get; set; }
     [Inject] public required IMessageService MessageService { get; set; }
+    [Inject] public required IServiceProvider ServiceProvider { get; set; }
 
     List<Folder> allFolders = [];
 
@@ -228,6 +232,15 @@
         }
 
         return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private string getProviderUrl()
+    {
+        if (Session?.Video == null || Session?.Provider == null) return null;
+
+        var provider = ServiceProvider.GetServices<IProvider>()
+            .Single(provider => provider.ProviderIdentifier == Session.Video.Subscription!.Provider);
+        return provider.GetUrl(Session.Video);
     }
 
 }
