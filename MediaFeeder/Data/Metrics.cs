@@ -17,6 +17,7 @@ public sealed class Metrics : IDisposable
     private ObservableGauge<int> FolderTrackedGauge { get; }
     private ObservableGauge<int> FolderUnwatchedGauge { get; }
     private ObservableGauge<int> FolderUnwatchedDurationGauge { get; }
+    private ObservableGauge<int> FolderWatchedDurationGauge { get; }
 
     public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory)
     {
@@ -120,6 +121,25 @@ public sealed class Metrics : IDisposable
                     .GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Where(static video => !video.Watched)
+                            .Sum(static video => video.Duration ?? 0),
+                        new Dictionary<string, object?>
+                        {
+                            { "Key", group.Key },
+                            { "Name", group.First().Subscription!.ParentFolder!.Name }
+                        }))
+                    .ToList();
+            },
+            "Seconds");
+
+        FolderWatchedDurationGauge = _meter.CreateObservableGauge(
+            "folders-watched-duration",
+            () =>
+            {
+                using var context = contextFactory.CreateDbContext();
+                return context.Videos
+                    .GroupBy(static video => video.Subscription!.ParentFolderId)
+                    .Select(static group => new Measurement<int>(
+                        group.Where(static video => video.Watched && video.WatchedDate != null)
                             .Sum(static video => video.Duration ?? 0),
                         new Dictionary<string, object?>
                         {
