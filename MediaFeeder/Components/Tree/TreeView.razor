@@ -25,7 +25,7 @@
 
     @if (Folders != null)
     {
-        <span>
+        <span style="margin-left: 1em;">
             All Subscriptions
             @if (UnwatchedCache?.Values.Sum(static f => f.unwatched) > 0)
             {
@@ -58,7 +58,7 @@
                     @*     } *@
                     @* </Tree> *@
 
-                    <div class="ant-tree">
+                    <div class="ant-tree" style="margin-left: 1em;">
                         @foreach (var folder in Folders.Where(static f => f.ParentId == null))
                         {
                             <TreeFolder @key="folder.Id" Folder="@folder"/>

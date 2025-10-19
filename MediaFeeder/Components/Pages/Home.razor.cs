@@ -23,6 +23,9 @@ public sealed partial class Home
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
 
+    public bool isMobile;
+    public bool menuDrawOpen = false;
+
     private string? SearchValue { get; set; } = string.Empty;
     private SortOrders SortOrder { get; set; } = SortOrders.Oldest;
     private bool? ShowWatched { get; set; } = false;
@@ -54,10 +57,27 @@ public sealed partial class Home
         await Update();
     }
 
+    void HandleBreakpoint(BreakpointType breakpoint)
+    {
+        isMobile = breakpoint.IsIn(BreakpointType.Sm, BreakpointType.Xs, BreakpointType.Md);
+    }
+
+    void toggleMenuDraw()
+    {
+        this.menuDrawOpen = !this.menuDrawOpen;
+    }
+
+    void closeMenuDraw()
+    {
+        this.menuDrawOpen = false;
+    }
+
     private async Task Update(bool force = false)
     {
         // if (force || !UpdateHash())
         //     return;
+
+        closeMenuDraw();
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);

@@ -1,5 +1,6 @@
-::deep .title {
-    vertical-align: middle;
+::deep a.navbar-brand {
+    display: inline-flex;
+    align-items: center;
 }
 
 @media (width <= 641px) {

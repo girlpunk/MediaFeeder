@@ -10,15 +10,33 @@
 
 <PageTitle>@Title</PageTitle>
 
+<SectionContent SectionName="LeftToolbar">
+    @if (isMobile)
+    {
+            <Button Type="ButtonType.Text" Size="ButtonSize.Large" Icon="@IconType.Outline.MenuUnfold" OnClick="@toggleMenuDraw" />
+    }
+</SectionContent>
+
 <div>
-    <Sider Width="300" Breakpoint="BreakpointType.Lg" CollapsedWidth="0" Style="background-color: white;">
-        <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId"/>
-    </Sider>
+        @if (isMobile)
+        {
+            <Drawer Visible="@menuDrawOpen" Placement="DrawerPlacement.Left"
+                    Width="300" Closable="false" OnClose="closeMenuDraw"
+                    BodyStyle="padding-left: 0; padding-right: 0;">
+                <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId"/>
+            </Drawer>
+        }
+        else
+        {
+            <Sider Width="300" Style="background-color: white;">
+                <TreeView SelectedFolder="@FolderId" SelectedSubscription="@SubscriptionId"/>
+            </Sider>
+        }
 </div>
 
 <Content>
     <div>
-        <GridRow Gutter="8" Class="main-toolbar">
+        <GridRow Gutter="8" Class="main-toolbar" OnBreakpoint="HandleBreakpoint">
             <GridCol Class="main-toolbar grow">
                 <Search Placeholder="Search" Size="@InputSize.Large" EnterButton="@("Search")" @bind-Value="@SearchValue"
                         OnSearch="OnParametersSetAsync"/>

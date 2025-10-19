@@ -8,6 +8,7 @@
     <Layout>
         <PageHeader Class="site-page-header">
             <TitleTemplate>
+                <SectionOutlet SectionName="LeftToolbar" />
                 <a class="navbar-brand" href="@(Configuration.GetValue<string>("base_path", "/"))">
                     <img src="@Assets["logo.png"]" alt="Logo image" height="30px"/>
                     <span class="title">MediaFeeder</span>
