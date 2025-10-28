@@ -9,7 +9,9 @@ public sealed class Metrics : IDisposable
     private readonly Meter _meter;
 
     private ObservableGauge<int> PublishedGauge { get; }
+    private ObservableGauge<int> PublishedDurationGauge { get; }
     private ObservableGauge<int> WatchedRecentlyGauge { get; }
+    private ObservableGauge<int> WatchedRecentlyDurationGauge { get; }
     private ObservableGauge<int> SubscriptionsGauge { get; }
     private ObservableGauge<int> VideosGauge { get; }
     private ObservableGauge<int> WatchedGauge { get; }
@@ -32,6 +34,16 @@ public sealed class Metrics : IDisposable
             },
             "Video");
 
+        PublishedDurationGauge = _meter.CreateObservableGauge(
+            "videos-published-duration",
+            () =>
+            {
+                var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
+                using var context = contextFactory.CreateDbContext();
+                return new Measurement<int>(context.Videos.Where(video => video.PublishDate >= lastHour).Sum(video => video.Duration));
+            },
+            "Seconds");
+
         WatchedRecentlyGauge = _meter.CreateObservableGauge(
             "watched-recently",
             () =>
@@ -41,6 +53,16 @@ public sealed class Metrics : IDisposable
                 return new Measurement<int>(context.Videos.Count(video => video.Watched && video.WatchedDate >= lastHour));
             },
             "Video");
+
+        WatchedRecentlyDurationGauge = _meter.CreateObservableGauge(
+            "watched-recently-duration",
+            () =>
+            {
+                var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
+                using var context = contextFactory.CreateDbContext();
+                return new Measurement<int>(context.Videos.Where(video => video.Watched && video.WatchedDate >= lastHour).Sum(video => video.Duration));
+            },
+            "Seconds");
 
         SubscriptionsGauge = _meter.CreateObservableGauge(
             "total-subscriptions",
