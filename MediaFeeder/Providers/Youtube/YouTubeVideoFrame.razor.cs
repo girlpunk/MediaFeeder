@@ -13,7 +13,7 @@ public sealed partial class YouTubeVideoFrame
     private DotNetObjectReference<YouTubeVideoFrame>? _videoFrameRef;
 
     private int? _playingVideo;
-    private PlayerState _state;
+    private YtEmbeddedPlayerState _state;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -51,10 +51,10 @@ public sealed partial class YouTubeVideoFrame
 
             switch (_state)
             {
-                case PlayerState.Paused:
+                case YtEmbeddedPlayerState.Paused:
                     await _player.InvokeVoidAsync("playVideo");
                     break;
-                case PlayerState.Playing:
+                case YtEmbeddedPlayerState.Playing:
                     await _player.InvokeVoidAsync("pauseVideo");
                     break;
             }
@@ -95,7 +95,8 @@ public sealed partial class YouTubeVideoFrame
 
         ProgressUpdate(this);
         if (PlaybackSession != null)
-            PlaybackSession.State = $"Error {data.ToString()}";
+            PlaybackSession.State = PlayerState.Unknown;
+            PlaybackSession.Message = $"Error {data.ToString()}";
 
         if (data.GetInt32() == 150)
         {
@@ -116,18 +117,19 @@ public sealed partial class YouTubeVideoFrame
     {
         Console.WriteLine($"State change: {JsonSerializer.Serialize(data)}");
 
-        _state = (PlayerState)data.GetInt32();
+        _state = (YtEmbeddedPlayerState)data.GetInt32();
 
         if (PlaybackSession != null)
         {
-            PlaybackSession.State = _state.Humanize();
+            PlaybackSession.State = _state.ToPlayState();
+            PlaybackSession.Message = null;
             ProgressUpdate(this);
         }
 
         // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
         switch (_state)
         {
-            case PlayerState.Ended:
+            case YtEmbeddedPlayerState.Ended:
             {
                 // setWatchedStatus(1);
                 Console.WriteLine("Video finished!");
@@ -136,7 +138,7 @@ public sealed partial class YouTubeVideoFrame
                     await Page.GoNext(true);
                 break;
             }
-            case PlayerState.Unstarted:
+            case YtEmbeddedPlayerState.Unstarted:
             {
                 ArgumentNullException.ThrowIfNull(_player);
 

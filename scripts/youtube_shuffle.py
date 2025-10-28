@@ -17,6 +17,7 @@ from typing import NamedTuple, TypeVar
 
 import grpc
 import pychromecast
+import pychromecast.controllers.media
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
 from pychromecast.controllers.youtube import YouTubeController
 
@@ -25,6 +26,19 @@ import Api_pb2_grpc
 import common
 
 common.set_logging()
+
+
+# https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py#L26
+def pycast_status_to_mf_state(status: MediaStatus):
+    if not status.supports_seek:
+        return Api_pb2.ADVERT
+    return {
+        "UNKNOWN": Api_pb2.UNKNOWN,
+        "BUFFERING": Api_pb2.LOADING,
+        "PLAYING": Api_pb2.PLAYING,
+        "PAUSED": Api_pb2.PAUSED,
+        "IDLE": Api_pb2.IDLE,
+    }[status.player_state]
 
 
 class QueueEvent(NamedTuple):
@@ -83,7 +97,7 @@ class MyMediaStatusListener(MediaStatusListener):
         status_message.Duration = int(status.current_time)
         if status.content_type == "x-youtube/video":
             status_message.Provider = "Youtube"
-        status_message.State = status.player_state
+        status_message.State = pycast_status_to_mf_state(status)
         status_message.Volume = int(status.volume_level * 100)
         status_message.Rate = status.playback_rate
         self.status_queue.put(status_message)
@@ -119,8 +133,12 @@ class MyMediaStatusListener(MediaStatusListener):
             elif self.last_status.player_is_playing:
                 self.cast.media_controller.pause()
                 self._logger.info("paused")
+            elif (self.last_status.player_is_idle or self.last_status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN) and rep.NextVideoId:
+                self._logger.info("Player is idle so requesting video replay.")
+                self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
             else:
                 self._logger.warning("can not play/pause in state: %s", self.last_status.player_state)
+            return  # so NextVideoId is not treated as skip to next video.
 
         if rep.ShouldSeekRelativeSeconds:
             if not self.last_status:
@@ -230,7 +248,6 @@ class Player:
             help="Add known host (IP), can be used multiple times",
             action="append",
         )
-        parser.add_argument("--folder", help="Folder ID", required=True, type=int)
         parser.add_argument("--token", help="Authentication token", required=True)
         self.args = parser.parse_args()
 
@@ -317,7 +334,10 @@ class Player:
                 # if connection was lost, at least restore what is currently playing.
                 if current_video_id:
                     self.status_message_queue.put(
-                        Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
+                        Api_pb2.PlaybackSessionRequest(
+                            VideoId=current_video_id,
+                            State=Api_pb2.UNKNOWN,  # reset any previous state
+                        ),
                     )
 
             if current_video_id and not self.update_cast():

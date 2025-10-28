@@ -168,6 +168,15 @@ enum PlaybackSessionAction {
   POP_NEXT_VIDEO = 1;
 }
 
+enum PlayerState {
+  UNKNOWN = 0;
+  IDLE = 1;
+  LOADING = 2;
+  PLAYING = 3;
+  PAUSED = 4;
+  ADVERT = 5;
+}
+
 message PlaybackSessionRequest {
   PlaybackSessionAction Action = 1;
   optional string Title = 11;
@@ -175,7 +184,7 @@ message PlaybackSessionRequest {
   optional int32 Duration = 3;
   optional string Quality = 4;
   optional string Provider = 5;
-  optional string State = 6;
+  optional PlayerState State = 6;
   optional int32 Volume = 7;
   optional float Rate = 8;
   optional float Loaded = 9;

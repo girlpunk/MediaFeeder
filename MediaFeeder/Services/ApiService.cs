@@ -540,7 +540,12 @@ public sealed class ApiService(
         // TODO pass some kinda init block to this so listeners only see the ready object?
         using var session = playbackSessionManager.NewSession(user);
 
-        session.PlayPauseEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPlayPause = true }, context.CancellationToken);
+        session.PlayPauseEvent += async () =>
+        {
+            var reply = new PlaybackSessionReply { ShouldPlayPause = true };
+            if (session.Video?.Id != null) reply.NextVideoId = session.Video.Id;
+            await responseStream.WriteAsync(reply, context.CancellationToken);
+        };
         session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
         session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);

@@ -62,6 +62,21 @@ public sealed partial class VideoCard : ComponentBase
         }
     }
 
+    // TODO(fae) move to Video class?
+    private async Task ToggleStar()
+    {
+        if (Video == null) return;
+
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        context.Attach(Video);
+        Video.Star = !Video.Star;
+        Video.StarDate = DateTimeOffset.Now;
+        await context.SaveChangesAsync();
+
+        await MessageService.SuccessAsync($"Star {(Video.Star ? "Added" : "Removed")}");
+        StateHasChanged();
+    }
+
     private async Task Watch()
     {
         ArgumentNullException.ThrowIfNull(Video);

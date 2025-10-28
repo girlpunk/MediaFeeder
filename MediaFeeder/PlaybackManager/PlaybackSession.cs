@@ -11,7 +11,8 @@ public sealed class PlaybackSession : IDisposable
     private AuthUser _user;
     private string? _quality;
     private Provider? _provider;
-    private string? _state;
+    private PlayerState? _state;
+    private string? _message;
     private int? _volume;
     private float? _rate;
     private float? _loaded;
@@ -116,12 +117,22 @@ public sealed class PlaybackSession : IDisposable
         }
     }
 
-    public string? State
+    public PlayerState? State
     {
         get => _state;
         set
         {
             _state = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public string? Message
+    {
+        get => _message;
+        set
+        {
+            _message = value;
             UpdateEvent?.Invoke();
         }
     }

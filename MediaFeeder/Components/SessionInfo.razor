@@ -6,6 +6,11 @@
 
 <div>
     @if( Session != null) {
+        @if (Session.Message != null)
+        {
+            <Alert Message="@Session.Message" Type="AlertType.Error" />
+        }
+
         <GridRow Gutter="16">
             <GridCol Span="8">
                 <Image
@@ -29,6 +34,22 @@
                         </span>
                     </DescriptionTemplate>
                 </CardMeta>
+                <div>
+                    <Button
+                        Style="margin: 1em 0;"
+                        OnClick="@ToggleStar">
+                        @if (Session?.Video?.Star ?? false)
+                        {
+                            <Icon Type="@IconType.Fill.Star" Theme="@IconThemeType.Fill"/>
+                            <span>Remove Star</span>
+                        }
+                        else
+                        {
+                            <Icon Type="@IconType.Outline.Star" Theme="@IconThemeType.Outline"/>
+                            <span>Add Star</span>
+                        }
+                    </Button>
+                </div>
             </GridCol>
         </GridRow>
 
@@ -45,7 +66,10 @@
                       Description="@($"{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume")">
                 <TitleTemplate>
                     <Flex Justify="FlexJustify.SpaceBetween">
-                        <span>@(Session.Provider?.Humanize())</span>
+                        @if (Session is { Video: not null, Provider: not null })
+                        {
+                            <span><a href="@(getProviderUrl())">@(Session.Provider.Humanize())</a></span>
+                        }
                         <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
                     </Flex>
                 </TitleTemplate>
@@ -54,19 +78,45 @@
 
         <GridRow Justify="RowJustify.Center" Gutter="(16, 16)" Class="control-bar">
             <GridCol>
-                <Button @onclick="@(() => Session.SeekRelative(-30))" Icon="@IconType.Outline.FastBackward">30s</Button>
+                <DropdownButton
+                    Class="control-btn"
+                    Block="true"
+                    OnClick="@(() => Session.SeekRelative(-30))"
+                    Trigger="@(new[] { Trigger.Click })">
+                    <ChildContent><Icon Type="@IconType.Outline.FastBackward"/><span Style="margin-left: 8px;">30s</span></ChildContent>
+                    <Overlay>
+                        <Menu>
+                            <MenuItem OnClick="@(() => Session.SeekRelative(-300))">5 minutes</MenuItem>
+                            <MenuItem OnClick="@(() => Session.SeekRelative(-900))">15 minutes</MenuItem>
+                            <MenuItem OnClick="@(() => Session.SeekRelative(-3600))">1 hour</MenuItem>
+                        </Menu>
+                    </Overlay>
+                </DropdownButton>
             </GridCol>
             <GridCol>
-                <Button Style="min-width: 12ex;" @onclick="@(() => Session.PlayPause())" Icon="@IconType.Outline.Pause">Pause</Button>
+                <Button Class="control-btn" Style="min-width: 12ex;" OnClick="@(() => Session.PlayPause())" Icon="@IconType.Outline.Pause">Pause</Button>
             </GridCol>
             <GridCol>
-                <Button @onclick="@(() => Session.SeekRelative(+30))" Icon="@IconType.Outline.FastForward">30s</Button>
+                <DropdownButton
+                    Class="control-btn"
+                    Block="true"
+                    OnClick="@(() => Session.SeekRelative(+30))"
+                    Trigger="@(new[] { Trigger.Click })">
+                    <ChildContent><span Style="margin-right: 8px;">30s</span><Icon Type="@IconType.Outline.FastForward"/></ChildContent>
+                    <Overlay>
+                        <Menu>
+                            <MenuItem OnClick="@(() => Session.SeekRelative(+300))">5 minutes</MenuItem>
+                            <MenuItem OnClick="@(() => Session.SeekRelative(+900))">15 minutes</MenuItem>
+                            <MenuItem OnClick="@(() => Session.SeekRelative(+3600))">1 hour</MenuItem>
+                        </Menu>
+                    </Overlay>
+                </DropdownButton>
             </GridCol>
             <GridCol>
-                <Button Style="min-width: 22ex;" @onclick="@(() => Session.Watch())" Icon="@IconType.Outline.Eye">Mark Watched</Button>
+                <Button Class="control-btn" Style="min-width: 22ex;" OnClick="@(() => Session.Watch())" Icon="@IconType.Outline.Eye">Mark Watched</Button>
             </GridCol>
             <GridCol>
-                <Button Style="min-width: 12ex;" @onclick="@(() => Session.Skip())" Icon="@IconType.Outline.FastForward">Skip</Button>
+                <Button Class="control-btn" Style="min-width: 12ex;" OnClick="@(() => Session.Skip())" Icon="@IconType.Outline.FastForward">Skip</Button>
             </GridCol>
         </GridRow>
 
@@ -87,7 +137,9 @@
                         TitleTemplate="static node => node.DataItem.Name.ToRenderFragment()"
                         KeyExpression="static node => node.DataItem.Id.ToString()"
                         IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"/>
-                    <DropdownButton OnClick="@(() => Session.TriggerAddVideos(60))">
+                    <DropdownButton
+                        OnClick="@(() => Session.TriggerAddVideos(60))"
+                        Trigger="@(new[] { Trigger.Click })">
                         <ChildContent>
                             <div>
                                 <Icon Type="@IconType.Outline.Plus"/>
@@ -133,7 +185,10 @@
     [EditorRequired]
     public PlaybackSession? Session { get; set; }
 
+    [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
     [Inject] public required MediaFeederDataContext Context { get; set; }
+    [Inject] public required IMessageService MessageService { get; set; }
+    [Inject] public required IServiceProvider ServiceProvider { get; set; }
 
     List<Folder> allFolders = [];
 
@@ -152,6 +207,22 @@
             Session.UpdateEvent += () => InvokeAsync(StateHasChanged);
     }
 
+    // TODO(fae) move to Video class?
+    private async Task ToggleStar()
+    {
+        var video = Session?.Video;
+        if (video == null) return;
+
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        context.Attach(video);
+        video.Star = !Session.Video.Star;
+        video.StarDate = DateTimeOffset.Now;
+        await context.SaveChangesAsync();
+
+        await MessageService.SuccessAsync($"Star {(video.Star ? "Added" : "Removed")}");
+        StateHasChanged();
+    }
+
     protected override Task OnAfterRenderAsync(bool firstRender)
     {
         if (Session != null && Session.SelectedFolderId == null && allFolders.Any())
@@ -161,6 +232,15 @@
         }
 
         return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private string getProviderUrl()
+    {
+        if (Session?.Video == null || Session?.Provider == null) return null;
+
+        var provider = ServiceProvider.GetServices<IProvider>()
+            .Single(provider => provider.ProviderIdentifier == Session.Video.Subscription!.Provider);
+        return provider.GetUrl(Session.Video);
     }
 
 }

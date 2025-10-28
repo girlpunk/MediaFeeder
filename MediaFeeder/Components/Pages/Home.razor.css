@@ -5,6 +5,9 @@
 ::deep .main-toolbar.ant-col {
     margin: 0.5em 0;
 }
+::deep .main-toolbar .ant-flex {
+    gap: 0.5em;
+}
 ::deep .grow.ant-col {
     flex-grow: 1;
 }
