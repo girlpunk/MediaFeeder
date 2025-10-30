@@ -120,8 +120,8 @@ public sealed partial class Home
             {
                 var pattern = $"%{EscapeSearch(SearchValue.Trim())}%";
                 source = source.Where(v =>
-                    EF.Functions.ILike(v.Name, pattern)
-                    || EF.Functions.ILike(v.Description, pattern));
+                    EF.Functions.ILike(v.Name, pattern, "\\")
+                    || EF.Functions.ILike(v.Description, pattern, "\\"));
             }
 
             ItemsAvailable = await source.CountAsync();
