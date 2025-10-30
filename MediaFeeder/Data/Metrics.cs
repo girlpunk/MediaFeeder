@@ -41,7 +41,7 @@ public sealed class Metrics : IDisposable
             {
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
-                return new Measurement<int>(context.Videos.Where(video => video.PublishDate >= lastHour).Sum(video => video.Duration));
+                return new Measurement<int>(context.Videos.Where(video => video.PublishDate >= lastHour).Sum(video => video.Duration) ?? 0);
             },
             "Seconds");
 
@@ -61,7 +61,7 @@ public sealed class Metrics : IDisposable
             {
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
-                return new Measurement<int>(context.Videos.Where(video => video.Watched && video.WatchedDate >= lastHour).Sum(video => video.Duration));
+                return new Measurement<int>(context.Videos.Where(video => video.Watched && video.WatchedDate >= lastHour).Sum(video => video.Duration) ?? 0);
             },
             "Seconds");
 
