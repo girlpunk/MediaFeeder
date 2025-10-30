@@ -117,7 +117,12 @@ public sealed partial class Home
                 source = source.Where(v => string.IsNullOrWhiteSpace(v.DownloadedPath) != ShowDownloaded);
 
             if (!string.IsNullOrWhiteSpace(SearchValue))
-                source = source.Where(v => v.Name.Contains(SearchValue) || v.Description.Contains(SearchValue));
+            {
+                var pattern = $"%{EscapeSearch(SearchValue.Trim())}%";
+                source = source.Where(v =>
+                    EF.Functions.ILike(v.Name, pattern)
+                    || EF.Functions.ILike(v.Description, pattern));
+            }
 
             ItemsAvailable = await source.CountAsync();
             Duration = TimeSpan.FromSeconds(await source.SumAsync(static v => v.Duration ?? 0));
@@ -131,6 +136,15 @@ public sealed partial class Home
         {
             Updating.Release();
         }
+    }
+
+    // TODO put this somewhere better?
+    private String EscapeSearch(String term)
+    {
+        return term.Replace("\\", "\\\\")
+            .Replace("%", "\\%")
+            .Replace("_", "\\_")
+            .Replace("*", "%");
     }
 
     private Task PageChange(PaginationEventArgs paginationEventArgs)
