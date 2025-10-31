@@ -312,7 +312,7 @@ public sealed class ApiService(
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
         video.Watched = request.Watched;
-        if (request.WhenSeconds != null)
+        if (request is { HasWhenSeconds: true, WhenSeconds: > 0 })
         {
             video.WatchedDate = DateTimeOffset.FromUnixTimeSeconds(request.WhenSeconds);
         }
