@@ -13,7 +13,10 @@ public enum SortOrders
     TopRated,
     Longest,
     Shortest,
-    WatchedDate
+    WatchedRecently,
+    WatchedHistorically,
+    StaredRecently,
+    StaredHistorically
 }
 
 public static class VideoExtensions
@@ -29,7 +32,10 @@ public static class VideoExtensions
             SortOrders.TopRated => source.OrderByDescending(static v => v.Rating),
             SortOrders.Longest => source.OrderByDescending(static v => v.Duration),
             SortOrders.Shortest => source.OrderBy(static v => v.Duration),
-            SortOrders.WatchedDate => source.Where(static v => v.WatchedDate != null).OrderByDescending(static v => v.WatchedDate),
+            SortOrders.WatchedRecently => source.Where(static v => v.WatchedDate != null).OrderByDescending(static v => v.WatchedDate),
+            SortOrders.WatchedHistorically => source.Where(static v => v.WatchedDate != null).OrderBy(static v => v.WatchedDate),
+            SortOrders.StaredRecently => source.Where(static v => v.Star).OrderByDescending(static v => v.StarDate),
+            SortOrders.StaredHistorically => source.Where(static v => v.Star).OrderBy(static v => v.StarDate),
             _ => source
         };
 

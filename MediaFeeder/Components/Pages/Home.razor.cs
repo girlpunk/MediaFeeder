@@ -50,6 +50,17 @@ public sealed partial class Home
         return true;
     }
 
+    private async Task OnSortChange()
+    {
+        if (SortOrder is SortOrders.WatchedRecently or SortOrders.WatchedHistorically)
+        {
+            ShowWatched = true;
+            StateHasChanged();
+        }
+
+         await OnParametersSetAsync();
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
