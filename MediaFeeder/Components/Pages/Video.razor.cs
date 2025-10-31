@@ -98,6 +98,19 @@ public sealed partial class Video : IDisposable
         GoNext();
     }
 
+    // TODO(fae) move to Video class?
+    private async Task ToggleStar()
+    {
+        if (VideoObject == null) return;
+
+        VideoObject.Star = !VideoObject.Star;
+        VideoObject.StarDate = DateTimeOffset.Now;
+        await Context.SaveChangesAsync();
+
+        await MessageService.SuccessAsync($"Star {(VideoObject.Star ? "Added" : "Removed")}");
+        StateHasChanged();
+    }
+
     internal async Task GoNext(bool watch)
     {
         if (watch)

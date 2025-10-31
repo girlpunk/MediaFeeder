@@ -53,6 +53,21 @@
             </Tooltip>
         }
 
+        <Tooltip Title="@(VideoObject?.Star ?? false ? "Remove Star" : "Add Star")">
+            <Button
+                Class="ant-btn-icon-only"
+                NoSpanWrap="true"
+                OnClick="@ToggleStar">
+                @if (VideoObject?.Star ?? false)
+                {
+                    <Icon Type="@IconType.Fill.Star" Theme="@IconThemeType.Fill"/>
+                }
+                else
+                {
+                    <Icon Type="@IconType.Outline.Star" Theme="@IconThemeType.Outline"/>
+                }
+            </Button>
+        </Tooltip>
 
         @if (Next != null)
         {
