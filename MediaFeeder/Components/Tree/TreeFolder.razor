@@ -19,15 +19,16 @@
             </span>
         </a>
 
-        @foreach (var subfolder in Folder.Subfolders)
-        {
-            <TreeFolder @key="subfolder.Id" Folder="subfolder" Parent="@(this)"/>
-        }
-        @if (Folder != null)
+        <div style="padding-left: 24px;">
+            @foreach (var subfolder in Folder.Subfolders)
+            {
+                <TreeFolder @key="@("s" + subfolder.Id)" Folder="@subfolder" Parent="@(this)"/>
+            }
             @foreach (var subscription in Folder.Subscriptions.OrderBy(static f => f.Name))
-        {
-            <TreeSubscription @key="subscription.Id" Subscription="@subscription" Parent="this"/>
-        }
+            {
+                <TreeSubscription @key="subscription.Id" Subscription="@subscription" Parent="this"/>
+            }
+        </div>
     </div>
 }
 else

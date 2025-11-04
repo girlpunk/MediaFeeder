@@ -2,7 +2,7 @@
 
 @if (Subscription != null)
 {
-    <div style="padding-left: 24px;" class="@ContainerClasses">
+    <div class="@ContainerClasses">
         <a href="subscription/@Subscription.Id">
             <Image Src="@($"api/subscriptions/{Subscription.Id}/thumbnail/")" Alt="Subscription Icon"
                    Style="max-width: 24px; max-height: 24px;"

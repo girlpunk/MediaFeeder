@@ -61,7 +61,7 @@
                     <div class="ant-tree" style="margin-left: 1em;">
                         @foreach (var folder in Folders.Where(static f => f.ParentId == null))
                         {
-                            <TreeFolder @key="folder.Id" Folder="@folder"/>
+                            <TreeFolder @key="@("s" + folder.Id)" Folder="@folder"/>
                         }
                     </div>
 
