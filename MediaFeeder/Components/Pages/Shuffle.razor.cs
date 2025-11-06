@@ -33,10 +33,18 @@ public sealed partial class Shuffle
         ArgumentNullException.ThrowIfNull(user);
 
         if (FolderId != null)
+        {
+            var folder = await DataContext.Folders
+                .Where(f => f.Id == FolderId && f.UserId == user.Id)
+                .Select(Folder.GetProjection(5))
+                .SingleAsync();
+            var subfolderIds = folder.RecursiveFolderIds(5).ToList();
+
             _subscriptions = await DataContext.Subscriptions
-                .Where(s => s.ParentFolderId == FolderId && s.UserId == user.Id)
+                .Where(s => subfolderIds.Contains(s.ParentFolderId) && s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
+        }
         else if (SubscriptionId != null)
             _subscriptions = [await DataContext.Subscriptions.SingleAsync(s => s.Id == SubscriptionId && s.UserId == user.Id)];
         else

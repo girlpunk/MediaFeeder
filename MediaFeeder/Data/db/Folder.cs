@@ -19,6 +19,18 @@ public class Folder : ITreeSelectable
 
     public string OnSelectedNavigate => "folder/" + Id;
 
+    public ICollection<int> RecursiveFolderIds(int maxDepth, int currentDepth = 0)
+    {
+        var ret = new HashSet<int> { Id };
+        foreach (var f in Subfolders)
+        {
+            ret.Add(f.Id);
+            if (currentDepth < maxDepth)
+                ret.UnionWith(f.RecursiveFolderIds(maxDepth, currentDepth + 1));
+        }
+        return ret;
+    }
+
     public static Expression<Func<Folder, Folder>> GetProjection(int maxDepth, int currentDepth = 0)
     {
         return folder => new Folder

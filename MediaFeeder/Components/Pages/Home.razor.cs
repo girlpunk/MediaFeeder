@@ -109,7 +109,13 @@ public sealed partial class Home
 
             if (FolderId != null)
             {
-                source = source.Where(v => v.Subscription!.ParentFolderId == FolderId);
+                var folder = await context.Folders
+                        .Where(f => f.Id == FolderId && f.UserId == user.Id)
+                        .Select(Folder.GetProjection(5))
+                        .SingleAsync();
+                var subfolderIds = folder.RecursiveFolderIds(5).ToList();
+
+                source = source.Where(v => subfolderIds.Contains(v.Subscription!.ParentFolderId));
                 Title = (await context.Folders.FindAsync(FolderId))?.Name ?? "";
             }
 

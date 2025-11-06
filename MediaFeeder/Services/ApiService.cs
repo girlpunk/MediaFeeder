@@ -378,10 +378,18 @@ public sealed class ApiService(
         List<Subscription> subscriptions;
 
         if (folderId != null)
+        {
+            var folder = await db.Folders
+                .Where(f => f.Id == folderId && f.UserId == user.Id)
+                .Select(Data.db.Folder.GetProjection(5))
+                .SingleAsync();
+            var subfolderIds = folder.RecursiveFolderIds(5).ToList();
+
             subscriptions = await db.Subscriptions
-                .Where(s => s.ParentFolderId == folderId && s.UserId == user.Id)
+                .Where(s => subfolderIds.Contains(s.ParentFolderId) && s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
+        }
         else if (subscriptionId != null)
             subscriptions = [await db.Subscriptions.SingleAsync(s => s.Id == subscriptionId && s.UserId == user.Id)];
         else
