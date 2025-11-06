@@ -131,6 +131,7 @@
                         ItemLabel="static item => item.Name"
                         AllowClear
                         EnableSearch
+                        TreeDefaultExpandAll
                         MatchedStyle="font-weight: bold"
                         ChildrenExpression="static node => node.DataItem.Subfolders"
                         TitleExpression="static node => node.DataItem.Name"
@@ -200,6 +201,9 @@
                 .AsNoTracking()
                 .Where(f => f.User == Session.User)
                 .Include(static f => f.Subfolders)
+                .Select(Folder.GetProjection(5))
+                .ToList()
+                .Where(static f => f.ParentId == null)
                 .ToList();
         }
 
