@@ -43,6 +43,7 @@ public partial class EditFolder
         ExistingFolders = await Context.Folders
             .Where(f => f != Folder)
             .Include(static f => f.Subfolders)
+            .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)
             .ToListAsync();
 

@@ -58,6 +58,7 @@ public sealed partial class EditSubscription
         ExistingFolders = await Context.Folders
             .Where(f => f.User == user)
             .Include(static f => f.Subfolders)
+            .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)
             .ToListAsync();
 

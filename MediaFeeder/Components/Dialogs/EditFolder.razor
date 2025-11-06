@@ -14,12 +14,13 @@
     <FormItem Label="Parent">
         <TreeSelect
             DataSource="@ExistingFolders"
-            @bind-Value="@context.Parent"
+            @bind-Value="@context.ParentId"
             Placeholder="Please select"
-            ItemValue="static item => item"
+            ItemValue="static item => item.Id"
             ItemLabel="static item => item.Name"
             AllowClear
             EnableSearch
+            TreeDefaultExpandAll
             MatchedStyle="font-weight: bold"
             ChildrenExpression="static node => node.DataItem.Subfolders"
             TitleExpression="static node => node.DataItem.Name"
