@@ -71,6 +71,7 @@ public sealed partial class TreeView
             .Where(f => f.UserId == user.Id)
             .Include(static f => f.Subfolders)
             .Include(static f => f.Subscriptions)
+            .Select(Folder.GetProjection(5))
             .ToListAsync();
 
         await InvokeAsync(StateHasChanged);

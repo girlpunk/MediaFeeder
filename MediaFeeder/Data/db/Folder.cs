@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 
 namespace MediaFeeder.Data.db;
 
@@ -17,4 +18,21 @@ public class Folder : ITreeSelectable
     public virtual ICollection<Subscription> Subscriptions { get; init; } = [];
 
     public string OnSelectedNavigate => "folder/" + Id;
+
+    public static Expression<Func<Folder, Folder>> GetProjection(int maxDepth, int currentDepth = 0)
+    {
+        return folder => new Folder
+        {
+            Id = folder.Id,
+            Name = folder.Name,
+            ParentId = folder.ParentId,
+            UserId = folder.UserId,
+            Parent = folder.Parent,
+            User = folder.User,
+            Subfolders = maxDepth == currentDepth
+                ? new List<Folder>()
+                : folder.Subfolders.AsQueryable().Select(GetProjection(maxDepth, currentDepth + 1)).ToList(),
+            Subscriptions = folder.Subscriptions.AsQueryable().ToList(),
+        };
+    }
 }
