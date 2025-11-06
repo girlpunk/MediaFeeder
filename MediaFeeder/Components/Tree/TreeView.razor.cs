@@ -72,6 +72,7 @@ public sealed partial class TreeView
             .Include(static f => f.Subfolders)
             .Include(static f => f.Subscriptions)
             .Select(Folder.GetProjection(5))
+            .OrderBy(static f => f.Name)
             .ToListAsync();
 
         await InvokeAsync(StateHasChanged);
