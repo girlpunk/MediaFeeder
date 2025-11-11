@@ -74,10 +74,6 @@
         }
 
         var info = await SignInManager.GetExternalLoginInfoAsync();
-        if (info is null)
-        {
-        }
-
         _externalLoginInfo = info;
 
         ArgumentNullException.ThrowIfNull(HttpContext);
