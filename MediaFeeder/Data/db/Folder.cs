@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Data.db;
 
@@ -19,7 +20,16 @@ public class Folder : ITreeSelectable
 
     public string OnSelectedNavigate => "folder/" + Id;
 
-    public ICollection<int> RecursiveFolderIds(int maxDepth, int currentDepth = 0)
+    public static async Task<ICollection<int>> RecursiveFolderIds(MediaFeederDataContext context, int folderId, int userId, int maxDepth = 5, int currentDepth = 0)
+    {
+        var folder = await context.Folders
+                .Where(f => f.Id == folderId && f.UserId == userId)
+                .Select(GetProjection(5))
+                .SingleAsync();
+        return folder.RecursiveFolderIds(5).ToList();
+    }
+
+    private ICollection<int> RecursiveFolderIds(int maxDepth, int currentDepth = 0)
     {
         var ret = new HashSet<int> { Id };
         foreach (var f in Subfolders)

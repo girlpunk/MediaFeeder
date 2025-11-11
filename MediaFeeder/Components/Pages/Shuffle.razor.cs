@@ -34,12 +34,7 @@ public sealed partial class Shuffle
 
         if (FolderId != null)
         {
-            var folder = await DataContext.Folders
-                .Where(f => f.Id == FolderId && f.UserId == user.Id)
-                .Select(Folder.GetProjection(5))
-                .SingleAsync();
-            var subfolderIds = folder.RecursiveFolderIds(5).ToList();
-
+            var subfolderIds = await Folder.RecursiveFolderIds(DataContext, FolderId.Value, user.Id);
             _subscriptions = await DataContext.Subscriptions
                 .Where(s => subfolderIds.Contains(s.ParentFolderId) && s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
