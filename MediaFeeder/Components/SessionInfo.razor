@@ -170,9 +170,7 @@
                             <span>@(item.DurationSpan.ToString() ?? "??:??") • @(item.Subscription?.Name)</span>
                         </DescriptionTemplate>
                     </ListItemMeta>
-                    <Actions>
-                        <a key="remove" @onclick="@(() => Session?.RemoveFromPlaylist(item))">remove</a>
-                    </Actions>
+                    <a key="remove" @onclick="@(() => Session?.RemoveFromPlaylist(item))">remove</a>
                 </ListItem>
             </ChildContent>
         </AntList>
