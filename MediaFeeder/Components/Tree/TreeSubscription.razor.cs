@@ -42,20 +42,6 @@ public sealed partial class TreeSubscription
                 Unwatched = value.unwatched;
                 Downloaded = value.downloaded;
             }
-            else
-            {
-                await using var context = await ContextFactory.CreateDbContextAsync();
-
-                Unwatched = await context.Videos
-                    .AsNoTracking()
-                    .TagWith("TreeView Unwatched")
-                    .CountAsync(v => !v.Watched && v.SubscriptionId == Subscription.Id);
-
-                Downloaded = await context.Videos
-                    .AsNoTracking()
-                    .TagWith("TreeView Downloaded")
-                    .CountAsync(v => v.IsDownloaded && v.SubscriptionId == Subscription.Id);
-            }
 
             Parent.AddUnwatched(Unwatched, Downloaded);
             StateHasChanged();
