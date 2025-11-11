@@ -23,6 +23,7 @@ from pychromecast.controllers.youtube import YouTubeController
 
 import Api_pb2
 import Api_pb2_grpc
+import auth
 import common
 
 common.set_logging()
@@ -248,7 +249,6 @@ class Player:
             help="Add known host (IP), can be used multiple times",
             action="append",
         )
-        parser.add_argument("--token", help="Authentication token", required=True)
         self.args = parser.parse_args()
 
         chromecasts, browser = pychromecast.get_listed_chromecasts(
@@ -269,7 +269,8 @@ class Player:
             root_certs = Path(self.args.server_cert).read_bytes()
             ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
-        bearer_credentials = grpc.access_token_call_credentials(self.args.token)
+        config = auth.MediaFeederConfig()
+        bearer_credentials = grpc.metadata_call_credentials(common._AuthGateway(config))
         composite_credentials = grpc.composite_channel_credentials(
             ssl_credentials,
             bearer_credentials,
