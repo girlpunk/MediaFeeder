@@ -126,7 +126,8 @@ class MediaFeederConfig:
         """
         self._logger.debug("Get Server Token")
         if (
-            self._settings["Auth"]["Server"]["Token"] is not None
+            "Token" in self._settings["Auth"]["Server"]
+            and self._settings["Auth"]["Server"]["Token"] is not None
             and self._settings["Auth"]["Server"]["Expiry"] is not None
             and self._settings["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
         ):
@@ -168,7 +169,8 @@ class MediaFeederConfig:
         self._logger.debug("Get Token")
         # Check if we have a token already
         if (
-            self._settings["Auth"]["Device"]["Token"] is not None
+            "Token" in self._settings["Auth"]["Server"]
+            and self._settings["Auth"]["Device"]["Token"] is not None
             and self._settings["Auth"]["Device"]["Expiry"] is not None
             and self._settings["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
         ):
@@ -199,7 +201,10 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Use Refresh")
-        if self._settings["Auth"]["Device"]["Refresh"] is None:
+        if (
+            "Refresh" not in self._settings["Auth"]["Device"]
+            or self._settings["Auth"]["Device"]["Refresh"] is None
+        ):
             return self._get_new_token()
 
         token_endpoint = self._metadata["token_endpoint"]
