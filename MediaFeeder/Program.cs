@@ -123,21 +123,7 @@ builder.Services.AddAuthentication()
         JwtBearerDefaults.AuthenticationScheme,
         options =>
         {
-            builder.Configuration.GetSection("ApiAuth").Bind(options);
-
-            //var selfIssuer = authSettings.GetValue<string>("issuer", "MediaFeeder");
-
-            //options.TokenValidationParameters.ValidIssuers = [selfIssuer];
-            //options.TokenValidationParameters.ValidAudience = selfIssuer;
-            //options.TokenValidationParameters.IssuerSigningKey =
-            //    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ??
-            //                                                    throw new InvalidOperationException()));
-
-            //options.TokenValidationParameters.ValidateLifetime = true;
-            //options.TokenValidationParameters.ValidateIssuerSigningKey = true;
-            //options.TokenValidationParameters.ValidateIssuer = true;
-            //options.TokenValidationParameters.ValidateAudience = true;
-
+            builder.Configuration.GetSection("Auth").Bind(options);
             options.EventsType = typeof(AppJwtBearerEvents);
         });
 
