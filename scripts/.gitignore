@@ -1,4 +1,5 @@
 appsettings.yaml
+appsettings.yaml.lock
 .env
 
 /.direnv/

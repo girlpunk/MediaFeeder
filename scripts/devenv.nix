@@ -18,6 +18,7 @@
     ++ (with pkgs.python3.pkgs; [
       aiofiles
       beautifulsoup4
+      fasteners
       grpcio
       grpcio-tools
       ipython

@@ -4,12 +4,12 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
-from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
 
 import requests
-import yaml
+
+from config_file import ConfigFile
 
 # @yaml_info(yaml_tag_ns='MediaFeederPlayerConfig')
 # class Config(YamlAble):
@@ -53,22 +53,14 @@ class MediaFeederConfig:
     """Configuration for MediaFeeder clients."""
 
     _metadata: dict[str, str | datetime] = None
-    _settings: Any = None
+    _config = ConfigFile("appsettings.yaml")
 
     def __init__(self) -> None:
         """Setup."""
         self._logger = logging.getLogger("MediaFeederConfig")
         self._logger.debug("Config init")
 
-        self.load_settings()
         self._load_metadata()
-
-    def load_settings(self) -> None:
-        """Load settings from YAML file."""
-        self._logger.debug("Load settings")
-        if self._settings is None:
-            with Path("appsettings.yaml").open(encoding="utf-8") as f:
-                self._settings = yaml.safe_load(f)
 
     def get_player(self, player: str) -> dict[str, Any]:
         """Get details about a player.
@@ -78,19 +70,15 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Get Player")
-        return self._settings["Players"][player]
+        with self._config as cfg:
+            return cfg["Players"][player]
 
     def save_player(self, player: str, settings: dict[str, Any]) -> None:
         """Save player config back to settings."""
         self._logger.debug("Save Player")
-        self._settings["Players"][player] = settings
-        self._save_settings()
-
-    def _save_settings(self) -> None:
-        """Save settings back to YAML file."""
-        self._logger.debug("Save settings")
-        with Path("appsettings.yaml").open("w", encoding="utf-8") as f:
-            yaml.dump(self._settings, f)
+        with self._config as cfg:
+            cfg["Players"][player] = settings
+            cfg.write()
 
     def get_server(self) -> str:
         """Get the address of the MediaFeeder server.
@@ -100,7 +88,8 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Get Server")
-        return self._settings["MediaFeederUrl"]
+        with self._config as cfg:
+            return cfg["MediaFeederUrl"]
 
     def get_certificate_path(self) -> str | None:
         """Get the certificate of the MediaFeeder server.
@@ -110,11 +99,17 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Get Certificate Path")
-        if "Certificate" in self._settings:
-            return self._settings["Certificate"]
-        return None
+        with self._config as cfg:
+            if "Certificate" in cfg:
+                return cfg["Certificate"]
+            return None
 
     def get_server_token(self) -> str:
+        # TODO caching goes here
+        with self._config as cfg:
+            return self._get_server_token(cfg)
+
+    def _get_server_token(self, cfg) -> str:
         """Get a token to authenticate to the MediaFeeder server.
 
         Returns:
@@ -126,12 +121,12 @@ class MediaFeederConfig:
         """
         self._logger.debug("Get Server Token")
         if (
-            "Token" in self._settings["Auth"]["Server"]
-            and self._settings["Auth"]["Server"]["Token"] is not None
-            and self._settings["Auth"]["Server"]["Expiry"] is not None
-            and self._settings["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
+            "Token" in cfg["Auth"]["Server"]
+            and cfg["Auth"]["Server"]["Token"] is not None
+            and cfg["Auth"]["Server"]["Expiry"] is not None
+            and cfg["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
         ):
-            return self._settings["Auth"]["Server"]["Token"]
+            return cfg["Auth"]["Server"]["Token"]
 
         token_endpoint = self._metadata["token_endpoint"]
 
@@ -140,8 +135,8 @@ class MediaFeederConfig:
             data={
                 "grant_type": "client_credentials",
                 "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                "client_assertion": self.get_token(),
-                "client_id": self._settings["Auth"]["Server"]["ClientId"],
+                "client_assertion": self.get_token(cfg),
+                "client_id": cfg["Auth"]["Server"]["ClientId"],
             },
             timeout=30,
         )
@@ -149,17 +144,17 @@ class MediaFeederConfig:
         if token_response.status_code == HTTPStatus.OK:
             token = token_response.json()
 
-            self._settings["Auth"]["Server"]["Token"] = token["access_token"]
-            self._settings["Auth"]["Server"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
+            cfg["Auth"]["Server"]["Token"] = token["access_token"]
+            cfg["Auth"]["Server"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
 
-            self._save_settings()
+            cfg.write()
             return token["access_token"]
 
         self._logger.error("Error getting server token: %s", token_response.json()["error_description"])
         token_response.raise_for_status()
         raise requests.exceptions.RequestException
 
-    def get_token(self) -> str:
+    def get_token(self, cfg) -> str:
         """Get an API token for the client.
 
         Returns:
@@ -169,20 +164,21 @@ class MediaFeederConfig:
         self._logger.debug("Get Token")
         # Check if we have a token already
         if (
-            "Token" in self._settings["Auth"]["Server"]
-            and self._settings["Auth"]["Device"]["Token"] is not None
-            and self._settings["Auth"]["Device"]["Expiry"] is not None
-            and self._settings["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
+            "Token" in cfg["Auth"]["Server"]
+            and cfg["Auth"]["Device"]["Token"] is not None
+            and cfg["Auth"]["Device"]["Expiry"] is not None
+            and cfg["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
         ):
-            return self._settings["Auth"]["Device"]["Token"]
+            return cfg["Auth"]["Device"]["Token"]
 
-        return self._use_refresh()
+        return self._use_refresh(cfg)
 
     def _load_metadata(self) -> None:
         """Load OIDC Metadata."""
         self._logger.debug("Load Metadata")
         if self._metadata is None:
-            authentik_url = self._settings["Auth"]["Url"]
+            with self._config as cfg:
+                authentik_url = cfg["Auth"]["Url"]
 
             oidc_configuration_request = requests.get(urljoin(authentik_url, ".well-known/openid-configuration"), timeout=30)
             oidc_configuration_request.raise_for_status()
@@ -190,7 +186,7 @@ class MediaFeederConfig:
 
             self._metadata = oidc_configuration
 
-    def _use_refresh(self) -> str:
+    def _use_refresh(self, cfg) -> str:
         """Use the stored refresh token to get a new auth token.
 
         Returns:
@@ -201,21 +197,18 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Use Refresh")
-        if (
-            "Refresh" not in self._settings["Auth"]["Device"]
-            or self._settings["Auth"]["Device"]["Refresh"] is None
-        ):
-            return self._get_new_token()
+        if "Refresh" not in cfg["Auth"]["Device"] or cfg["Auth"]["Device"]["Refresh"] is None:
+            return self._get_new_token(cfg)
 
         token_endpoint = self._metadata["token_endpoint"]
 
-        client_id = self._settings["Auth"]["Device"]["ClientId"]
+        client_id = cfg["Auth"]["Device"]["ClientId"]
 
         refresh_response = requests.post(
             token_endpoint,
             data={
                 "grant_type": "refresh_token",
-                "refresh_token": self._settings["Auth"]["Device"]["Refresh"],
+                "refresh_token": cfg["Auth"]["Device"]["Refresh"],
                 "client_id": client_id,
             },
             timeout=30,
@@ -224,22 +217,22 @@ class MediaFeederConfig:
         if refresh_response.status_code == HTTPStatus.OK:
             token = refresh_response.json()
 
-            self._settings["Auth"]["Device"]["Token"] = token["access_token"]
-            self._settings["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
-            self._settings["Auth"]["Device"]["Refresh"] = token["refresh_token"]
+            cfg["Auth"]["Device"]["Token"] = token["access_token"]
+            cfg["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
+            cfg["Auth"]["Device"]["Refresh"] = token["refresh_token"]
 
-            self._save_settings()
+            cfg.write()
             return token["access_token"]
 
         if refresh_response.status_code == HTTPStatus.BAD_REQUEST and refresh_response.json()["error"] == "invalid_grant":
             self._logger.error("Error refreshing auth: %s", refresh_response.json()["error_description"])
-            return self._get_new_token()
+            return self._get_new_token(cfg)
 
         self._logger.error("Error using refresh token: %s", refresh_response.json()["error_description"])
         refresh_response.raise_for_status()
         raise requests.exceptions.RequestException
 
-    def _get_new_token(self) -> str:
+    def _get_new_token(self, cfg) -> str:
         """Get a new refresh token.
 
         Returns:
@@ -250,7 +243,7 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Get new token")
-        client_id = self._settings["Auth"]["Device"]["ClientId"]
+        client_id = cfg["Auth"]["Device"]["ClientId"]
 
         device_endpoint = self._metadata["device_authorization_endpoint"]
         token_endpoint = self._metadata["token_endpoint"]
@@ -291,11 +284,11 @@ class MediaFeederConfig:
                 # Successfully retrieved the token
                 token = token_response.json()
 
-                self._settings["Auth"]["Device"]["Token"] = token["access_token"]
-                self._settings["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
-                self._settings["Auth"]["Device"]["Refresh"] = token["refresh_token"]
+                cfg["Auth"]["Device"]["Token"] = token["access_token"]
+                cfg["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
+                cfg["Auth"]["Device"]["Refresh"] = token["refresh_token"]
 
-                self._save_settings()
+                cfg.write()
 
                 return token["access_token"]
             if token_response.status_code == HTTPStatus.BAD_REQUEST and token_response.json()["error"] == "authorization_pending":
@@ -308,3 +301,6 @@ class MediaFeederConfig:
 
         self._logger.error("Timed out retrieving token. Please try again.")
         raise requests.exceptions.Timeout
+
+
+# vim: tw=0 ts=4 sw=4
