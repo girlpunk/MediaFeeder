@@ -290,7 +290,7 @@
         var remaining = TimeSpan.FromSeconds(Session.Playlist.Sum(v => v.Duration ?? 0));
 
         if (Session.CurrentPosition != null && Session.Video?.DurationSpan != null)
-            remaining += (Session.CurrentPosition - Session.Video.DurationSpan) ?? TimeSpan.Zero;
+            remaining += (Session.Video.DurationSpan - Session.CurrentPosition) ?? TimeSpan.Zero;
 
         return remaining;
     }
