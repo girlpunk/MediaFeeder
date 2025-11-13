@@ -85,13 +85,13 @@
                                 })
                                 @Session.State
                             </span>
-                            @if(!string.isNullOrWhitespace(Session.Quality)) {
+                            @if(!string.IsNullOrWhiteSpace(Session.Quality)) {
                                 <span>@Session.Quality</span>
                             }
-                            @if(!string.isNullOrWhitespace(Session.Rate)) {
+                            @if(Session.Rate != null) {
                                 <span>@(Session.Rate)x</span>
                             }
-                            @if(!string.isNullOrWhitespace(Session.Volume)){
+                            @if(Session.Volume != null){
                                 <span>@(Session.Volume)% volume</span>
                             }
                         </Flex>
@@ -128,7 +128,7 @@
                     OnClick="@(() => Session.PlayPause())"
                     Icon="@(Session.State switch {
                         PlayerState.Playing => IconType.Outline.Pause,
-                        PlayerState.Paused => IconType.Outline.IconType.Outline.CaretRight,
+                        PlayerState.Paused => IconType.Outline.CaretRight,
                         _ => IconType.Outline.Pause,
                     })"
                 >@(Session.State switch {
