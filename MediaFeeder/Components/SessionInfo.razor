@@ -122,7 +122,20 @@
                 </DropdownButton>
             </GridCol>
             <GridCol>
-                <Button Class="control-btn" Style="min-width: 12ex;" OnClick="@(() => Session.PlayPause())" Icon="@IconType.Outline.Pause">Pause</Button>
+                <Button
+                    Class="control-btn"
+                    Style="min-width: 12ex;"
+                    OnClick="@(() => Session.PlayPause())"
+                    Icon="@(Session.State switch {
+                        PlayerState.Playing => IconType.Outline.Pause,
+                        PlayerState.Paused => IconType.Outline.IconType.Outline.CaretRight,
+                        _ => IconType.Outline.Pause,
+                    })"
+                >@(Session.State switch {
+                        PlayerState.Playing => "Pause",
+                        PlayerState.Paused => "Play",
+                        _ => "Play/Pause",
+                })</Button>
             </GridCol>
             <GridCol>
                 <DropdownButton
