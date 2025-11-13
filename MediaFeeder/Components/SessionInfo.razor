@@ -74,7 +74,27 @@
                 </TitleTemplate>
                 <DescriptionTemplate>
                     <Flex Justify="FlexJustify.SpaceBetween">
-                        <span>{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume</span>
+                        <Flex Justify="FlexJustify.SpaceBetween">
+                            <span>
+                                @(Session.State switch {
+                                    PlayerState.Playing =>"⏵",
+                                    PlayerState.Advert =>"⏵",
+                                    PlayerState.Paused => "⏸",
+                                    PlayerState.Loading => "⧖",
+                                    _ => "⏹"
+                                })
+                                @Session.State
+                            </span>
+                            @if(!string.isNullOrWhitespace(Session.Quality)) {
+                                <span>@Session.Quality</span>
+                            }
+                            @if(!string.isNullOrWhitespace(Session.Rate)) {
+                                <span>@(Session.Rate)x</span>
+                            }
+                            @if(!string.isNullOrWhitespace(Session.Volume)){
+                                <span>@(Session.Volume)% volume</span>
+                            }
+                        </Flex>
                         <span>
                             @Session.Playlist.Count() Queued,
                             @Remaining().Humanize(2) Remaining
