@@ -62,8 +62,7 @@
         }
         @if (Session.Video != null)
         {
-            <CardMeta Style="display: block;"
-                      Description="@($"{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume")">
+            <CardMeta Style="display: block;">
                 <TitleTemplate>
                     <Flex Justify="FlexJustify.SpaceBetween">
                         @if (Session is { Video: not null, Provider: not null })
@@ -73,6 +72,15 @@
                         <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
                     </Flex>
                 </TitleTemplate>
+                <DescriptionTemplate>
+                    <Flex Justify="FlexJustify.SpaceBetween">
+                        <span>{Session.State} - {Session.Quality} - {Session.Rate}x - {Session.Volume}% volume</span>
+                        <span>
+                            @Session.Playlist.Count() Queued,
+                            @Remaining().Humanize(2) Remaining
+                        </span>
+                    </Flex>
+                </DescriptionTemplate>
             </CardMeta>
         }
 
@@ -245,4 +253,12 @@
         return provider.GetUrl(Session.Video);
     }
 
+    private TimeSpan Remaining() {
+        var remaining = TimeSpan.FromSeconds(Session.Playlist.Sum(v => v.Duration ?? 0));
+
+        if (Session.CurrentPosition != null && Session.Video?.DurationSpan != null)
+            remaining += (Session.CurrentPosition - Session.Video.DurationSpan) ?? TimeSpan.Zero;
+
+        return remaining;
+    }
 }
