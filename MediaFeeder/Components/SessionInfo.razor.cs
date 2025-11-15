@@ -16,17 +16,29 @@ public sealed partial class SessionInfo
     [Inject] public required IMessageService MessageService { get; set; }
     [Inject] public required IServiceProvider ServiceProvider { get; set; }
     private List<Folder> _allFolders = [];
+    private readonly SemaphoreSlim _loading = new(1);
 
     protected override async Task OnParametersSetAsync()
     {
         if (Session != null && !_allFolders.Any())
-            _allFolders = await Context.Folders
-                .AsNoTracking()
-                .Where(f => f.User == Session.User)
-                .Include(static f => f.Subfolders)
-                .Select(Folder.GetProjection(5))
-                .Where(static f => f.ParentId == null)
-                .ToListAsync();
+        {
+            await _loading.WaitAsync();
+
+            try
+            {
+                _allFolders = await Context.Folders
+                    .AsNoTracking()
+                    .Where(f => f.User == Session.User)
+                    .Include(static f => f.Subfolders)
+                    .Select(Folder.GetProjection(5))
+                    .Where(static f => f.ParentId == null)
+                    .ToListAsync();
+            }
+            finally
+            {
+                _loading.Release();
+            }
+        }
 
         if (Session != null)
             Session.UpdateEvent += () => InvokeAsync(StateHasChanged);
