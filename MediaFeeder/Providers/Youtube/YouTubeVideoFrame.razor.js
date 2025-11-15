@@ -13,7 +13,7 @@ export function helperReady(DotNetHelper) {
 window.onYouTubePlayerAPIReady = function() {
     "use strict";
     
-    if (helper == null) {
+    if (helper === null) {
         ready = true;
     } else {
         helper.invokeMethodAsync('OnLibraryLoaded');
@@ -39,6 +39,7 @@ export function initPlayer(videoId)
                 'onStateChange': (event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
                 'onError': (event => helper.invokeMethodAsync('OnError', DotNet.createJSObjectReference(event.target), event.data)),
                 'onPlaybackQualityChange': (event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
+                'onPlaybackRateChange': (event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),
             }
         });
 }

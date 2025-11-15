@@ -189,6 +189,12 @@ message PlaybackSessionRequest {
   optional float Rate = 8;
   optional float Loaded = 9;
   optional bool EndSession = 10;  // TODO move to Action.
+
+  optional string Subtitles = 12;
+
+  optional bool SupportsRateChange = 13;
+  optional bool SupportsVolumeChange = 14;
+  optional bool SupportsSubtitles = 15;
 }
 
 message PlaybackSessionReply {
@@ -197,6 +203,9 @@ message PlaybackSessionReply {
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
   optional int32 NextVideoId = 4;
+  optional bool ShouldChangeRate = 6;
+  optional bool ShouldChangeVolume = 7;
+  optional bool ShouldToggleSubtitles = 8;
 }
 
 message UnwatchedCounts {

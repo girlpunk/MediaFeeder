@@ -101,6 +101,12 @@ class MyMediaStatusListener(MediaStatusListener):
         status_message.State = pycast_status_to_mf_state(status)
         status_message.Volume = int(status.volume_level * 100)
         status_message.Rate = status.playback_rate
+        status_message.Subtitles = status.current_subtitle_tracks
+
+        status_message.SupportsRateChange = True
+        status_message.SupportsVolumeChange = True
+        status_message.SupportsSubtitles = True
+
         self.status_queue.put(status_message)
 
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
@@ -158,6 +164,38 @@ class MyMediaStatusListener(MediaStatusListener):
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s", rep.NextVideoId)
             self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId))
+
+        elif rep.ShouldChangeRate:
+            self._logger.info("Received change rate command: %s", rep.ShouldChangeRate)
+
+            current_rate = self.cast.media_controller.playback_rate
+
+            if rep.ShouldChangeRate:
+                current_rate += 0.25
+            else:
+                current_rate -= 0.25
+
+            if current_rate < 0.25:
+                current_rate = 0.25
+            if current_rate > 3:
+                current_rate = 3
+
+            self.cast.media_controller.set_playback_rate(current_rate)
+
+        elif rep.ShouldChangeVolume:
+            self._logger.info("Received change volume command: %s", rep.ShouldChangeVolume)
+
+            if rep.ShouldChangeVolume:
+                self.cast.volume_up()
+            else:
+                self.cast.volume_down()
+
+        elif rep.ShouldToggleSubtitles:
+            self._logger.info("Received toggle subtitles command")
+            if len(self.cast.media_controller.current_subtitle_tracks) != 0:
+                self.cast.media_controller.disable_subtitle()
+            else:
+                self.cast.media_controller.enable_subtitle(self.cast.media_controller.subtitle_tracks[0].trackId)
 
     def pause_if_playing(self):
         if self.last_status.player_is_playing:
@@ -345,7 +383,11 @@ class Player:
                 continue
 
             event = self.listener_media.get_event(5)
-            if event and event.next_video_id:
+
+            if not event:
+                continue
+
+            if event.next_video_id:
                 current_video_id = event.next_video_id
                 id_response = self.stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
                 current_content_id = id_response.VideoId
@@ -369,7 +411,7 @@ class Player:
                 self.yt.clear_playlist()
                 self.yt.play_video(current_content_id)
 
-            elif event and event.go_next:
+            elif event.go_next:
                 # this check is to protected against the chromecast sending multiple finished events.
                 if not event.content_id or event.content_id == current_content_id:
                     if current_video_id and event.mark_watched:

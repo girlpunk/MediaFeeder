@@ -8,7 +8,6 @@ using MediaFeeder.PlaybackManager;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace MediaFeeder.Services;
 
@@ -53,9 +52,9 @@ public sealed class ApiService(
             if (request.IncludeUnwatchedCounts)
             {
                 var videos = db.Videos
-                    .Where(v => v.Subscription.ParentFolderId == folder.Id);
+                    .Where(v => v.Subscription!.ParentFolderId == folder.Id);
 
-                folderReply.UnwatchedCounts = new UnwatchedCounts()
+                folderReply.UnwatchedCounts = new UnwatchedCounts
                 {
                     UnwatchedCount = videos.Count(static v => !v.Watched),
                     UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
@@ -98,9 +97,9 @@ public sealed class ApiService(
         if (request.IncludeUnwatchedCounts)
         {
             var videos = db.Videos
-                .Where(v => v.Subscription.ParentFolderId == folder.Id);
+                .Where(v => v.Subscription!.ParentFolderId == folder.Id);
 
-            reply.UnwatchedCounts = new UnwatchedCounts()
+            reply.UnwatchedCounts = new UnwatchedCounts
             {
                 UnwatchedCount = videos.Count(static v => !v.Watched),
                 UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
@@ -115,10 +114,18 @@ public sealed class ApiService(
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.Name);
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.ChannelId);
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.PlaylistId);
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(request.Provider);
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new InvalidOperationException("Subscription name cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(request.ChannelId))
+            throw new InvalidOperationException("Channel ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(request.PlaylistId))
+            throw new InvalidOperationException("Playlist ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(request.Provider))
+            throw new InvalidOperationException("Provider cannot be empty");
+
         ArgumentOutOfRangeException.ThrowIfLessThan(request.FolderId, 0);
 
         var subscription = new Subscription
@@ -137,7 +144,7 @@ public sealed class ApiService(
         db.Subscriptions.Add(subscription);
         await db.SaveChangesAsync(context.CancellationToken);
 
-        return new AddSubscriptionReply {SubscriptionId = subscription.Id};
+        return new AddSubscriptionReply { SubscriptionId = subscription.Id };
     }
 
     public override async Task ListSubscription(ListSubscriptionRequest request, IServerStreamWriter<SubscriptionReply> responseStream, ServerCallContext context)
@@ -313,13 +320,9 @@ public sealed class ApiService(
 
         video.Watched = request.Watched;
         if (request is { HasWhenSeconds: true, WhenSeconds: > 0 })
-        {
             video.WatchedDate = DateTimeOffset.FromUnixTimeSeconds(request.WhenSeconds);
-        }
         else if (request.ActuallyWatched)
-        {
             video.WatchedDate = DateTimeOffset.Now;
-        }
 
         await db.SaveChangesAsync(context.CancellationToken);
         return new WatchedReply();
@@ -333,17 +336,19 @@ public sealed class ApiService(
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
         var video = await db.Videos.SingleOrDefaultAsync(
-            v => v.Subscription.UserId == user.Id
-            && v.Subscription.Provider == request.Provider
-            && v.VideoId == request.ProviderVideoId,
+            v => v.Subscription!.UserId == user.Id
+                 && v.Subscription.Provider == request.Provider
+                 && v.VideoId == request.ProviderVideoId,
             context.CancellationToken);
 
         var reply = new SearchReply();
-        if (video != null) {
+        if (video != null)
+        {
             var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched, };
             if (video.WatchedDate != null) found.WatchedWhenSeconds = video.WatchedDate.Value.ToUnixTimeSeconds();
             reply.Videos.Add(found);
         }
+
         return reply;
     }
 
@@ -359,21 +364,19 @@ public sealed class ApiService(
             user,
             request.DurationMinutes,
             request.HasFolderId ? request.FolderId : null,
-            request.HasSubscriptionId ? request.SubscriptionId : null,
-            null);
+            request.HasSubscriptionId ? request.SubscriptionId : null);
         var reply = new ShuffleReply();
         foreach (var video in videos)
-        {
             reply.Id.Add(video.Id);
-        }
+
         return reply;
     }
 
-    private async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes,
-        int? folderId, int? subscriptionId, List<Video>? exclude)
+    private static async Task<List<Video>> DoShuffle(MediaFeederDataContext db, AuthUser user, int? durationMinutes,
+        int? folderId, int? subscriptionId, List<Video>? exclude = null)
     {
         var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
-        var excludeOrEmpty = exclude ??= [];
+        var excludeOrEmpty = exclude ?? [];
         List<Video> reply = [];
         List<Subscription> subscriptions;
 
@@ -386,12 +389,16 @@ public sealed class ApiService(
                 .ToListAsync();
         }
         else if (subscriptionId != null)
+        {
             subscriptions = [await db.Subscriptions.SingleAsync(s => s.Id == subscriptionId && s.UserId == user.Id)];
+        }
         else
+        {
             subscriptions = await db.Subscriptions
                 .Where(s => s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync();
+        }
 
         var query = db.Videos
             .Where(v => v.Watched == false
@@ -552,6 +559,9 @@ public sealed class ApiService(
         session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
         session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
+        session.ChangeRateEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeRate = direction }, context.CancellationToken);
+        session.ChangeVolumeEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeVolume = direction }, context.CancellationToken);
+        session.ToggleSubtitleEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldToggleSubtitles = true }, context.CancellationToken);
         session.AddVideos += async minutes =>
         {
             if (session.SelectedFolderId == null) return;
@@ -578,8 +588,9 @@ public sealed class ApiService(
                 switch (requestStream.Current.Action)
                 {
                     case PlaybackSessionAction.PopNextVideo:
-                        Video video = session.PopPlaylistHead();
-                        if (video != null) responseStream.WriteAsync(new PlaybackSessionReply { NextVideoId = video.Id }, context.CancellationToken);
+                        var video = session.PopPlaylistHead();
+                        if (video != null)
+                            await responseStream.WriteAsync(new PlaybackSessionReply { NextVideoId = video.Id }, context.CancellationToken);
                         break;
                 }
 
@@ -595,15 +606,11 @@ public sealed class ApiService(
                 if (requestStream.Current.HasProvider)
                 {
                     if (requestStream.Current.Provider != null)
-                    {
                         session.Provider = serviceProvider.GetServices<IProvider>()
                             .SingleOrDefault(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
                             ?.Provider;
-                    }
                     else
-                    {
                         session.Provider = null;
-                    }
                 }
 
                 if (requestStream.Current.HasQuality)
@@ -618,19 +625,30 @@ public sealed class ApiService(
                 if (requestStream.Current.HasVideoId)
                 {
                     if (requestStream.Current.VideoId != null)
-                    {
-                        session.Video = db.Videos.Include(static v => v.Subscription).Single(v => v.Id == requestStream.Current.VideoId);
-                    }
+                        session.Video = await db.Videos
+                            .Include(static v => v.Subscription)
+                            .SingleAsync(v => v.Id == requestStream.Current.VideoId);
                     else
-                    {
                         session.Video = null;
-                    }
                 }
 
                 if (requestStream.Current.HasVolume)
                     session.Volume = requestStream.Current.Volume;
 
-                if (requestStream.Current.EndSession) return;
+                if (requestStream.Current.HasSupportsRateChange)
+                    session.SupportsRateChange = requestStream.Current.SupportsRateChange;
+
+                if (requestStream.Current.HasSupportsVolumeChange)
+                    session.SupportsVolumeChange = requestStream.Current.SupportsVolumeChange;
+
+                if (requestStream.Current.HasSupportsSubtitles)
+                    session.SupportsSubtitles = requestStream.Current.SupportsSubtitles;
+
+                if (requestStream.Current.HasSubtitles)
+                    session.Subtitles = requestStream.Current.Subtitles;
+
+                if (requestStream.Current.EndSession)
+                    return;
             }
 
             await Task.Delay(TimeSpan.FromSeconds(1), context.CancellationToken);

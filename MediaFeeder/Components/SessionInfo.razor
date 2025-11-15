@@ -1,11 +1,7 @@
 @using Humanizer
-@using MediaFeeder.Data
-@using MediaFeeder.Data.db
-@using MediaFeeder.PlaybackManager
-@using Microsoft.EntityFrameworkCore;
 
 <div>
-    @if( Session != null) {
+    @if(Session != null) {
         @if (Session.Message != null)
         {
             <Alert Message="@Session.Message" Type="AlertType.Error" />
@@ -67,14 +63,14 @@
                     <Flex Justify="FlexJustify.SpaceBetween">
                         @if (Session is { Video: not null, Provider: not null })
                         {
-                            <span><a href="@(getProviderUrl())">@(Session.Provider.Humanize())</a></span>
+                            <span><a href="@(GetProviderUrl())">@(Session.Provider.Humanize())</a></span>
                         }
                         <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
                     </Flex>
                 </TitleTemplate>
                 <DescriptionTemplate>
                     <Flex Justify="FlexJustify.SpaceBetween">
-                        <Flex Justify="FlexJustify.SpaceBetween">
+                        <Flex Justify="FlexJustify.SpaceBetween" Gap="@FlexGap.Normal">
                             <span>
                                 @(Session.State switch {
                                     PlayerState.Playing =>"⏵",
@@ -89,10 +85,37 @@
                                 <span>@Session.Quality</span>
                             }
                             @if(Session.Rate != null) {
-                                <span>@(Session.Rate)x</span>
+                                <div>
+                                    @if (Session.SupportsRateChange)
+                                    {
+                                        <Button OnClick="@(() => Session.ChangeRate(false))">Rate Down</Button>
+                                    }
+                                    <span>@(Session.Rate)x</span>
+                                    @if (Session.SupportsRateChange)
+                                    {
+                                        <Button OnClick="@(() => Session.ChangeRate(true))">Rate Up</Button>
+                                    }
+                                </div>
                             }
                             @if(Session.Volume != null){
-                                <span>@(Session.Volume)% volume</span>
+                                <div>
+                                    @if (Session.SupportsVolumeChange)
+                                    {
+                                        <Button OnClick="@(() => Session.ChangeVolume(false))">Volume Down</Button>
+                                    }
+                                    <span>@(Session.Volume)% volume</span>
+                                    @if (Session.SupportsVolumeChange)
+                                    {
+                                        <Button OnClick="@(() => Session.ChangeVolume(true))">Volume Up</Button>
+                                    }
+                                </div>
+                            }
+                            @if (Session.SupportsSubtitles)
+                            {
+                                <div>
+                                    <span>Subtitles @Session.Subtitles</span>
+                                    <Button OnClick="@(() => Session.ToggleSubtitles())">Subtitles Toggle</Button>
+                                </div>
                             }
                         </Flex>
                         <span>
@@ -165,7 +188,7 @@
             <Header>
                 <Flex Gap="FlexGap.Small">
                     <TreeSelect
-                        DataSource="@allFolders"
+                        DataSource="@_allFolders"
                         @bind-Value="@Session.SelectedFolderId"
                         Placeholder="Please select folder"
                         ItemValue="static item => item.Id"
@@ -220,78 +243,3 @@
         <span>Loading...</span>
     }
 </div>
-
-@code {
-    [Parameter]
-    [EditorRequired]
-    public PlaybackSession? Session { get; set; }
-
-    [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
-    [Inject] public required MediaFeederDataContext Context { get; set; }
-    [Inject] public required IMessageService MessageService { get; set; }
-    [Inject] public required IServiceProvider ServiceProvider { get; set; }
-
-    List<Folder> allFolders = [];
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (Context != null && allFolders.Count() == 0)
-        {
-            allFolders = Context.Folders
-                .AsNoTracking()
-                .Where(f => f.User == Session.User)
-                .Include(static f => f.Subfolders)
-                .Select(Folder.GetProjection(5))
-                .Where(static f => f.ParentId == null)
-                .ToList();
-        }
-
-        if (Session != null)
-            Session.UpdateEvent += () => InvokeAsync(StateHasChanged);
-    }
-
-    // TODO(fae) move to Video class?
-    private async Task ToggleStar()
-    {
-        var video = Session?.Video;
-        if (video == null) return;
-
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        context.Attach(video);
-        video.Star = !Session.Video.Star;
-        video.StarDate = DateTimeOffset.Now;
-        await context.SaveChangesAsync();
-
-        await MessageService.SuccessAsync($"Star {(video.Star ? "Added" : "Removed")}");
-        StateHasChanged();
-    }
-
-    protected override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Session != null && Session.SelectedFolderId == null && allFolders.Any())
-        {
-            Session.SelectedFolderId = allFolders.First().Id;
-            StateHasChanged();
-        }
-
-        return base.OnAfterRenderAsync(firstRender);
-    }
-
-    private string getProviderUrl()
-    {
-        if (Session?.Video == null || Session?.Provider == null) return null;
-
-        var provider = ServiceProvider.GetServices<IProvider>()
-            .Single(provider => provider.ProviderIdentifier == Session.Video.Subscription!.Provider);
-        return provider.GetUrl(Session.Video);
-    }
-
-    private TimeSpan Remaining() {
-        var remaining = TimeSpan.FromSeconds(Session.Playlist.Sum(v => v.Duration ?? 0));
-
-        if (Session.CurrentPosition != null && Session.Video?.DurationSpan != null)
-            remaining += (Session.Video.DurationSpan - Session.CurrentPosition) ?? TimeSpan.Zero;
-
-        return remaining;
-    }
-}

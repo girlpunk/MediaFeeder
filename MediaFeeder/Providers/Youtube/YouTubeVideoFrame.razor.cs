@@ -1,11 +1,10 @@
 using System.Text.Json;
-using Humanizer;
 using Microsoft.JSInterop;
 using Timer = System.Threading.Timer;
 
 namespace MediaFeeder.Providers.Youtube;
 
-public sealed partial class YouTubeVideoFrame
+public sealed partial class YouTubeVideoFrame : IDisposable
 {
     private IJSObjectReference? _youtubeCustomModule;
     private IJSObjectReference? _youtubeLibraryModule;
@@ -14,6 +13,17 @@ public sealed partial class YouTubeVideoFrame
 
     private int? _playingVideo;
     private YtEmbeddedPlayerState _state;
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _videoFrameRef?.Dispose();
+        Timer?.Dispose();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -39,7 +49,16 @@ public sealed partial class YouTubeVideoFrame
             await _player.InvokeVoidAsync("loadVideoById", Video.VideoId);
 
             if (PlaybackSession != null)
+            {
                 PlaybackSession.PlayPauseEvent += PlayPause;
+                PlaybackSession.SeekRelativeEvent += Seek;
+                PlaybackSession.ChangeRateEvent += ChangeRate;
+                PlaybackSession.ChangeVolumeEvent += ChangeVolume;
+
+                PlaybackSession.SupportsRateChange = true;
+                PlaybackSession.SupportsSubtitles = false;
+                PlaybackSession.SupportsVolumeChange = true;
+            }
         }
     }
 
@@ -59,6 +78,55 @@ public sealed partial class YouTubeVideoFrame
                     break;
             }
         });
+    }
+
+    private async void Seek(int amount)
+    {
+        if (_player == null || PlaybackSession == null)
+            return;
+
+        var progress = await _player.InvokeAsync<float>("getCurrentTime");
+
+        var seekTo = progress + amount;
+        if (seekTo < 0)
+            seekTo = 0;
+
+        await _player.InvokeVoidAsync("seekTo", seekTo, true);
+
+        ProgressUpdate(this);
+    }
+
+    private async void ChangeRate(bool direction)
+    {
+        if (_player == null)
+            return;
+
+        // Get available rates
+        var availableRates = (await _player.InvokeAsync<float[]>("getAvailablePlaybackRates")).ToList();
+
+        // Get current rate
+        var currentRate = await _player.InvokeAsync<float>("getPlaybackRate");
+
+        // Find next rate in appropriate direction
+        var index = availableRates.IndexOf(currentRate);
+        var nextIndex = direction ? index + 1 : index - 1;
+        if (nextIndex < 0 || nextIndex >= availableRates.Count)
+            return;
+
+        // Update to new rate
+        await _player.InvokeVoidAsync("setPlaybackRate", availableRates[nextIndex]);
+    }
+
+    private async void ChangeVolume(bool direction)
+    {
+        if (_player == null)
+            return;
+
+        // Get current volume
+        var volume = await _player.InvokeAsync<float>("getVolume");
+        var newVolume = direction ? volume + 10 : volume - 10;
+
+        await _player.InvokeVoidAsync("setVolume", newVolume);
     }
 
     [JSInvokable]
@@ -95,8 +163,10 @@ public sealed partial class YouTubeVideoFrame
 
         ProgressUpdate(this);
         if (PlaybackSession != null)
+        {
             PlaybackSession.State = PlayerState.Unknown;
             PlaybackSession.Message = $"Error {data.ToString()}";
+        }
 
         if (data.GetInt32() == 150)
         {
@@ -117,7 +187,7 @@ public sealed partial class YouTubeVideoFrame
     {
         Console.WriteLine($"State change: {JsonSerializer.Serialize(data)}");
 
-        _state = (YtEmbeddedPlayerState)data.GetInt32();
+        _state = (YtEmbeddedPlayerState) data.GetInt32();
 
         if (PlaybackSession != null)
         {
@@ -150,6 +220,16 @@ public sealed partial class YouTubeVideoFrame
     }
 
     [JSInvokable]
+    public void OnPlaybackRateChange(IJSObjectReference target, JsonElement data)
+    {
+        if (PlaybackSession == null)
+            return;
+
+        PlaybackSession.Rate = (float?) data.GetDouble();
+        ProgressUpdate(this);
+    }
+
+    [JSInvokable]
     public void OnPlaybackQualityChange(IJSObjectReference target, JsonElement data)
     {
         if (PlaybackSession == null)
@@ -169,8 +249,9 @@ public sealed partial class YouTubeVideoFrame
                 return;
 
             PlaybackSession.Volume = await _player.InvokeAsync<int>("getVolume");
-            PlaybackSession.Rate = await _player.InvokeAsync<float>("getPlaybackRate");
             PlaybackSession.Loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
+
+            PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
 
             var progress = await _player.InvokeAsync<float>("getCurrentTime");
             PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);

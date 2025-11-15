@@ -16,10 +16,19 @@ public sealed class PlaybackSession : IDisposable
     private int? _volume;
     private float? _rate;
     private float? _loaded;
+    private string? _subtitles;
+
+    private bool _supportsRateChange;
+    private bool _supportsVolumeChange;
+    private bool _supportsSubtitles;
+
     public string? Title { get; set; }
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
     public event Action<Int32>? SeekRelativeEvent;
+    public event Action? ToggleSubtitleEvent;
+    public event Action<bool>? ChangeRateEvent;
+    public event Action<bool>? ChangeVolumeEvent;
     public event Action? WatchEvent;
     public event Action? SkipEvent;
     public int? SelectedFolderId { get; set; }
@@ -27,6 +36,10 @@ public sealed class PlaybackSession : IDisposable
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
     public void SeekRelative(int seconds) => SeekRelativeEvent?.Invoke(seconds);
+
+    public void ToggleSubtitles() => ToggleSubtitleEvent?.Invoke();
+    public void ChangeRate(bool increase) => ChangeRateEvent?.Invoke(increase);
+    public void ChangeVolume(bool increase) => ChangeVolumeEvent?.Invoke(increase);
     public void Watch() => WatchEvent?.Invoke();
     public void Skip() => SkipEvent?.Invoke();
 
@@ -44,7 +57,7 @@ public sealed class PlaybackSession : IDisposable
 
     public List<Video> Playlist { get; } = [];
 
-    public void AddToPlaylist(List<Video> items)
+    public void AddToPlaylist(IEnumerable<Video> items)
     {
         Playlist.AddRange(items);
 
@@ -61,7 +74,8 @@ public sealed class PlaybackSession : IDisposable
     {
         if (Playlist.Count < 1)
             return null;
-        Video video = Playlist.First();
+
+        var video = Playlist.First();
         Playlist.Remove(video);
         UpdateEvent?.Invoke();
         return video;
@@ -167,12 +181,50 @@ public sealed class PlaybackSession : IDisposable
         }
     }
 
-    public bool HasAddVideosHandlers()
-    {
-        return AddVideos != null;
-    }
-    public void TriggerAddVideos(int minutes)
+    public bool HasAddVideosHandlers() => AddVideos != null;
+
+    internal void TriggerAddVideos(int minutes)
     {
         AddVideos?.Invoke(minutes);
+    }
+
+    public bool SupportsRateChange
+    {
+        get => _supportsRateChange;
+        set
+        {
+            _supportsRateChange = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public bool SupportsVolumeChange
+    {
+        get => _supportsVolumeChange;
+        set
+        {
+            _supportsVolumeChange = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public bool SupportsSubtitles
+    {
+        get => _supportsSubtitles;
+        set
+        {
+            _supportsSubtitles = value;
+            UpdateEvent?.Invoke();
+        }
+    }
+
+    public string? Subtitles
+    {
+        get => _subtitles;
+        set
+        {
+            _subtitles = value;
+            UpdateEvent?.Invoke();
+        }
     }
 }
