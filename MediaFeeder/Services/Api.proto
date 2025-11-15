@@ -203,8 +203,8 @@ message PlaybackSessionReply {
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
   optional int32 NextVideoId = 4;
-  optional bool ShouldChangeRate = 6;
-  optional bool ShouldChangeVolume = 7;
+  optional sint32 ShouldChangeRate = 6;
+  optional sint32 ShouldChangeVolume = 7;
   optional bool ShouldToggleSubtitles = 8;
 }
 

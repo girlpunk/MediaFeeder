@@ -557,8 +557,8 @@ public sealed class ApiService(
         session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
         session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
         session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
-        session.ChangeRateEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeRate = direction }, context.CancellationToken);
-        session.ChangeVolumeEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeVolume = direction }, context.CancellationToken);
+        session.ChangeRateEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeRate = direction ? 1 : -1 }, context.CancellationToken);
+        session.ChangeVolumeEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeVolume = direction ? 1 : -1 }, context.CancellationToken);
         session.ToggleSubtitleEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldToggleSubtitles = true }, context.CancellationToken);
         session.AddVideos += async minutes =>
         {
