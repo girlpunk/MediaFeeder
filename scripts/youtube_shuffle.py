@@ -101,7 +101,7 @@ class MyMediaStatusListener(MediaStatusListener):
         status_message.State = pycast_status_to_mf_state(status)
         status_message.Volume = int(status.volume_level * 100)
         status_message.Rate = status.playback_rate
-        status_message.Subtitles = status.current_subtitle_tracks
+        status_message.Subtitles = str(status.current_subtitle_tracks)
 
         status_message.SupportsRateChange = True
         status_message.SupportsVolumeChange = True
@@ -168,12 +168,12 @@ class MyMediaStatusListener(MediaStatusListener):
         elif rep.ShouldChangeRate:
             self._logger.info("Received change rate command: %s", rep.ShouldChangeRate)
 
-            current_rate = self.cast.media_controller.playback_rate
+            current_rate = self.cast.media_controller.status.playback_rate
 
-            if rep.ShouldChangeRate:
-                current_rate += 0.25
+            if rep.ShouldChangeRate > 0:
+                current_rate += 0.5
             else:
-                current_rate -= 0.25
+                current_rate -= 0.5
 
             if current_rate < 0.25:
                 current_rate = 0.25
@@ -185,14 +185,14 @@ class MyMediaStatusListener(MediaStatusListener):
         elif rep.ShouldChangeVolume:
             self._logger.info("Received change volume command: %s", rep.ShouldChangeVolume)
 
-            if rep.ShouldChangeVolume:
+            if rep.ShouldChangeVolume > 0:
                 self.cast.volume_up()
             else:
                 self.cast.volume_down()
 
         elif rep.ShouldToggleSubtitles:
             self._logger.info("Received toggle subtitles command")
-            if len(self.cast.media_controller.current_subtitle_tracks) != 0:
+            if len(self.cast.media_controller.status.current_subtitle_tracks) != 0:
                 self.cast.media_controller.disable_subtitle()
             else:
                 self.cast.media_controller.enable_subtitle(self.cast.media_controller.subtitle_tracks[0].trackId)
