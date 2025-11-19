@@ -18,6 +18,7 @@ from typing import NamedTuple, TypeVar
 
 import grpc
 import pychromecast
+import pychromecast.config
 import pychromecast.controllers.media
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
 from pychromecast.controllers.youtube import YouTubeController
@@ -201,7 +202,7 @@ class MyMediaStatusListener(MediaStatusListener):
             if len(self.cast.media_controller.status.current_subtitle_tracks) != 0:
                 self.cast.media_controller.disable_subtitle()
             else:
-                self.cast.media_controller.enable_subtitle(self.cast.media_controller.subtitle_tracks[0].trackId)
+                self.cast.media_controller.enable_subtitle(self.cast.media_controller.status.subtitle_tracks[0].trackId)
 
     def pause_if_playing(self):
         if self.last_status.player_is_playing:
@@ -397,24 +398,26 @@ class Player:
                         ),
                     )
 
-            if current_video_id and not self.update_cast():
-                # chromecast not connected.
-                continue
+            cc_connected = False
+            if current_video_id and self.cast.app_id == pychromecast.config.APP_YOUTUBE:
+                cc_connected = self.update_cast()
 
             event = self.listener_media.get_event(5)
-            position = self.listener_media.get_position()
-            state = self.listener_media.get_state()
 
-            if current_video_id and state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and position and position >= 1:
-                if playback_position_to_restore and playback_position_to_restore > 0:
-                    self.logger.info("Seeking to restore playback position: %s ...", playback_position_to_restore)
-                    self.cast.media_controller.seek(playback_position_to_restore)
-                    playback_position_to_restore = None
-                    last_save_position_time = time.monotonic()  # do not re-save position immediately.
-                elif (event and event.save_position) or (time.monotonic() - last_save_position_time > 60 and state == Api_pb2.PLAYING):
-                    self.stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=current_video_id, PositionSeconds=position))
-                    last_save_position_time = time.monotonic()
-                    self.logger.debug("Saved playback position: %s", position)
+            if cc_connected and current_video_id:
+                position = self.listener_media.get_position()
+                state = self.listener_media.get_state()
+
+                if state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and position and position >= 1:
+                    if playback_position_to_restore and playback_position_to_restore > 0:
+                        self.logger.info("Seeking to restore playback position: %s ...", playback_position_to_restore)
+                        self.cast.media_controller.seek(playback_position_to_restore)
+                        playback_position_to_restore = None
+                        last_save_position_time = time.monotonic()  # do not re-save position immediately.
+                    elif (event and event.save_position) or (time.monotonic() - last_save_position_time > 60 and state == Api_pb2.PLAYING):
+                        self.stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=current_video_id, PositionSeconds=position))
+                        last_save_position_time = time.monotonic()
+                        self.logger.debug("Saved playback position: %s", position)
 
             if not event:
                 continue
