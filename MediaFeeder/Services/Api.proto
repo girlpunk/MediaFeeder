@@ -16,6 +16,7 @@ service API {
   rpc GetVideo (GetVideoRequest) returns (stream GetVideoReply) {}
   rpc GetVideoThumbnail (GetVideoThumbnailRequest) returns (stream GetVideoThumbnailReply) {}
   rpc Watched (WatchedRequest) returns (WatchedReply) {}
+  rpc SavePlaybackPosition (SavePlaybackPositionRequest) returns (SavePlaybackPositionReply) {}
   rpc Search (SearchRequest) returns (SearchReply) {}
   rpc Shuffle (ShuffleRequest) returns (ShuffleReply) {}
   rpc PlaybackSession (stream PlaybackSessionRequest) returns (stream PlaybackSessionReply) {}
@@ -137,6 +138,14 @@ message WatchedRequest {
 message WatchedReply {
 }
 
+message SavePlaybackPositionRequest {
+  int32 Id = 1;
+  optional int32 PositionSeconds = 2;
+}
+
+message SavePlaybackPositionReply {
+}
+
 message SearchRequest {
   optional string Provider = 1;
   optional string ProviderVideoId = 2;
@@ -181,7 +190,7 @@ message PlaybackSessionRequest {
   PlaybackSessionAction Action = 1;
   optional string Title = 11;
   optional int32 VideoId = 2;
-  optional int32 Duration = 3;
+  optional int32 Position = 3;
   optional string Quality = 4;
   optional string Provider = 5;
   optional PlayerState State = 6;
@@ -203,6 +212,7 @@ message PlaybackSessionReply {
   optional bool ShouldWatch = 2;
   optional bool ShouldSkip = 3;
   optional int32 NextVideoId = 4;
+  optional int32 PlaybackPosition = 9;
   optional sint32 ShouldChangeRate = 6;
   optional sint32 ShouldChangeVolume = 7;
   optional bool ShouldToggleSubtitles = 8;

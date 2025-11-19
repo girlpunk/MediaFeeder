@@ -305,18 +305,8 @@ public sealed class ApiService(
 
     public override async Task<WatchedReply> Watched(WatchedRequest request, ServerCallContext context)
     {
-        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
-        ArgumentNullException.ThrowIfNull(user);
-
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-
-        var video = await db.Videos
-            .Include(static v => v.Subscription)
-            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id,
-                context.CancellationToken);
-
-        if (video == null)
-            throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+        var video = await CheckAuthAndGetVideo(context, db, request.Id);
 
         video.Watched = request.Watched;
         if (request is { HasWhenSeconds: true, WhenSeconds: > 0 })
@@ -326,6 +316,34 @@ public sealed class ApiService(
 
         await db.SaveChangesAsync(context.CancellationToken);
         return new WatchedReply();
+    }
+
+    public override async Task<SavePlaybackPositionReply> SavePlaybackPosition(SavePlaybackPositionRequest request, ServerCallContext context)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        var video = await CheckAuthAndGetVideo(context, db, request.Id);
+
+        if (request.PositionSeconds < 0 || request.PositionSeconds > video.Duration)
+            throw new RpcException(context.Status = new Status(StatusCode.InvalidArgument, "Invalid PositionSeconds."));
+
+        video.PlaybackPosition = request.PositionSeconds;
+        await db.SaveChangesAsync(context.CancellationToken);
+        return new SavePlaybackPositionReply();
+    }
+
+    private async Task<Video?> CheckAuthAndGetVideo(ServerCallContext context, MediaFeederDataContext db, int videoId)
+    {
+        var user = await userManager.GetUserAsync(context.GetHttpContext().User);
+        ArgumentNullException.ThrowIfNull(user);
+
+        var video = await db.Videos
+            .Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == videoId,
+                context.CancellationToken);
+
+        if (video == null)
+            throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+        return video;
     }
 
     public override async Task<SearchReply> Search(SearchRequest request, ServerCallContext context)
@@ -552,6 +570,7 @@ public sealed class ApiService(
         {
             var reply = new PlaybackSessionReply { ShouldPlayPause = true };
             if (session.Video?.Id != null) reply.NextVideoId = session.Video.Id;
+            if (session.CurrentPosition != null) reply.PlaybackPosition = (int)session.CurrentPosition.Value.TotalSeconds;
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
         session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
@@ -587,15 +606,24 @@ public sealed class ApiService(
                     case PlaybackSessionAction.PopNextVideo:
                         var video = session.PopPlaylistHead();
                         if (video != null)
-                            await responseStream.WriteAsync(new PlaybackSessionReply { NextVideoId = video.Id }, context.CancellationToken);
+                        {
+                            var reply = new PlaybackSessionReply { NextVideoId = video.Id };
+
+                            var position = video.PlaybackPosition ?? -1;
+                            if (position > 0 && position < video.Duration * 0.9)
+                                reply.PlaybackPosition = position;
+
+                            await responseStream.WriteAsync(reply, context.CancellationToken);
+                        }
+
                         break;
                 }
 
                 if (requestStream.Current.HasTitle)
                     session.Title = requestStream.Current.Title;
 
-                if (requestStream.Current.HasDuration)
-                    session.CurrentPosition = requestStream.Current.Duration != null ? TimeSpan.FromSeconds(requestStream.Current.Duration) : null;
+                if (requestStream.Current.HasPosition)
+                    session.CurrentPosition = requestStream.Current.Position != null ? TimeSpan.FromSeconds(requestStream.Current.Position) : null;
 
                 if (requestStream.Current.HasLoaded)
                     session.Loaded = requestStream.Current.Loaded;

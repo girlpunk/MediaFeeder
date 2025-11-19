@@ -23,7 +23,7 @@ class StatusUpdate:
     VideoId: int | None = None
 
     """Current position of playback, in seconds"""
-    Duration: int | None = None
+    Position: int | None = None
 
     """Description of the quality of playback"""
     Quality: str | None = None
@@ -194,8 +194,8 @@ class Shuffler:
         if status.VideoId is not None:
             status_message.VideoId = status.VideoId
 
-        if status.Duration is not None:
-            status_message.Duration = status.Duration
+        if status.Position is not None:
+            status_message.Position = status.Position
 
         if status.Quality is not None:
             status_message.Quality = status.Quality

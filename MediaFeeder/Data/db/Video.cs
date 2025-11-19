@@ -32,6 +32,7 @@ public class Video
     public int? Views { get; set; }
     public bool New { get; set; }
     public int? Duration { get; set; }
+    public int? PlaybackPosition { get; set; }
 
     public string? DownloadError { get; set; }
 

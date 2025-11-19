@@ -107,7 +107,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
                 update.VideoId = server_video
 
         if event.current_time is not None:
-            update.Duration = int(event.current_time)
+            update.Position = int(event.current_time)
         update.Provider = "YouTube"
 
         await self._shuffler.send_status(update)
@@ -199,7 +199,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         update.State = str(event.state)
 
         if event.current_time is not None:
-            update.Duration = int(event.current_time)
+            update.Position = int(event.current_time)
 
         await self._shuffler.send_status(update)
 
