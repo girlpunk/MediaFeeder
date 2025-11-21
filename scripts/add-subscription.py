@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# vim: tw=0 ts=4 sw=4
 
 # need:
 # - name
@@ -15,11 +16,12 @@ from bs4 import BeautifulSoup
 
 import Api_pb2
 import Api_pb2_grpc
+import auth
+import common
 
 parser = argparse.ArgumentParser()
 parser.add_argument("channelurl")
 parser.add_argument("--server", help="MediaFeeder server address and port", required=True)
-parser.add_argument("--token", help="Authentication token", required=True)
 parser.add_argument("--folder", help="Folder ID", required=True, type=int)
 args = parser.parse_args()
 print(f"     channel url: {args.channelurl}")
@@ -67,7 +69,8 @@ print(f"           pl id: {chan_info.pl_id}")
 print(f"            name: {chan_info.name}")
 
 
-bearer_credentials = grpc.access_token_call_credentials(args.token)
+config = auth.MediaFeederConfig()
+bearer_credentials = grpc.metadata_call_credentials(common._AuthGateway(config))
 ssl_credentials = grpc.ssl_channel_credentials()
 composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
 
