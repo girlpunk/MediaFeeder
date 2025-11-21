@@ -10,7 +10,7 @@
     <Tabs StandaloneInCard DefaultActiveKey="@(SessionManager?.PlaybackSessions.FirstOrDefault(s => s.State == PlayerState.Playing)?.Title)">
         @if (SessionManager != null)
         {
-            @foreach (var session in SessionManager.PlaybackSessions)
+            @foreach (var session in SessionManager.PlaybackSessions.OrderBy(static s => s.Title))
             {
                 <TabPane Key="@session.Title">
                     <TabTemplate>
