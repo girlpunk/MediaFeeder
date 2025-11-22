@@ -10,6 +10,8 @@ import grpc
 
 import Api_pb2
 import Api_pb2_grpc
+import auth
+import common
 
 # Enable deprecation warnings etc.
 if not sys.warnoptions:
@@ -25,7 +27,6 @@ parser.add_argument(
     help="MediaFeeder server address and port",
     required=True,
 )
-parser.add_argument("--token", help="Authentication token", required=True)
 parser.add_argument("--history", help="YouTube watch history JSON file", required=True)
 args = parser.parse_args()
 
@@ -36,7 +37,8 @@ if not history[0]["titleUrl"]:
     sys.exit(1)
 print(f"History entries: {len(history)}")
 
-bearer_credentials = grpc.access_token_call_credentials(args.token)
+config = auth.MediaFeederConfig()
+bearer_credentials = grpc.metadata_call_credentials(common._AuthGateway(config))
 ssl_credentials = grpc.ssl_channel_credentials()
 composite_credentials = grpc.composite_channel_credentials(
     ssl_credentials,
