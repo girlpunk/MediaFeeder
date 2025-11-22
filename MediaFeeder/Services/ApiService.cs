@@ -3,6 +3,7 @@ using Grpc.Core;
 using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
+using MediaFeeder.Filters;
 using MediaFeeder.Helpers;
 using MediaFeeder.PlaybackManager;
 using MediaFeeder.Tasks;
@@ -353,17 +354,34 @@ public sealed class ApiService(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var video = await db.Videos.SingleOrDefaultAsync(
-            v => v.Subscription!.UserId == user.Id
-                 && v.Subscription.Provider == request.Provider
-                 && v.VideoId == request.ProviderVideoId,
-            context.CancellationToken);
+        var query = db.Videos.AsQueryable()
+            .Where(v => v.Subscription!.UserId == user.Id);
+
+        if (request.HasProvider)
+            query = query.Where(v => v.Subscription.Provider == request.Provider);
+
+        if (request.HasProviderVideoId)
+            query = query.Where(v => v.VideoId == request.ProviderVideoId);
+
+        if (request.HasFolderId)
+        {
+            var subfolderIds = await Data.db.Folder.RecursiveFolderIds(db, request.FolderId, user.Id);
+            query = query.Where(v => subfolderIds.Contains(v.Subscription!.ParentFolderId));
+        }
+
+        if (request.HasStar)
+            query = query.Where(v => v.Star == request.Star);
+
+        var videos = await query
+            .SortVideos(SortOrders.Oldest)
+            .ToListAsync(context.CancellationToken);
 
         var reply = new SearchReply();
-        if (video != null)
+        foreach (var video in videos)
         {
-            var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched, };
+            var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched,  Star = video.Star };
             if (video.WatchedDate != null) found.WatchedWhenSeconds = video.WatchedDate.Value.ToUnixTimeSeconds();
+            if (video.VideoId != null) found.ProviderVideoId = video.VideoId;
             reply.Videos.Add(found);
         }
 

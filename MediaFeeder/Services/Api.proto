@@ -149,12 +149,16 @@ message SavePlaybackPositionReply {
 message SearchRequest {
   optional string Provider = 1;
   optional string ProviderVideoId = 2;
+  optional int32 FolderId = 3;
+  optional bool Star = 4;
 }
 // TODO use same video message as other APIs?
 message FoundVideo {
   int32 VideoId = 1;
   bool Watched = 2;
   optional int64 WatchedWhenSeconds = 3;
+  optional string ProviderVideoId = 4;
+  optional bool Star = 5;
 }
 message SearchReply {
   repeated FoundVideo Videos = 1;
