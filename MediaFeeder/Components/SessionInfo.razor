@@ -68,63 +68,63 @@
                         <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
                     </Flex>
                 </TitleTemplate>
-                <DescriptionTemplate>
-                    <Flex Justify="FlexJustify.SpaceBetween">
-                        <Flex Justify="FlexJustify.SpaceBetween" Gap="@FlexGap.Normal">
-                            <span>
-                                @(Session.State switch {
-                                    PlayerState.Playing =>"⏵",
-                                    PlayerState.Advert =>"⏵",
-                                    PlayerState.Paused => "⏸",
-                                    PlayerState.Loading => "⧖",
-                                    _ => "⏹"
-                                })
-                                @Session.State
-                            </span>
-                            @if(!string.IsNullOrWhiteSpace(Session.Quality)) {
-                                <span>@Session.Quality</span>
-                            }
-                            @if(Session.Rate != null) {
-                                <div>
-                                    @if (Session.SupportsRateChange)
-                                    {
-                                        <Button OnClick="@(() => Session.ChangeRate(false))">Rate Down</Button>
-                                    }
-                                    <span>@(Session.Rate)x</span>
-                                    @if (Session.SupportsRateChange)
-                                    {
-                                        <Button OnClick="@(() => Session.ChangeRate(true))">Rate Up</Button>
-                                    }
-                                </div>
-                            }
-                            @if(Session.Volume != null){
-                                <div>
-                                    @if (Session.SupportsVolumeChange)
-                                    {
-                                        <Button OnClick="@(() => Session.ChangeVolume(false))">Volume Down</Button>
-                                    }
-                                    <span>@(Session.Volume)% volume</span>
-                                    @if (Session.SupportsVolumeChange)
-                                    {
-                                        <Button OnClick="@(() => Session.ChangeVolume(true))">Volume Up</Button>
-                                    }
-                                </div>
-                            }
-                            @if (Session.SupportsSubtitles)
-                            {
-                                <div>
-                                    <span>Subtitles @Session.Subtitles</span>
-                                    <Button OnClick="@(() => Session.ToggleSubtitles())">Subtitles Toggle</Button>
-                                </div>
-                            }
-                        </Flex>
-                        <span>
-                            @Session.Playlist.Count() Queued,
-                            @Remaining().Humanize(2) Remaining
-                        </span>
-                    </Flex>
-                </DescriptionTemplate>
             </CardMeta>
+
+            <GridRow Justify="RowJustify.End" Gutter="(16, 16)" Class="control-bar">
+                <GridCol>
+                    <span>
+                        @(Session.State switch
+                        {
+                            PlayerState.Playing => "⏵",
+                            PlayerState.Advert => "⏵",
+                            PlayerState.Paused => "⏸",
+                            PlayerState.Loading => "⧖",
+                            _ => "⏹"
+                        })
+                        @Session.State
+                    </span>
+                </GridCol>
+                @if(!string.IsNullOrWhiteSpace(Session.Quality)) {
+                    <GridCol>@Session.Quality</GridCol>
+                }
+                @if(Session.Rate != null) {
+                    <GridCol>
+                        @if (Session.SupportsRateChange)
+                        {
+                            <Button OnClick="@(() => Session.ChangeRate(false))" Icon="@IconType.Outline.Minus" Shape="ButtonShape.Circle" />
+                        }
+                        <span>@(Session.Rate)x</span>
+                        @if (Session.SupportsRateChange)
+                        {
+                            <Button OnClick="@(() => Session.ChangeRate(true))" Icon="@IconType.Outline.Plus" Shape="ButtonShape.Circle" />
+                        }
+                    </GridCol>
+                }
+                @if(Session.Volume != null) {
+                    <GridCol>
+                        @if (Session.SupportsVolumeChange)
+                        {
+                            <Button OnClick="@(() => Session.ChangeVolume(false))"  Icon="@IconType.Outline.Minus" Shape="ButtonShape.Circle" />
+                        }
+                        <span>@(Session.Volume)% volume</span>
+                        @if (Session.SupportsVolumeChange)
+                        {
+                            <Button OnClick="@(() => Session.ChangeVolume(true))" Icon="@IconType.Outline.Plus" Shape="ButtonShape.Circle" />
+                        }
+                    </GridCol>
+                }
+                @if (Session.SupportsSubtitles)
+                {
+                    <GridCol>
+                        <span>Subtitles @Session.Subtitles</span>
+                        <Button OnClick="@(() => Session.ToggleSubtitles())" Icon="@IconType.Outline.Swap"  Shape="ButtonShape.Circle" />
+                    </GridCol>
+                }
+                <GridCol Style="flex-grow: 0;">
+                    @Session.Playlist.Count() Queued,
+                    @Remaining().ToString("hh':'mm':'ss")
+                </GridCol>
+            </GridRow>
         }
 
         <GridRow Justify="RowJustify.Center" Gutter="(16, 16)" Class="control-bar">

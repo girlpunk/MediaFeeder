@@ -1,5 +1,6 @@
 ::deep .control-bar {
     padding: 1em 0 0 0;
+    align-items: center;
 }
 ::deep .control-bar .ant-col {
     flex-grow: 1;
