@@ -5,6 +5,7 @@ namespace MediaFeeder.PlaybackManager;
 
 public sealed class PlaybackSession : IDisposable
 {
+    public readonly string SessionId = Guid.NewGuid().ToString();
     private readonly PlaybackSessionManager _manager;
     private Video? _video;
     private TimeSpan? _currentPosition;

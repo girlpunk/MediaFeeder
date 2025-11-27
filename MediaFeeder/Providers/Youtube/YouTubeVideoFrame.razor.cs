@@ -39,6 +39,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         }
     }
 
+    // runs after OnPlayerReady()
     protected override async Task OnParametersSetAsync()
     {
         if (_player != null && Video?.Id != _playingVideo)
@@ -138,11 +139,13 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         _player = await _youtubeCustomModule.InvokeAsync<IJSObjectReference>("initPlayer", Video.VideoId);
     }
 
+    // runs before OnParametersSetAsync()
     [JSInvokable]
     public Task OnPlayerReady(IJSObjectReference target, JsonElement data)
     {
         Console.WriteLine($"Player Ready: {JsonSerializer.Serialize(data)}. Trying to play.");
 
+        // TODO why target and _player?
         target.InvokeVoidAsync("playVideo");
 
         ArgumentNullException.ThrowIfNull(_player);
@@ -248,13 +251,26 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             if (_player == null || PlaybackSession == null)
                 return;
 
-            PlaybackSession.Volume = await _player.InvokeAsync<int>("getVolume");
-            PlaybackSession.Loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
+            try
+            {
+                PlaybackSession.Volume = await _player.InvokeAsync<int?>("getVolume");
+                PlaybackSession.Loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
 
-            PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
+                // TODO error: Could not find 'getSubtitles' ('getSubtitles' was undefined).
+                //PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
 
-            var progress = await _player.InvokeAsync<float>("getCurrentTime");
-            PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
+                var progress = await _player.InvokeAsync<float>("getCurrentTime");
+                PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
+
+            }
+            catch (ObjectDisposedException) // seems sometimes timer runs after page left / refreshed, so clean up.
+            {
+                Timer?.DisposeAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"(session: {PlaybackSession.SessionId}) Exception reading data from YT player:" + e);
+            }
         });
     }
 
