@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AntDesign;
 using MediaFeeder.Data.db;
 using MediaFeeder.PlaybackManager;
@@ -31,6 +32,8 @@ public sealed partial class Video : IDisposable
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; } = TimeSpan.Zero;
     private TimeSpan TotalDuration { get; set; } = TimeSpan.Zero;
+
+    private Stopwatch lastSavePositionTime = Stopwatch.StartNew();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -72,6 +75,7 @@ public sealed partial class Video : IDisposable
         PlaybackSession.Provider = Provider.Provider;
         PlaybackSession.UpdateEvent += UpdateTimestamp;
 
+        lastSavePositionTime.Restart();  // wait for some actual playback before trying to save position.
         UpdateTimestamp();
         StateHasChanged();
     }
@@ -82,6 +86,17 @@ public sealed partial class Video : IDisposable
         TotalDuration = UpNextDuration + (remaining ?? TimeSpan.Zero);
 
         InvokeAsync(StateHasChanged);
+
+        if (lastSavePositionTime.Elapsed > TimeSpan.FromSeconds(60))
+        {
+            int position = (int) (PlaybackSession?.CurrentPosition?.TotalSeconds ?? 0);
+            if (VideoObject != null && position > 0 && position != VideoObject.PlaybackPosition)
+            {
+                VideoObject.PlaybackPosition = position;
+                Context.SaveChangesAsync();  // no need to wait.
+            }
+            lastSavePositionTime.Restart();
+        }
     }
 
     private async Task MarkWatched()

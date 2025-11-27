@@ -627,9 +627,8 @@ public sealed class ApiService(
                         {
                             var reply = new PlaybackSessionReply { NextVideoId = video.Id };
 
-                            var position = video.PlaybackPosition ?? -1;
-                            if (position > 0 && position < video.Duration * 0.9)
-                                reply.PlaybackPosition = position;
+                            var position = session.PlaybackPositionToRestore();
+                            if (position != null) reply.PlaybackPosition = position.Value;
 
                             await responseStream.WriteAsync(reply, context.CancellationToken);
                         }

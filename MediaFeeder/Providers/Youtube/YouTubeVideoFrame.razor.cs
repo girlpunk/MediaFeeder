@@ -14,6 +14,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
     private int? _playingVideo;
     private YtEmbeddedPlayerState _state;
     private bool _disposed;
+    private int? _lastRestoredPositionVideoId;
 
     public void Dispose()
     {
@@ -262,6 +263,15 @@ public sealed partial class YouTubeVideoFrame : IDisposable
                 var progress = await _player.InvokeAsync<float>("getCurrentTime");
                 PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
 
+                // trying to seek before playback has actually started seems to do nothing.
+                if (progress > 0 && _lastRestoredPositionVideoId != Video.Id)
+                {
+                    _lastRestoredPositionVideoId = Video.Id;
+
+                    var positionToRestore = PlaybackSession.PlaybackPositionToRestore();
+                    if (positionToRestore != null)
+                        await _player.InvokeVoidAsync("seekTo", positionToRestore, true);
+                }
             }
             catch (ObjectDisposedException) // seems sometimes timer runs after page left / refreshed, so clean up.
             {

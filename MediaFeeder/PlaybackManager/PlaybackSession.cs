@@ -228,4 +228,15 @@ public sealed class PlaybackSession : IDisposable
             UpdateEvent?.Invoke();
         }
     }
+
+    public int? PlaybackPositionToRestore()
+    {
+        if (Video == null) return null;
+
+        var position = Video?.PlaybackPosition ?? 0;
+        if (position > 0 && position < Video.Duration * 0.9)
+            return position;
+
+        return null;
+    }
 }
