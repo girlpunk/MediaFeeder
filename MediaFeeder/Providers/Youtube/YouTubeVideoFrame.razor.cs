@@ -254,17 +254,17 @@ public sealed partial class YouTubeVideoFrame : IDisposable
 
             try
             {
-                PlaybackSession.Volume = await _player.InvokeAsync<int?>("getVolume");
-                PlaybackSession.Loaded = await _player.InvokeAsync<float?>("getVideoLoadedFraction");
+                PlaybackSession.Volume = await callJsOrNull<int?>(_player, "getVolume");
+                PlaybackSession.Loaded = await callJsOrNull<float?>(_player, "getVideoLoadedFraction");
 
                 // TODO error: Could not find 'getSubtitles' ('getSubtitles' was undefined).
                 //PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
 
-                var progress = await _player.InvokeAsync<float>("getCurrentTime");
-                PlaybackSession.CurrentPosition = TimeSpan.FromSeconds(progress);
+                var progress = await callJsOrNull<float?>(_player, "getCurrentTime");
+                PlaybackSession.CurrentPosition = progress != null ? TimeSpan.FromSeconds(progress.Value) : null;
 
                 // trying to seek before playback has actually started seems to do nothing.
-                if (progress > 0 && _lastRestoredPositionVideoId != Video.Id)
+                if (progress != null && progress > 0 && _lastRestoredPositionVideoId != Video.Id)
                 {
                     _lastRestoredPositionVideoId = Video.Id;
 
@@ -275,13 +275,43 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             }
             catch (ObjectDisposedException) // seems sometimes timer runs after page left / refreshed, so clean up.
             {
-                Timer?.DisposeAsync();
+                Timer?.Dispose();
+            }
+            catch (JSDisconnectedException)
+            {
+                Timer?.Dispose();
+            }
+            catch (TaskCanceledException)
+            {
+                Timer?.Dispose();
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(session: {PlaybackSession.SessionId}) Exception reading data from YT player:" + e);
+                Console.WriteLine($"(session: {PlaybackSession.SessionId}) Exception reading data from YT player: " + e);
             }
         });
+    }
+
+    // for some reason changes to this method do not actually get picked up by hot-reload.
+    private static async Task<T?> callJsOrNull<T>(IJSObjectReference? thing, string method)
+    {
+        if (thing == null) return default;
+
+        try
+        {
+            return await thing.InvokeAsync<T>(method);
+        }
+        catch (JSException e)
+        {
+            // TODO maybe fixed in aspnetcore 10+ https://github.com/dotnet/aspnetcore/pull/60850
+            if (e.Message.Contains("Null object cannot be converted to a value type"))
+                return default;
+
+            if (e.Message.Contains("The JSON value could not be converted"))
+                return default;
+
+            throw e;
+        }
     }
 
     public async ValueTask DisposeAsync()
