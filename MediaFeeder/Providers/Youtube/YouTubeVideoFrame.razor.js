@@ -5,17 +5,16 @@ export function helperReady(DotNetHelper) {
     "use strict";
     helper = DotNetHelper;
     
-    if(ready === true) {
+    if (ready === true) {
         helper.invokeMethodAsync('OnLibraryLoaded');
     }
 }
 
-window.onYouTubePlayerAPIReady = function() {
+window.onYouTubeIframeAPIReady = function() {
     "use strict";
-    
-    if (helper === null) {
-        ready = true;
-    } else {
+
+    ready = true;
+    if (helper !== null) {
         helper.invokeMethodAsync('OnLibraryLoaded');
     }
 };
