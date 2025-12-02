@@ -229,12 +229,13 @@ public sealed class PlaybackSession : IDisposable
         }
     }
 
-    public int? PlaybackPositionToRestore()
+    public int? PlaybackPositionToRestore(Video? alt = default)
     {
-        if (Video == null) return null;
+        var v = alt ?? Video;
+        if (v == null) return null;
 
-        var position = Video?.PlaybackPosition ?? 0;
-        if (position > 0 && position < Video.Duration * 0.9)
+        var position = v?.PlaybackPosition ?? 0;
+        if (position > 0 && position < v.Duration * 0.9)
             return position;
 
         return null;

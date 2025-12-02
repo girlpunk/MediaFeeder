@@ -627,7 +627,8 @@ public sealed class ApiService(
                         {
                             var reply = new PlaybackSessionReply { NextVideoId = video.Id };
 
-                            var position = session.PlaybackPositionToRestore();
+                            // give our video object cos session does not update until playback starts.
+                            var position = session.PlaybackPositionToRestore(video);
                             if (position != null) reply.PlaybackPosition = position.Value;
 
                             await responseStream.WriteAsync(reply, context.CancellationToken);
