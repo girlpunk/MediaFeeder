@@ -30,6 +30,9 @@ import common
 
 common.set_logging()
 
+# to see chromecast wire messages
+#logging.getLogger("pychromecast.socket_client").setLevel(logging.DEBUG)
+
 
 # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py#L26
 def pycast_status_to_mf_state(status: MediaStatus):
@@ -202,7 +205,10 @@ class MyMediaStatusListener(MediaStatusListener):
             if len(self.cast.media_controller.status.current_subtitle_tracks) != 0:
                 self.cast.media_controller.disable_subtitle()
             else:
-                self.cast.media_controller.enable_subtitle(self.cast.media_controller.status.subtitle_tracks[0].trackId)
+                available_subs = self.cast.media_controller.status.subtitle_tracks
+                self._logger.info("Available subtitles: %s", available_subs)
+                if available_subs:
+                    self.cast.media_controller.enable_subtitle(next(iter(available_subs)).trackId)
 
     def pause_if_playing(self):
         if self.last_status.player_is_playing:
