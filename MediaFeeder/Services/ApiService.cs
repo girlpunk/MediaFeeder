@@ -393,7 +393,9 @@ public sealed class ApiService(
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
-        var videos = await DoShuffle(
+        await using var dataContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        var videos = await ShuffleHelper.Shuffle(
+            dataContext,
             user,
             request.DurationMinutes,
             request.HasFolderId ? request.FolderId : null,
@@ -402,81 +404,6 @@ public sealed class ApiService(
         var reply = new ShuffleReply();
         foreach (var video in videos)
             reply.Id.Add(video.Id);
-
-        return reply;
-    }
-
-    private async Task<List<Video>> DoShuffle(AuthUser user, int? durationMinutes,
-        int? folderId, int? subscriptionId, List<Video>? exclude = null, CancellationToken cancellationToken = default)
-    {
-        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-
-        var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
-        var excludeOrEmpty = exclude ?? [];
-        List<Video> reply = [];
-        List<Subscription> subscriptions;
-
-        if (folderId != null)
-        {
-            var subfolderIds = await Data.db.Folder.RecursiveFolderIds(db, folderId.Value, user.Id);
-            subscriptions = await db.Subscriptions
-                .Where(s => subfolderIds.Contains(s.ParentFolderId) && s.UserId == user.Id)
-                .OrderBy(static _ => EF.Functions.Random())
-                .ToListAsync(cancellationToken);
-        }
-        else if (subscriptionId != null)
-        {
-            subscriptions = [await db.Subscriptions.SingleAsync(s => s.Id == subscriptionId && s.UserId == user.Id, cancellationToken)];
-        }
-        else
-        {
-            subscriptions = await db.Subscriptions
-                .Where(s => s.UserId == user.Id)
-                .OrderBy(static _ => EF.Functions.Random())
-                .ToListAsync(cancellationToken);
-        }
-
-        var query = db.Videos
-            .Where(v => v.Watched == false
-                        && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId)
-                        && !excludeOrEmpty.Contains(v));
-
-        if (timeRemaining.TotalMinutes < 60)
-            query = query.Where(v => v.Duration <= timeRemaining.TotalSeconds);
-
-        var first = await query
-            .OrderBy(static v => v.PublishDate)
-            .FirstAsync(cancellationToken);
-
-        reply.Add(first);
-        timeRemaining -= first.DurationSpan ?? TimeSpan.Zero;
-
-        var idleLoops = 0;
-        while (idleLoops <= 2)
-        {
-            var addedVideo = false;
-
-            foreach (var subscription in subscriptions)
-            {
-                var video = await db.Videos
-                    .Where(v => v.SubscriptionId == subscription.Id
-                                && v.Watched == false
-                                && !reply.Contains(v)
-                                && !excludeOrEmpty.Contains(v))
-                    .OrderBy(static v => v.PublishDate)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (video == null || video.DurationSpan > timeRemaining)
-                    continue;
-
-                reply.Add(video);
-                timeRemaining -= video.DurationSpan ?? TimeSpan.Zero;
-                addedVideo = true;
-            }
-
-            if (!addedVideo)
-                idleLoops++;
-        }
 
         return reply;
     }
@@ -604,7 +531,9 @@ public sealed class ApiService(
             var exclude = new List<Video>(session.Playlist);
             if (session.Video != null) exclude.Add(session.Video);
 
-            var videos = await DoShuffle(
+            await using var dataContext = await contextFactory.CreateDbContextAsync();
+            var videos = await ShuffleHelper.Shuffle(
+                dataContext,
                 user,
                 minutes,
                 session.SelectedFolderId,
