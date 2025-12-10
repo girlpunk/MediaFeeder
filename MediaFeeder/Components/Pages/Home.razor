@@ -39,12 +39,10 @@
     <div>
         <GridRow Gutter="8" Class="main-toolbar" OnBreakpoint="HandleBreakpoint">
             <GridCol Class="main-toolbar grow">
-                <Search Placeholder="Search" Size="@InputSize.Large" EnterButton="@("Search")" @bind-Value="@SearchValue"
-                        OnSearch="OnParametersSetAsync"/>
+                <Search Placeholder="Search" @bind-Value="@SearchValue" OnSearch="OnParametersSetAsync"/>
             </GridCol>
 
             <GridCol Class="main-toolbar grow">
-                <label>Sort</label>
                 <Select TItem="SortOrders"
                         TItemValue="SortOrders"
                         DataSource="@(
@@ -65,17 +63,16 @@
                         @bind-Value="@SortOrder"
                         ItemLabel="static c => c.Humanize()"
                         DefaultActiveFirstOption
-                        Placeholder="Make a selection..."
+                        Placeholder="Order"
                         OnSelectedItemChanged="@OnSortChange">
                 </Select>
             </GridCol>
 
             <GridCol Class="main-toolbar grow">
-                <div>Filter</div>
                 <EnumSelect
                     Style="min-width: 15em; width: 100%;"
                     Mode="SelectMode.Multiple"
-                    Placeholder="filter..."
+                    Placeholder="Filter"
                     TEnum="VideosShowOnly"
                     ItemLabel="static c => c.Humanize()"
                     @bind-Value="@ShowFilters"
@@ -84,8 +81,7 @@
                 </EnumSelect>
             </GridCol>
 
-            <GridCol Class="main-toolbar">
-                <span>Per Page</span>
+            <GridCol Class="main-toolbar" Style="width: 8em;">
                 <Select
                     TItem="int"
                     TItemValue="int"
