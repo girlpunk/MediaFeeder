@@ -3,6 +3,7 @@ using Humanizer;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Filters;
+using MediaFeeder.PlaybackManager;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,7 +14,6 @@ namespace MediaFeeder.Components.Pages;
 public sealed partial class Home
 {
     [Parameter] public int? FolderId { get; set; }
-
     [Parameter] public int? SubscriptionId { get; set; }
 
     private List<Data.db.Video>? Videos { get; set; }
@@ -23,6 +23,8 @@ public sealed partial class Home
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; } = null!;
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+    [Inject] public PlaybackSessionManager? SessionManager { get; set; }
+    [Inject] public required MessageService MessageService { get; set; }
 
     public bool isMobile;
     public bool menuDrawOpen = false;
@@ -34,6 +36,8 @@ public sealed partial class Home
     private int PageNumber { get; set; } = 1;
     private int ItemsAvailable { get; set; }
     private TimeSpan Duration { get; set; }
+    private PlaybackSession? SelectedSession { get; set; }
+    private bool VideoOnClickPreventDefault;
     private string Title { get; set; } = "MediaFeeder";
     private int FilterHash { get; set; }
 
@@ -168,6 +172,22 @@ public sealed partial class Home
         ResultsPerPage = paginationEventArgs.PageSize;
 
         return Update();
+    }
+
+    private async Task OnSelectedSessionChanged()
+    {
+        VideoOnClickPreventDefault = SelectedSession != null;
+    }
+
+    private async Task OnVideoClick(Data.db.Video video)
+    {
+        if (SelectedSession == null)
+            return;
+
+        if (SelectedSession.AddToPlaylistIfNotPresent(video))
+            await MessageService.SuccessAsync("Added to session playlist");
+        else
+            await MessageService.SuccessAsync("Already in session playlist");
     }
 
     private void Shuffle()

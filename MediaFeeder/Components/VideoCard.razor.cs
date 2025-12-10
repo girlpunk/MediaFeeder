@@ -5,6 +5,7 @@ using MediaFeeder.Data.db;
 using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Components;
@@ -14,6 +15,11 @@ public sealed partial class VideoCard : ComponentBase
     [Parameter]
     [EditorRequired]
     public Video? Video { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter]
+    public bool OnClickPreventDefault { get; set; }
 
     [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 

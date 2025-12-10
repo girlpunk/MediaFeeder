@@ -3,7 +3,7 @@
 <Card Loading="@(Video == null)" BodyStyle="padding:0.5em;">
     <Cover>
         <BadgeRibbon Text="@(Badge)" Placement="@(Badge == null ? "hidden" : "end")" Color="@BadgeColour">
-            <a href="@($"video/{Video?.Id}")">
+            <a @onclick="@OnClick" @onclick:preventDefault="OnClickPreventDefault" href="@($"video/{Video?.Id}")">
                 <Image
                     Src="@($"api/video/{Video?.Id}/thumbnail/")"
                     Alt="Video thumbnail Icon"
@@ -55,7 +55,7 @@
         </CardAction>
     </ActionTemplate>
     <ChildContent>
-        <a href="@($"video/{Video?.Id}")">
+        <a @onclick="@OnClick" @onclick:preventDefault="OnClickPreventDefault" href="@($"video/{Video?.Id}")">
             @if (Video != null)
             {
                 <CardMeta Description="@Video.Description.Truncate(120)">

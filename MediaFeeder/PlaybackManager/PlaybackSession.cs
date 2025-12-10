@@ -61,8 +61,15 @@ public sealed class PlaybackSession : IDisposable
     public void AddToPlaylist(IEnumerable<Video> items)
     {
         Playlist.AddRange(items);
-
         UpdateEvent?.Invoke();
+    }
+
+    public bool AddToPlaylistIfNotPresent(Video video)
+    {
+        if (Playlist.Contains(video)) return false;
+        Playlist.Add(video);
+        UpdateEvent?.Invoke();
+        return true;
     }
 
     public void RemoveFromPlaylist(Video item)
