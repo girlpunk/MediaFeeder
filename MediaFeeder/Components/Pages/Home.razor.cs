@@ -1,4 +1,5 @@
 using AntDesign;
+using Humanizer;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Filters;
@@ -28,8 +29,7 @@ public sealed partial class Home
 
     private string? SearchValue { get; set; } = string.Empty;
     private SortOrders SortOrder { get; set; } = SortOrders.Oldest;
-    private bool? ShowWatched { get; set; } = false;
-    private bool? ShowDownloaded { get; set; }
+    private VideosShowOnly ShowFilters { get; set; } = VideosShowOnly.NotWatched;
     private int ResultsPerPage { get; set; } = 50;
     private int PageNumber { get; set; } = 1;
     private int ItemsAvailable { get; set; }
@@ -41,7 +41,7 @@ public sealed partial class Home
 
     private bool UpdateHash()
     {
-        var newHash = $"{FolderId}{SubscriptionId}{SortOrder}{ShowWatched}{ShowDownloaded}{SearchValue}".GetHashCode();
+        var newHash = $"{FolderId}{SubscriptionId}{SortOrder}{ShowFilters.Humanize()}{SearchValue}".GetHashCode();
 
         if (newHash == FilterHash)
             return false;
@@ -54,7 +54,7 @@ public sealed partial class Home
     {
         if (SortOrder is SortOrders.WatchedRecently or SortOrders.WatchedHistorically)
         {
-            ShowWatched = true;
+            ShowFilters |= VideosShowOnly.Watched;
             StateHasChanged();
         }
 
@@ -122,11 +122,17 @@ public sealed partial class Home
 
             source = source.SortVideos(SortOrder);
 
-            if (ShowWatched != null)
-                source = source.Where(v => v.Watched == ShowWatched);
+            if (ShowFilters.HasFlag(VideosShowOnly.Watched) ^ ShowFilters.HasFlag(VideosShowOnly.NotWatched))
+            {
+                if (ShowFilters.HasFlag(VideosShowOnly.Watched)) source = source.Where(v => v.Watched);
+                if (ShowFilters.HasFlag(VideosShowOnly.NotWatched)) source = source.Where(v => !v.Watched);
+            }
 
-            if (ShowDownloaded != null)
-                source = source.Where(v => string.IsNullOrWhiteSpace(v.DownloadedPath) != ShowDownloaded);
+            if (ShowFilters.HasFlag(VideosShowOnly.Downloaded) ^ ShowFilters.HasFlag(VideosShowOnly.NotDownloaded))
+            {
+                if (ShowFilters.HasFlag(VideosShowOnly.Downloaded)) source = source.Where(v => !string.IsNullOrWhiteSpace(v.DownloadedPath));
+                if (ShowFilters.HasFlag(VideosShowOnly.NotDownloaded)) source = source.Where(v => string.IsNullOrWhiteSpace(v.DownloadedPath));
+            }
 
             if (!string.IsNullOrWhiteSpace(SearchValue))
             {

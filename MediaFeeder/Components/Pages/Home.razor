@@ -70,35 +70,18 @@
             </GridCol>
 
             <GridCol Class="main-toolbar grow">
-                <div>Show Only</div>
-                <Select
-                    TItem="bool?"
-                    TItemValue="bool?"
-                    DefaultValue="null"
-                    @bind-Value="@ShowWatched"
-                    OnSelectedItemChanged="OnParametersSetAsync">
-                    <SelectOptions>
-                        <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
-                        <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Watched"/>
-                        <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Watched"/>
-                    </SelectOptions>
-                </Select>
-            </GridCol>
-
-            <GridCol Class="main-toolbar grow">
-                <span>Show Only</span>
-                <Select
-                    TItem="bool?"
-                    TItemValue="bool?"
-                    DefaultValue="null"
-                    @bind-Value="@ShowDownloaded"
-                    OnSelectedItemChanged="OnParametersSetAsync">
-                    <SelectOptions>
-                        <SelectOption TItem="bool?" TItemValue="bool?" Value="null" Label="All"/>
-                        <SelectOption TItem="bool?" TItemValue="bool?" Value="true" Label="Downloaded"/>
-                        <SelectOption TItem="bool?" TItemValue="bool?" Value="false" Label="Not Downloaded"/>
-                    </SelectOptions>
-                </Select>
+                <div>Filter</div>
+                <EnumSelect
+                    Style="min-width: 15em; width: 100%;"
+                    Mode="SelectMode.Multiple"
+                    Placeholder="filter..."
+                    AllowClear
+                    TEnum="VideosShowOnly"
+                    ItemLabel="static c => c.Humanize()"
+                    @bind-Value="@ShowFilters"
+                    OnSelectedItemsChanged="OnParametersSetAsync"
+                    >
+                </EnumSelect>
             </GridCol>
 
             <GridCol Class="main-toolbar">
