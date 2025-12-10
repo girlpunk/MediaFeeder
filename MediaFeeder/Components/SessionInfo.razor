@@ -7,7 +7,7 @@
             <Alert Message="@Session.Message" Type="AlertType.Error" />
         }
 
-        <GridRow Gutter="16">
+        <GridRow Gutter="16" OnBreakpoint="HandleBreakpoint">
             <GridCol Span="8">
                 <Image
                     Src="@($"api/video/{Session.Video?.Id}/thumbnail/")"
@@ -46,8 +46,25 @@
                         }
                     </Button>
                 </div>
+                @if (!isMobile)
+                {
+                    <Collapse Bordered="false">
+                        <Panel Header="Description">
+                            <p Style="white-space: pre-wrap;">@Session?.Video?.Description</p>
+                        </Panel>
+                    </Collapse>
+                }
             </GridCol>
         </GridRow>
+
+        @if (isMobile)
+        {
+            <Collapse Bordered="false">
+                <Panel Header="Description">
+                    <p Style="white-space: pre-wrap;">@Session?.Video?.Description</p>
+                </Panel>
+            </Collapse>
+        }
 
         @if (Session.CurrentPosition != null)
         {

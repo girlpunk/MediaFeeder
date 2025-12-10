@@ -15,6 +15,7 @@ public sealed partial class SessionInfo
     [Inject] public required MediaFeederDataContext Context { get; set; }
     [Inject] public required IMessageService MessageService { get; set; }
     [Inject] public required IServiceProvider ServiceProvider { get; set; }
+    public bool isMobile;
     private List<Folder> _allFolders = [];
     private readonly SemaphoreSlim _loading = new(1);
 
@@ -89,5 +90,10 @@ public sealed partial class SessionInfo
             remaining += (TimeSpan) (Session.Video.DurationSpan - Session.CurrentPosition);
 
         return remaining;
+    }
+
+    void HandleBreakpoint(BreakpointType breakpoint)
+    {
+        isMobile = breakpoint.IsIn(BreakpointType.Sm, BreakpointType.Xs, BreakpointType.Md, BreakpointType.Lg);
     }
 }
