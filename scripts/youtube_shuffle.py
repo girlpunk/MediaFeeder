@@ -30,7 +30,9 @@ import common
 
 common.set_logging()
 
-# to see chromecast wire messages
+# to show debug log:
+#logging.getLogger("Youtube_Shuffle").setLevel(logging.DEBUG)
+# to see chromecast wire messages:
 #logging.getLogger("pychromecast.socket_client").setLevel(logging.DEBUG)
 
 
@@ -185,6 +187,7 @@ class MyMediaStatusListener(MediaStatusListener):
                 current_rate = 3
 
             self.cast.media_controller.set_playback_rate(current_rate)
+            self._logger.info("Set rate to: %s", current_rate)
 
         elif rep.ShouldChangeVolume:
             self._logger.info("Received change volume command: %s", rep.ShouldChangeVolume)
