@@ -207,4 +207,14 @@ public sealed partial class Home
         var url = $"video/{videos.Dequeue().Id}/{string.Join(',', videos.Select(static v => v.Id))}";
         NavigationManager.NavigateTo(url);
     }
+
+    private string ShortDurationFormated()
+    {
+        var ret = "";
+        if (Duration.Days > 0) ret += $"{Duration.Days}d";
+        if (Duration.Hours > 0) ret += $" {Duration.Hours}h";
+        if (Duration.Minutes > 0) ret += $" {Duration.Minutes}m";
+        if (ret.Length < 1) ret = "0";
+        return ret;
+    }
 }
