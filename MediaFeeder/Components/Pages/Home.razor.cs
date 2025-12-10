@@ -53,10 +53,7 @@ public sealed partial class Home
     private async Task OnSortChange()
     {
         if (SortOrder is SortOrders.WatchedRecently or SortOrders.WatchedHistorically)
-        {
             ShowFilters |= VideosShowOnly.Watched;
-            StateHasChanged();
-        }
 
          await OnParametersSetAsync();
     }
