@@ -106,6 +106,7 @@ public sealed partial class Video : IDisposable
 
         VideoObject.Watched = !VideoObject.Watched;
         VideoObject.WatchedDate = DateTimeOffset.Now;
+        if (VideoObject.Watched) VideoObject.PlaybackPosition = null;
         await Context.SaveChangesAsync();
 
         StateHasChanged();

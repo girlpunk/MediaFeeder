@@ -242,7 +242,7 @@ public sealed class PlaybackSession : IDisposable
         if (v == null) return null;
 
         var position = v?.PlaybackPosition ?? 0;
-        if (position > 0 && position < v.Duration * 0.9)
+        if (position > 0 && position < v.Duration - 10)
             return position;
 
         return null;
