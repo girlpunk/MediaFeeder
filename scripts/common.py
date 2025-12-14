@@ -80,7 +80,6 @@ class Shuffler:
     _stub: Api_pb2_grpc.APIStub
     _settings: MediaFeederConfig
     _now_playing: int | None = None
-    _mark_watched: bool
     _play_next: int | None = None
     _player: PlayerBase
     _session_reader = None
@@ -166,16 +165,8 @@ class Shuffler:
         self._logger.debug("On Ses Rep Msg")
         if rep.ShouldPlayPause:
             await self._player.play_pause()
-
-        elif rep.ShouldWatch:
-            self._logger.info("Received mark as watched and skip command")
-            self._mark_watched = True
-            await self.finished()
-
-        elif rep.ShouldSkip:
-            self._logger.info("Received skip command")
-            self._mark_watched = False
-            await self.finished()
+        elif rep.ShouldPauseIfPlaying:
+            self._logger.info("TODO: pause-if-playing")
 
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s", rep.NextVideoId)
@@ -225,13 +216,8 @@ class Shuffler:
 
     async def finished(self) -> None:
         """Current video has finished playing."""
-        self._logger.debug("Finished")
-        if self._mark_watched and self._now_playing is not None:
-            watched_request = Api_pb2.WatchedRequest(Id=self._now_playing, Watched=True)
-            await self._stub.Watched(watched_request)
-
-        await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.POP_NEXT_VIDEO))
-
+        self._logger.debug(f"Finished playing: {self._now_playing}")
+        await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=self._now_playing))
         self._now_playing = None
 
     async def start(self) -> None:

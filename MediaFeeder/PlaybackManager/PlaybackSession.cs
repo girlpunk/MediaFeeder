@@ -1,5 +1,7 @@
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.PlaybackManager;
 
@@ -7,6 +9,8 @@ public sealed class PlaybackSession : IDisposable
 {
     public readonly string SessionId = Guid.NewGuid().ToString();
     private readonly PlaybackSessionManager _manager;
+    public IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
+
     private Video? _video;
     private TimeSpan? _currentPosition;
     private AuthUser _user;
@@ -26,7 +30,9 @@ public sealed class PlaybackSession : IDisposable
     public string? Title { get; set; }
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
-    public event Action<Int32>? SeekRelativeEvent;
+    public event Action? PauseIfPlayingEvent;
+    public event Action<Video, int?>? StartPlayingVideo;  // params: video, position to play from in seconds.
+    public event Action<Int32>? SeekRelativeEvent;  // param: position to play from in seconds.
     public event Action? ToggleSubtitleEvent;
     public event Action<bool>? ChangeRateEvent;
     public event Action<bool>? ChangeVolumeEvent;
@@ -41,14 +47,13 @@ public sealed class PlaybackSession : IDisposable
     public void ToggleSubtitles() => ToggleSubtitleEvent?.Invoke();
     public void ChangeRate(bool increase) => ChangeRateEvent?.Invoke(increase);
     public void ChangeVolume(bool increase) => ChangeVolumeEvent?.Invoke(increase);
-    public void Watch() => WatchEvent?.Invoke();
-    public void Skip() => SkipEvent?.Invoke();
 
-    internal PlaybackSession(PlaybackSessionManager manager, AuthUser user)
+    internal PlaybackSession(PlaybackSessionManager manager, AuthUser user, IDbContextFactory<MediaFeederDataContext> dbContextFactory)
     {
         _manager = manager;
         _user = user;
         User = user;
+        DbContextFactory = dbContextFactory;
     }
 
     public void Dispose()
@@ -92,6 +97,67 @@ public sealed class PlaybackSession : IDisposable
     public void ClearPlaylist()
     {
         Playlist.Clear();
+    }
+
+    // TODO remove after migrating Video page.
+    public async Task Watch()
+    {
+        if (WatchEvent != null)
+        {
+            WatchEvent.Invoke();
+            return;
+        }
+
+        await MarkAsWatchedAndGoNext();
+    }
+
+    // TODO remove after migrating Video page.
+    public async Task Skip()
+    {
+        if (SkipEvent != null)
+        {
+            SkipEvent.Invoke();
+            return;
+        }
+
+        await PlayNextInPlaylist();
+    }
+
+    public async Task MarkAsWatchedAndGoNext()
+    {
+        var video = Video;  // capture for thread safety.
+        if (video == null) throw new InvalidOperationException("Video not set in session.");
+        await OnWatchedToEnd(video.Id);
+    }
+
+    public async Task OnWatchedToEnd(int videoId)
+    {
+        var video = Video;  // capture for thread safety.
+        if (video == null) throw new InvalidOperationException("Video not set in session.");
+        if (videoId != video.Id) throw new InvalidOperationException("Video ID does not match current video.");
+
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        db.Attach(video);
+        video.MarkWatched(true);
+        await db.SaveChangesAsync();
+
+        await PlayNextInPlaylist();
+    }
+
+    public async Task PlayNextInPlaylist()
+    {
+        if (StartPlayingVideo == null) throw new InvalidOperationException("StartPlayingVideo not defined.");
+
+        var nextVideo = PopPlaylistHead();
+        if (nextVideo != null)
+        {
+            var position = PlaybackPositionToRestore(nextVideo);
+            StartPlayingVideo.Invoke(nextVideo, position);
+        }
+        else
+        {
+            PauseIfPlayingEvent?.Invoke();
+        }
     }
 
     public Video? Video

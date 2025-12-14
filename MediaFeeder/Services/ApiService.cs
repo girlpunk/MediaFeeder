@@ -510,6 +510,13 @@ public sealed class ApiService(
         // TODO pass some kinda init block to this so listeners only see the ready object?
         using var session = playbackSessionManager.NewSession(user);
 
+        session.StartPlayingVideo += async (video, positionSeconds) =>
+        {
+            var reply = new PlaybackSessionReply { NextVideoId = video.Id };
+            if (positionSeconds != null) reply.PlaybackPosition = positionSeconds.Value;
+            await responseStream.WriteAsync(reply, context.CancellationToken);
+        };
+
         session.PlayPauseEvent += async () =>
         {
             var reply = new PlaybackSessionReply { ShouldPlayPause = true };
@@ -517,12 +524,14 @@ public sealed class ApiService(
             if (session.CurrentPosition != null) reply.PlaybackPosition = (int)session.CurrentPosition.Value.TotalSeconds;
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
+
+        session.PauseIfPlayingEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPauseIfPlaying = true }, context.CancellationToken);
         session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
-        session.SkipEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSkip = true }, context.CancellationToken);
-        session.WatchEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldWatch = true }, context.CancellationToken);
         session.ChangeRateEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeRate = direction ? 1 : -1 }, context.CancellationToken);
         session.ChangeVolumeEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeVolume = direction ? 1 : -1 }, context.CancellationToken);
         session.ToggleSubtitleEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldToggleSubtitles = true }, context.CancellationToken);
+
+        // TODO move to PlaybackSession.
         session.AddVideos += async minutes =>
         {
             if (session.SelectedFolderId == null) return;
@@ -547,24 +556,6 @@ public sealed class ApiService(
 
             if (await requestStream.MoveNext(context.CancellationToken))
             {
-                switch (requestStream.Current.Action)
-                {
-                    case PlaybackSessionAction.PopNextVideo:
-                        var video = session.PopPlaylistHead();
-                        if (video != null)
-                        {
-                            var reply = new PlaybackSessionReply { NextVideoId = video.Id };
-
-                            // give our video object cos session does not update until playback starts.
-                            var position = session.PlaybackPositionToRestore(video);
-                            if (position != null) reply.PlaybackPosition = position.Value;
-
-                            await responseStream.WriteAsync(reply, context.CancellationToken);
-                        }
-
-                        break;
-                }
-
                 if (requestStream.Current.HasTitle)
                     session.Title = requestStream.Current.Title;
 
@@ -623,6 +614,14 @@ public sealed class ApiService(
 
                 if (requestStream.Current.HasSubtitles)
                     session.Subtitles = requestStream.Current.Subtitles;
+
+                // process actions after status updates so that status is up to date for whatever the actiond does.
+                switch (requestStream.Current.Action)
+                {
+                    case PlaybackSessionAction.OnWatchedToEnd:
+                        await session.OnWatchedToEnd(requestStream.Current.VideoId);
+                        break;
+                }
 
                 if (requestStream.Current.EndSession)
                     return;

@@ -178,7 +178,7 @@ message ShuffleReply {
 
 enum PlaybackSessionAction {
   NO_SESSION_ACTION = 0;
-  POP_NEXT_VIDEO = 1;
+  ON_WATCHED_TO_END = 2;  // Requires PlaybackSessionRequest.VideoId to be set.
 }
 
 enum PlayerState {
@@ -212,9 +212,8 @@ message PlaybackSessionRequest {
 
 message PlaybackSessionReply {
   optional bool ShouldPlayPause = 1;
+  optional bool ShouldPauseIfPlaying = 10;
   optional int32 ShouldSeekRelativeSeconds = 5;
-  optional bool ShouldWatch = 2;
-  optional bool ShouldSkip = 3;
   optional int32 NextVideoId = 4;
   optional int32 PlaybackPosition = 9;
   optional sint32 ShouldChangeRate = 6;

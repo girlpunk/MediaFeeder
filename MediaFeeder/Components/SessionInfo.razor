@@ -194,10 +194,10 @@
                 </DropdownButton>
             </GridCol>
             <GridCol>
-                <Button Class="control-btn" Style="min-width: 22ex;" OnClick="@(() => Session.Watch())" Icon="@IconType.Outline.Eye">Mark Watched</Button>
+                <Button Class="control-btn" Style="min-width: 22ex;" OnClick="@Session.Watch" Icon="@IconType.Outline.Eye">Mark Watched</Button>
             </GridCol>
             <GridCol>
-                <Button Class="control-btn" Style="min-width: 12ex;" OnClick="@(() => Session.Skip())" Icon="@IconType.Outline.FastForward">Skip</Button>
+                <Button Class="control-btn" Style="min-width: 12ex;" OnClick="@Session.Skip" Icon="@IconType.Outline.FastForward">Skip</Button>
             </GridCol>
         </GridRow>
 

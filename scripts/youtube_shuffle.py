@@ -54,8 +54,7 @@ class QueueEvent(NamedTuple):
 
     next_video_id: int = None
     restore_position_seconds: int = None
-    go_next: bool = False
-    mark_watched: bool = False
+    watched_to_end: bool = False
     save_position: bool = False  # a hint, not guaranteed
     content_id: str = None
 
@@ -96,11 +95,10 @@ class MyMediaStatusListener(MediaStatusListener):
             return
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
-            self._logger.info("Received finished event: %s", status.content_id)
+            self._logger.info("Received playback finished event: %s", status.content_id)
             self.event_queue.put(
                 QueueEvent(
-                    go_next=True,
-                    mark_watched=True,
+                    watched_to_end=True,
                     content_id=status.content_id,
                 ),
             )
@@ -143,11 +141,11 @@ class MyMediaStatusListener(MediaStatusListener):
         if rep.ShouldPlayPause:
             if self.cast.media_controller.status.player_is_paused:
                 self.cast.media_controller.play()
-                self._logger.info("playing")
+                self._logger.info("Playing")
             elif self.cast.media_controller.status.player_is_playing:
                 self.cast.media_controller.pause()
                 self.event_queue.put(QueueEvent(save_position=True))
-                self._logger.info("paused")
+                self._logger.info("Paused")
             elif (self.cast.media_controller.status.player_is_idle or self.cast.media_controller.status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN) and rep.NextVideoId:
                 self._logger.info("Player is idle so requesting replay of %s from %s seconds.", rep.NextVideoId, rep.PlaybackPosition)
                 self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId, restore_position_seconds=rep.PlaybackPosition))
@@ -155,17 +153,14 @@ class MyMediaStatusListener(MediaStatusListener):
                 self._logger.warning("can not play/pause in state: %s", self.cast.media_controller.status.player_state)
             return  # so NextVideoId is not treated as skip to next video.
 
+        if rep.ShouldPauseIfPlaying:
+            if self.cast.media_controller.status.player_is_playing:
+                self.cast.media_controller.pause()
+                self._logger.info("Paused")
+
         if rep.ShouldSeekRelativeSeconds:
             if self.cast.media_controller.status.player_is_playing:
                 self.cast.media_controller.seek(self.cast.media_controller.status.current_time + rep.ShouldSeekRelativeSeconds)
-
-        elif rep.ShouldWatch:
-            self._logger.info("Received mark as watched and skip command")
-            self.event_queue.put(QueueEvent(go_next=True, mark_watched=True))
-
-        elif rep.ShouldSkip:
-            self._logger.info("Received skip command")
-            self.event_queue.put(QueueEvent(go_next=True, mark_watched=False))
 
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
@@ -206,11 +201,6 @@ class MyMediaStatusListener(MediaStatusListener):
                 self._logger.info("Available subtitles: %s", available_subs)
                 if available_subs:
                     self.cast.media_controller.enable_subtitle(next(iter(available_subs)).trackId)
-
-    def pause_if_playing(self):
-        if self.cast.media_controller.status.player_is_playing:
-            self.cast.media_controller.pause()
-            self._logger.info("paused")
 
     def get_state(self) -> int | None:
         return pycast_status_to_mf_state(self.cast.media_controller.status)
@@ -447,21 +437,16 @@ class Player:
                 self.yt.play_video(current_content_id)
                 playback_position_to_restore = event.restore_position_seconds
 
-            elif event.go_next:
+            elif event.watched_to_end:
                 # this check is to protected against the chromecast sending multiple finished events.
-                if not event.content_id or event.content_id == current_content_id:
-                    if current_video_id and event.mark_watched:
-                        self.logger.info("Marking %s as watched...", current_video_id)
-                        self.stub.Watched(Api_pb2.WatchedRequest(Id=current_video_id, Watched=True, ActuallyWatched=True))
-                        self.listener_media.pause_if_playing()  # so playback stops if last video in queue
+                if event.content_id == current_content_id:
+                    self.logger.info(f"Notifiting server video {current_video_id} was watched...")
+                    self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id))
 
-                    self.yt.clear_playlist()
                     current_video_id = None
                     current_content_id = None
-                    self.logger.info("Requesting next video...")
-                    self.status_message_queue.put(
-                        Api_pb2.PlaybackSessionRequest(Action=Api_pb2.POP_NEXT_VIDEO),
-                    )
+
+                    self.yt.clear_playlist()
                     time.sleep(1)  # let chromecast finish before trying to play next video.
                 else:
                     self.logger.info("Ignoring event: %s", event)
