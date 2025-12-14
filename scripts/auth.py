@@ -77,6 +77,9 @@ class MediaFeederConfig:
         """Save player config back to settings."""
         self._logger.debug("Save Player")
         with self._config as cfg:
+            if "Players" not in cfg:
+                cfg["Players"] = {}
+
             cfg["Players"][player] = settings
             cfg.write()
 

@@ -23,8 +23,14 @@ class ConfigFile(AbstractContextManager):
             with Path(self._cf._path).open("r", encoding="utf-8") as f:
                 self._data = yaml.safe_load(f)
 
-        def __getitem__(self, index):
-            return self._data.__getitem__(index)
+        def __contains__(self, key):
+            return self._data.__contains__(key)
+
+        def __getitem__(self, key):
+            return self._data.__getitem__(key)
+
+        def __setitem__(self, key, value):
+            return self._data.__setitem__(key, value)
 
         def __len__(self):
             return self._data.__len__()
