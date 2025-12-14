@@ -234,6 +234,7 @@
                                 <MenuItem @onclick="@(() => Session.TriggerAddVideos(30))">30 minutes</MenuItem>
                                 <MenuItem @onclick="@(() => Session.TriggerAddVideos(120))">2 hours</MenuItem>
                                 <MenuItem @onclick="@(() => Session.TriggerAddVideos(300))">5 hours</MenuItem>
+                                <MenuItem @onclick="@(() => Session.ClearPlaylist())">Clear List</MenuItem>
                             </Menu>
                         </Overlay>
                     </DropdownButton>

@@ -89,6 +89,11 @@ public sealed class PlaybackSession : IDisposable
         return video;
     }
 
+    public void ClearPlaylist()
+    {
+        Playlist.Clear();
+    }
+
     public Video? Video
     {
         get => _video;
