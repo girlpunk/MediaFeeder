@@ -43,13 +43,13 @@
         @if (VideoObject?.Watched ?? false)
         {
             <Tooltip Title="Mark as not watched">
-                <Button Icon="@IconType.Outline.EyeInvisible" Color="@Color.Green10" OnClick="@MarkWatched"></Button>
+                <Button Icon="@IconType.Outline.EyeInvisible" Color="@Color.Green10" OnClick="@ToggleWatched"></Button>
             </Tooltip>
         }
         else
         {
             <Tooltip Title="Mark as watched">
-                <Button Icon="@IconType.Outline.Eye" OnClick="@MarkWatched"></Button>
+                <Button Icon="@IconType.Outline.Eye" OnClick="@ToggleWatched"></Button>
             </Tooltip>
         }
 

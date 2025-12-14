@@ -309,15 +309,10 @@ public sealed class ApiService(
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await CheckAuthAndGetVideo(context, db, request.Id);
 
-        video.Watched = request.Watched;
-
-        if (request is { HasWhenSeconds: true, WhenSeconds: > 0 })
-            video.WatchedDate = DateTimeOffset.FromUnixTimeSeconds(request.WhenSeconds);
-        else if (request.ActuallyWatched)
-        {
-            video.WatchedDate = DateTimeOffset.Now;
-            if (request.Watched) video.PlaybackPosition = null;
-        }
+        DateTimeOffset? date = request is { HasWhenSeconds: true, WhenSeconds: > 0 }
+            ? DateTimeOffset.FromUnixTimeSeconds(request.WhenSeconds)
+            : null;
+        video.MarkWatched(request.ActuallyWatched, date);
 
         await db.SaveChangesAsync(context.CancellationToken);
         return new WatchedReply();

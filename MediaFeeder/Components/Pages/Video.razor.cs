@@ -99,18 +99,24 @@ public sealed partial class Video : IDisposable
         }
     }
 
-    private async Task MarkWatched()
+    private async Task ToggleWatched()
     {
         ArgumentNullException.ThrowIfNull(VideoObject);
-        Console.WriteLine("Marking as watched");
 
-        VideoObject.Watched = !VideoObject.Watched;
-        VideoObject.WatchedDate = DateTimeOffset.Now;
-        if (VideoObject.Watched) VideoObject.PlaybackPosition = null;
-        await Context.SaveChangesAsync();
+        if (!VideoObject.Watched)
+        {
+            VideoObject.MarkWatched(true);
+            await Context.SaveChangesAsync();
+            Console.WriteLine("Marked as Watched");
+        }
+        else
+        {
+            VideoObject.Watched = false;
+            await Context.SaveChangesAsync();
+            Console.WriteLine("Marked as Unwatched");
+        }
 
         StateHasChanged();
-
         GoNext();
     }
 
@@ -130,7 +136,11 @@ public sealed partial class Video : IDisposable
     internal async Task GoNext(bool watch)
     {
         if (watch)
-            await MarkWatched();
+        {
+            VideoObject.MarkWatched(true);
+            await Context.SaveChangesAsync();
+            StateHasChanged();
+        }
 
         GoNext();
     }

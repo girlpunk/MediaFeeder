@@ -47,4 +47,15 @@ public class Video
 
     public virtual Subscription? Subscription { get; set; }
     public virtual bool IsDownloaded { get; }
+
+    public void MarkWatched(bool actuallyWatched, DateTimeOffset? date = null)
+    {
+        Watched = true;
+        if (actuallyWatched) PlaybackPosition = null;
+
+        if (date != null)
+            WatchedDate = date;
+        else if (actuallyWatched)
+            WatchedDate = DateTimeOffset.Now;
+    }
 }
