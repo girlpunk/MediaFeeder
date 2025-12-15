@@ -31,9 +31,9 @@ import common
 common.set_logging()
 
 # to show debug log:
-#logging.getLogger("Youtube_Shuffle").setLevel(logging.DEBUG)
+# logging.getLogger("Youtube_Shuffle").setLevel(logging.DEBUG)
 # to see chromecast wire messages:
-#logging.getLogger("pychromecast.socket_client").setLevel(logging.DEBUG)
+# logging.getLogger("pychromecast.socket_client").setLevel(logging.DEBUG)
 
 
 # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py#L26
@@ -146,7 +146,9 @@ class MyMediaStatusListener(MediaStatusListener):
                 self.cast.media_controller.pause()
                 self.event_queue.put(QueueEvent(save_position=True))
                 self._logger.info("Paused")
-            elif (self.cast.media_controller.status.player_is_idle or self.cast.media_controller.status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN) and rep.NextVideoId:
+            elif (
+                self.cast.media_controller.status.player_is_idle or self.cast.media_controller.status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN
+            ) and rep.NextVideoId:
                 self._logger.info("Player is idle so requesting replay of %s from %s seconds.", rep.NextVideoId, rep.PlaybackPosition)
                 self.event_queue.put(QueueEvent(next_video_id=rep.NextVideoId, restore_position_seconds=rep.PlaybackPosition))
             else:
@@ -176,10 +178,8 @@ class MyMediaStatusListener(MediaStatusListener):
             else:
                 current_rate -= 0.5
 
-            if current_rate < 0.25:
-                current_rate = 0.25
-            if current_rate > 3:
-                current_rate = 3
+            current_rate = max(current_rate, 0.25)
+            current_rate = min(current_rate, 3)
 
             self.cast.media_controller.set_playback_rate(current_rate)
             self._logger.info("Set rate to: %s", current_rate)
@@ -278,7 +278,7 @@ class Player:
         self.logger = logging.getLogger("Youtube_Shuffle")
 
         parser = argparse.ArgumentParser(
-            description="Example on how to use the Youtube Controller.",
+            description="Youtube ChromeCast API Controller.",
         )
         parser.add_argument(
             "--server",
