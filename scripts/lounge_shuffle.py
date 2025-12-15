@@ -18,7 +18,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     _api: pyytlounge.YtLoungeApi
     _shuffler: common.Shuffler
-    _last_status: pyytlounge.PlaybackStateEvent | None = None
+    _current_player_state: int | None = None
     _now_playing: str | None = None
 
     def __init__(self, name: str) -> None:
@@ -59,16 +59,17 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     async def play_pause(self) -> None:
         """Toggle the paused state."""
         self._logger.debug("Play Pause")
-        if self._last_status is None:
-            self._logger.error("can not play/pause without last_status.")
-            return
 
-        if self._last_status.state == pyytlounge.State.Paused:
+        if self._current_player_state == pyytlounge.State.Paused:
             await self._api.play()
-        elif self._last_status.state == pyytlounge.State.Playing:
+        elif self._current_player_state == pyytlounge.State.Playing:
             await self._api.pause()
         else:
-            self._logger.warning("Don't know how to play/pause from state %s", self._last_status.state)
+            self._logger.warning("Don't know how to play/pause from state %s", self._current_player_state)
+
+    async def pause_if_playing(self) -> None:
+        if self._current_player_state == pyytlounge.State.Playing:
+            await self._api.pause()
 
     async def main(self) -> None:
         """Connect to the Lounge API."""
@@ -98,17 +99,20 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         """Called when active video changes."""
         self._logger.info(("Now Playing:\n    %s\n    ID: %s\n    pos: %s\n    duration: %s"), event.state, event.video_id, event.current_time, event.duration)
 
+        self._current_player_state = event.state
+
         update = common.StatusUpdate()
+        update.State = self.lounge_state_to_mf_state(event.state)
 
         if event.video_id is not None and event.video_id != self._now_playing:
             self._now_playing = event.video_id
-            server_video = await self._shuffler.search(Api_pb2.SearchRequest(Provider="YouTube", ProviderVideoId=self._now_playing))
+            server_video = await self._shuffler.search(Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=self._now_playing))
             if server_video is not None:
                 update.VideoId = server_video
 
         if event.current_time is not None:
             update.Position = int(event.current_time)
-        update.Provider = "YouTube"
+        update.Provider = "Youtube"
 
         await self._shuffler.send_status(update)
 
@@ -193,10 +197,10 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.debug("Playback State Changed")
         self._logger.info(("Playback State Changed:    Current Time: %s\n    Duration: %s\n    State: %s"), event.current_time, event.duration, event.state)
 
-        self._last_status = event
+        self._current_player_state = event.state
 
         update = common.StatusUpdate()
-        update.State = str(event.state)
+        update.State = self.lounge_state_to_mf_state(event.state)
 
         if event.current_time is not None:
             update.Position = int(event.current_time)
@@ -206,6 +210,17 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         if event.state == pyytlounge.State.Stopped and self._now_playing is not None:
             self._now_playing = None
             await self._shuffler.finished()
+
+    def lounge_state_to_mf_state(self, state: pyytlounge.State):
+        # https://github.com/FabioGNR/pyytlounge/blob/master/src/pyytlounge/models.py
+        return {
+            pyytlounge.State.Stopped: Api_pb2.IDLE,
+            pyytlounge.State.Buffering: Api_pb2.LOADING,
+            pyytlounge.State.Playing: Api_pb2.PLAYING,
+            pyytlounge.State.Paused: Api_pb2.PAUSED,
+            pyytlounge.State.Starting: Api_pb2.LOADING,
+            pyytlounge.State.Advertisement: Api_pb2.ADVERT,
+        }[state]
 
     async def subtitles_track_changed(self, event: pyytlounge.SubtitlesTrackEvent) -> None:
         """Called when subtitles track changes."""

@@ -31,8 +31,8 @@ class StatusUpdate:
     """Which provider is playing the video"""
     Provider: str | None = None
 
-    """Description of the state of playback"""
-    State: str | None = None
+    """Player state, using Api.proto PlayerState enum values"""
+    State: int | None = None
 
     """Volume, 0-11 scale"""
     Volume: int | None = None
@@ -54,6 +54,10 @@ class PlayerBase(abc.ABC):
     @abc.abstractmethod
     async def play_pause(self) -> None:
         """Toggle the paused state."""
+
+    @abc.abstractmethod
+    async def pause_if_playing(self) -> None:
+        """If playing, then pause."""
 
 
 class _AuthGateway(grpc.AuthMetadataPlugin):
@@ -165,8 +169,9 @@ class Shuffler:
         self._logger.debug("On Ses Rep Msg")
         if rep.ShouldPlayPause:
             await self._player.play_pause()
+
         elif rep.ShouldPauseIfPlaying:
-            self._logger.info("TODO: pause-if-playing")
+            await self._player.pause_if_playing()
 
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s", rep.NextVideoId)
