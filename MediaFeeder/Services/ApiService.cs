@@ -357,7 +357,7 @@ public sealed class ApiService(
             .Where(v => v.Subscription!.UserId == user.Id);
 
         if (request.HasProvider)
-            query = query.Where(v => string.Equals(v.Subscription.Provider, request.Provider, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(v => v.Subscription.Provider == request.Provider);
 
         if (request.HasProviderVideoId)
             query = query.Where(v => v.VideoId == request.ProviderVideoId);
@@ -569,7 +569,7 @@ public sealed class ApiService(
                 {
                     if (requestStream.Current.Provider != null)
                         session.Provider = serviceProvider.GetServices<IProvider>()
-                            .SingleOrDefault(provider => string.Equals(provider.ProviderIdentifier, requestStream.Current.Provider, StringComparison.OrdinalIgnoreCase))
+                            .SingleOrDefault(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
                             ?.Provider;
                     else
                         session.Provider = null;
