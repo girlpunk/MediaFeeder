@@ -1,12 +1,15 @@
 """MediaFeeder Common client API."""
+# vim: tw=0 ts=4 sw=4
 
 from __future__ import annotations
 
 import abc
 import asyncio
 import logging
+import time
 from collections.abc import Iterator
 from pathlib import Path
+from typing import NamedTuple
 
 import grpc
 import grpc.aio
@@ -44,6 +47,15 @@ class StatusUpdate:
     Loaded: float | None = None
 
 
+class QueueEvent(NamedTuple):
+    """Internal queue events."""
+
+    next_video_id: int = None
+    restore_position_seconds: int = None
+    watched_to_end: bool = False
+    content_id: int = None
+
+
 class PlayerBase(abc.ABC):
     """Base class for player implementations."""
 
@@ -58,6 +70,10 @@ class PlayerBase(abc.ABC):
     @abc.abstractmethod
     async def pause_if_playing(self) -> None:
         """If playing, then pause."""
+
+    @abc.abstractmethod
+    async def seek(self, position_seconds: int) -> None:
+        """Seek player to this position."""
 
 
 class _AuthGateway(grpc.AuthMetadataPlugin):
@@ -83,15 +99,21 @@ class Shuffler:
     name: str
     _stub: Api_pb2_grpc.APIStub
     _settings: MediaFeederConfig
-    _now_playing: int | None = None
-    _play_next: int | None = None
+
+    _now_state: int | None = None
+    _now_position_seconds: int | None = None
+
+    _event_queue = asyncio.Queue()
+
     _player: PlayerBase
     _session_reader = None
     _channel: grpc.aio.Channel = None
 
-    def __init__(self, name: str, player: PlayerBase) -> None:
+    def __init__(self, name: str, player: PlayerBase, *, verbose: bool) -> None:
         """Prepare state only."""
         self._logger = logging.getLogger("Shuffler")
+        if verbose:
+            self._logger.setLevel(logging.DEBUG)
         self._logger.debug("Shuffler Init")
 
         self.name = name
@@ -137,18 +159,12 @@ class Shuffler:
             self._session_reader.cancel()
 
         self._logger.info("Connecting to server...")
-        # channel_ready = grpc.channel_ready_future(self._channel)
-        # channel_ready.add_done_callback(self._on_connected)
-        self._logger.debug("Conneting")
-
         await self._channel.channel_ready()
-
-        self._logger.info("Connected!")
         status_report_iterator = self._stub.PlaybackSession(self._status_report_queue_iterator())
-
         self._session_reader = asyncio.get_event_loop().create_task(self._on_ses_rep(status_report_iterator))
 
         await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.name))
+        self._logger.info("Server connected.")
 
     async def _on_ses_rep(self, iterator: Iterator[Api_pb2.PlaybackSessionReply]) -> None:
         """Process incoming messages from MediaFeeder."""
@@ -173,9 +189,12 @@ class Shuffler:
         elif rep.ShouldPauseIfPlaying:
             await self._player.pause_if_playing()
 
+        if rep.ShouldSeekRelativeSeconds:
+            await self._player.seek(self._now_position_seconds + rep.ShouldSeekRelativeSeconds)
+
         elif rep.NextVideoId > 0:
-            self._logger.info("Received next video ID: %s", rep.NextVideoId)
-            self._play_next = rep.NextVideoId
+            self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
+            self._event_queue.put_nowait(QueueEvent(next_video_id=rep.NextVideoId, restore_position_seconds=rep.PlaybackPosition))
 
     async def _status_report_queue_iterator(self) -> Iterator[Api_pb2.PlaybackSessionRequest]:
         self._logger.debug("Status Report Queue Iterator")
@@ -184,23 +203,26 @@ class Shuffler:
 
     async def send_status(self, status: StatusUpdate) -> None:
         """Send a playback status update to MediaFeeder."""
-        self._logger.debug("Send Status")
         status_message = Api_pb2.PlaybackSessionRequest()
 
         if status.VideoId is not None:
             status_message.VideoId = status.VideoId
 
+        if status.State is not None:
+            status_message.State = status.State
+            self._now_state = status.State
+
         if status.Position is not None:
             status_message.Position = status.Position
+            self._now_position_seconds = status.Position
+        elif status.State not in [Api_pb2.PLAYING, Api_pb2.PAUSED]:
+            self._now_position_seconds = None
 
         if status.Quality is not None:
             status_message.Quality = status.Quality
 
         if status.Provider is not None:
             status_message.Provider = status.Provider
-
-        if status.State is not None:
-            status_message.State = status.State
 
         if status.Volume is not None:
             status_message.Volume = status.Volume
@@ -213,46 +235,74 @@ class Shuffler:
 
         await self._status_report_queue.put(status_message)
 
-    async def search(self, request: Api_pb2.SearchRequest) -> int | None:
-        results = await self._stub.Search(request)
-        if results.Videos is not None and len(results.Videos) > 0:
-            return results.Videos[0].VideoId
-        return None
-
-    async def finished(self) -> None:
+    async def finished(self, content_id: int) -> None:
         """Current video has finished playing."""
-        self._logger.debug(f"Finished playing: {self._now_playing}")
-        await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=self._now_playing))
-        self._now_playing = None
+        self._logger.debug(f"Finished playing: content_id={content_id}")
+        self._event_queue.put_nowait(QueueEvent(watched_to_end=True, content_id=content_id))
+
+    async def get_event(self, timeout: int) -> QueueEvent | None:
+        """Get next event in queue."""
+        try:
+            item = await asyncio.wait_for(self._event_queue.get(), timeout=timeout)
+            self._event_queue.task_done()  # dont care about work tracking.
+            return item
+        except TimeoutError:
+            return None
 
     async def start(self) -> None:
         """Start playback, if available."""
         self._logger.debug("Start")
+
+        current_video_id = None
+        current_content_id = None
+        last_save_position_time = time.monotonic()
+        position_to_restore_seconds = None
+
         while True:
             if self._session_reader is None or self._session_reader.done():
                 self._logger.debug("Loop reconnecting...")
                 await self._connect_to_server()
 
                 # if connection was lost, at least restore what is currently playing.
-                if self._now_playing:
-                    await self._status_report_queue.put(
-                        Api_pb2.PlaybackSessionRequest(VideoId=self._now_playing),
-                    )
-                self._logger.debug("Loop reconnected!")
+                if current_video_id:
+                    await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=current_video_id))
+                self._logger.debug("Loop reconnected.")
 
-            if self._now_playing is None and self._play_next is not None:
-                self._logger.debug("Play next video")
-                self._now_playing = self._play_next
-                self._play_next = None
+            event = await self.get_event(5)
 
-                id_response = await self._stub.Video(Api_pb2.VideoRequest(Id=self._now_playing))
+            if event and event.next_video_id:
+                current_video_id = event.next_video_id
+                id_response = await self._stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
+                current_content_id = id_response.VideoId
 
-                self._logger.info("Playing %s: %s [%s]", self._now_playing, id_response.Title, id_response.VideoId)
-                await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=self._now_playing))
+                self._logger.info("Playing %s: %s [%s]", current_video_id, id_response.Title, id_response.VideoId)
+                await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=current_video_id))
 
+                self._last_save_position_time = time.monotonic()  # do not save position immediately.
                 await self._player.play_video(id_response)
+                position_to_restore_seconds = event.restore_position_seconds
 
-            await asyncio.sleep(1)
+            elif event and event.watched_to_end:
+                if event.content_id == current_content_id:
+                    self._logger.info(f"Notifiting server video {current_video_id} was watched...")
+                    await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id))
+
+                    current_video_id = None
+                    current_content_id = None
+                else:
+                    self._logger.warning("Mismatched watched_to_end event: expected=%s  got=%s", current_content_id, event.content_id)
+
+            elif current_video_id and self._now_state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and self._now_position_seconds and self._now_position_seconds > 0:
+                if position_to_restore_seconds and position_to_restore_seconds > 0:
+                    self._logger.info("Seeking to restore playback position: %s ...", position_to_restore_seconds)
+                    await self._player.seek(position_to_restore_seconds)
+                    position_to_restore_seconds = None
+                    last_save_position_time = time.monotonic()  # do not re-save position immediately.
+
+                elif time.monotonic() - last_save_position_time > 60:
+                    self._stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=current_video_id, PositionSeconds=self._now_position_seconds))
+                    last_save_position_time = time.monotonic()
+                    self._logger.debug("Saved playback position: %s", self._now_position_seconds)
 
 
 def set_logging() -> None:

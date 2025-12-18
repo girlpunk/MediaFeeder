@@ -15,6 +15,11 @@ import Api_pb2
 import auth
 import common
 
+# TODO
+# - set volume
+# - set rate
+# - set subtitles
+
 
 class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     """Player for Youtube TV App's 'Lounge' API."""
@@ -22,7 +27,12 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     _api: pyytlounge.YtLoungeApi
     _shuffler: common.Shuffler
     _current_player_state: int | None = None
-    _now_playing: str | None = None
+
+    _now_provider_id: str | None = None
+    _now_duration: float | None = None
+
+    _prev_provider_id: str | None = None
+    _prev_duration: float | None = None
 
     def __init__(self, name: str, *, verbose: bool) -> None:
         """Set up variables, but doesn't connect yet."""
@@ -32,7 +42,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.debug("LoungePlayer Init")
 
         self._api = pyytlounge.YtLoungeApi("MediaFeeder", self)
-        self._shuffler = common.Shuffler(name, self)
+        self._shuffler = common.Shuffler(name, self, verbose=verbose)
 
         config = auth.MediaFeederConfig()
         self._api.load_auth_state(config.get_player(name))
@@ -58,7 +68,6 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
         self._logger.debug("Play Video")
-        self._now_playing = video.VideoId
         await self._api.play_video(video.VideoId)
 
     async def play_pause(self) -> None:
@@ -73,9 +82,12 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             self._logger.warning("Don't know how to play/pause from state %s", self._current_player_state)
 
     async def pause_if_playing(self) -> None:
-        """Paus, but only if in playing state."""
+        """Pause, but only if in playing state."""
         if self._current_player_state == pyytlounge.State.Playing:
             await self._api.pause()
+
+    async def seek(self, position_seconds: int) -> None:
+        await self._api.seek_to(position_seconds)
 
     async def main(self) -> None:
         """Connect to the Lounge API."""
@@ -102,18 +114,26 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def now_playing_changed(self, event: pyytlounge.NowPlayingEvent) -> None:
         """Called when active video changes."""
-        self._logger.debug(("Now Playing:\n    %s\n    ID: %s\n    pos: %s\n    duration: %s"), event.state, event.video_id, event.current_time, event.duration)
+        self._logger.debug(("Now Playing:   %s   provider_id: %s   pos: %s   duration: %s"), event.state, event.video_id, event.current_time, event.duration)
 
         self._current_player_state = event.state
 
         update = common.StatusUpdate()
         update.State = self._lounge_state_to_mf_state(event.state)
 
-        if event.video_id is not None and event.video_id != self._now_playing:
-            self._now_playing = event.video_id
-            server_video = await self._shuffler.search(Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=self._now_playing))
-            if server_video is not None:
-                update.VideoId = server_video
+        if event.state == pyytlounge.State.Advertisement:
+            await self._shuffler.send_status(update)
+            return
+
+        if event.video_id:
+            if event.video_id != self._now_provider_id:
+                self._prev_provider_id = self._now_provider_id
+                self._prev_duration = self._now_duration
+                self._logger.debug("self._now_provider_id=%s  prev_provider_id=%s  prev_duration=%s", event.video_id, self._prev_provider_id, self._prev_duration)
+            self._now_provider_id = event.video_id
+
+        if event.duration:
+            self._now_duration = event.duration
 
         if event.current_time is not None:
             update.Position = int(event.current_time)
@@ -159,11 +179,11 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def ad_state_changed(self, event: pyytlounge.AdStateEvent) -> None:
         """Called when ad state changes (position, play/pause, skippable)."""
-        self._logger.debug(("Ad State:\n    AD State: %s\n    Current Time: %s\n    Is Skip Enabled: %s"), event.ad_state, event.current_time, event.is_skip_enabled)
+        self._logger.debug(("Ad State:   AD State: %s   Current Time: %s   Is Skip Enabled: %s"), event.ad_state, event.current_time, event.is_skip_enabled)
 
     async def autoplay_changed(self, event: pyytlounge.AutoplayModeChangedEvent) -> None:
         """Called when auto play mode changes."""
-        self._logger.debug(("Autoplay Changed:\n    Enabled: %s\n    Supported: %s"), event.enabled, event.supported)
+        self._logger.debug(("Autoplay Changed:   Enabled: %s    Supported: %s"), event.enabled, event.supported)
         if event.enabled:
             asyncio.get_event_loop().create_task(self._disable_autoplay())
 
@@ -177,15 +197,15 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def autoplay_up_next_changed(self, event: pyytlounge.AutoplayUpNextEvent) -> None:
         """Called when up next video changes."""
-        self._logger.debug(("Autoplay Up Next Changed:\n    Video ID: %s"), event.video_id)
+        self._logger.debug(("Autoplay Up Next Changed:   Video ID: %s"), event.video_id)
 
     async def disconnected(self, event: pyytlounge.DisconnectedEvent) -> None:
         """Called when the screen is no longer connected."""
-        self._logger.info(("Disconnected:\n    Reason: %s"), event.reason)
+        self._logger.info(("Disconnected:   Reason: %s"), event.reason)
 
     async def playback_speed_changed(self, event: pyytlounge.PlaybackSpeedEvent) -> None:
         """Called when playback speed changes."""
-        self._logger.debug(("Playback Speed Changed:\n    Playback Speed: %s"), event.playback_speed)
+        self._logger.debug(("Playback Speed Changed:   Playback Speed: %s"), event.playback_speed)
 
         update = common.StatusUpdate()
         update.Rate = event.playback_speed
@@ -193,21 +213,40 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def playback_state_changed(self, event: pyytlounge.PlaybackStateEvent) -> None:
         """Called when playback state changes (position, play/pause)."""
-        self._logger.debug(("Playback State Changed:    Current Time: %s\n    Duration: %s\n    State: %s"), event.current_time, event.duration, event.state)
+        self._logger.debug(("Playback State Changed:   Current Time: %s    Duration: %s    State: %s"), event.current_time, event.duration, event.state)
 
         self._current_player_state = event.state
 
         update = common.StatusUpdate()
         update.State = self._lounge_state_to_mf_state(event.state)
 
+        if event.state == pyytlounge.State.Advertisement:
+            await self._shuffler.send_status(update)
+            return
+
         if event.current_time is not None:
             update.Position = int(event.current_time)
 
         await self._shuffler.send_status(update)
 
-        if event.state == pyytlounge.State.Stopped and self._now_playing is not None:
-            self._now_playing = None
-            await self._shuffler.finished()
+        if self.is_close(event.current_time, event.duration):
+            if self._prev_provider_id and self.is_close(self._prev_duration, event.duration):
+                self._logger.debug("Assuming prev video finished: prev_provider_id=%s  prev_duration=%s", self._prev_provider_id, self._prev_duration)
+                await self._shuffler.finished(self._prev_provider_id)
+                self._prev_provider_id = None
+                self._prev_duration = None
+            elif self._now_provider_id and self.is_close(self._now_duration, event.duration):
+                self._logger.debug("Assuming now video finished: now_provider_id=%s  now_duration=%s", self._now_provider_id, self._now_duration)
+                await self._shuffler.finished(self._now_provider_id)
+                self._now_provider_id = None
+                self._now_duration = None
+                self._prev_provider_id = None
+                self._prev_duration = None
+
+    def is_close(self, a, b, epsilon=0.01):
+        if a is None or b is None:
+            return False
+        return abs(a - b) < epsilon
 
     def _lounge_state_to_mf_state(self, state: pyytlounge.State) -> int:
         # https://github.com/FabioGNR/pyytlounge/blob/master/src/pyytlounge/models.py
@@ -248,7 +287,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def volume_changed(self, event: pyytlounge.VolumeChangedEvent) -> None:
         """Called when volume or muted state changes."""
-        self._logger.debug(("Volume Changed:\n    Volume: %s\n    Muted: %s"), event.volume, event.muted)
+        self._logger.debug(("Volume Changed:   Volume: %s   Muted: %s"), event.volume, event.muted)
 
         update = common.StatusUpdate()
         update.Volume = event.volume
