@@ -137,10 +137,22 @@ public sealed partial class Home
 
             if (!string.IsNullOrWhiteSpace(SearchValue))
             {
-                var pattern = $"%{EscapeSearch(SearchValue.Trim())}%";
-                source = source.Where(v =>
-                    EF.Functions.ILike(v.Name, pattern, "\\")
-                    || EF.Functions.ILike(v.Description, pattern, "\\"));
+                if (SearchValue.StartsWith("!"))
+                {
+                    var pattern = $"%{EscapeSearch(SearchValue[1..].Trim())}%";
+                    source = source.Where(v =>
+                        !EF.Functions.ILike(v.Name, pattern, "\\")
+                        && !EF.Functions.ILike(v.Description, pattern, "\\")
+                        && !v.Tags.Any(t => EF.Functions.ILike(t.Tag, pattern, "\\")));
+                }
+                else
+                {
+                    var pattern = $"%{EscapeSearch(SearchValue.Trim())}%";
+                    source = source.Where(v =>
+                        EF.Functions.ILike(v.Name, pattern, "\\")
+                        || EF.Functions.ILike(v.Description, pattern, "\\")
+                        || v.Tags.Any(t => EF.Functions.ILike(t.Tag, pattern, "\\")));
+                }
             }
 
             ItemsAvailable = await source.CountAsync();

@@ -32,6 +32,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
     public virtual DbSet<Subscription> Subscriptions { get; init; }
     public virtual DbSet<Folder> Folders { get; init; }
     public virtual DbSet<Video> Videos { get; init; }
+    public virtual DbSet<VideoTag> VideoTags { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -605,6 +606,9 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
 
             entity.Property(static e => e.IsDownloaded)
                 .HasComputedColumnSql("downloaded_path IS NOT NULL", true);
+
+            entity.HasMany(static e => e.Tags).WithOne(static e => e.Video)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // entity.HasIndex(e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
             // entity.HasIndex(e => new { e.SubscriptionId, e.Watched }, "ytmanagerapp_video_subscription_id_idx");

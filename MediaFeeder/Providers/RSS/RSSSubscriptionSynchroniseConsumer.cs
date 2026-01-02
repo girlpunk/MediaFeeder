@@ -67,7 +67,9 @@ public class RSSSubscriptionSynchroniseConsumer(
         item.Id = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/")
             .FirstOrDefault() ?? item.Id;
 
-        var video = await db.Videos.SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken);
+        var video = await db.Videos
+            .Include(v => v.Tags)
+            .SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken);
 
         if (video == null)
         {
@@ -97,6 +99,19 @@ public class RSSSubscriptionSynchroniseConsumer(
         video.UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
                                                ?? item.Authors.Select(static a => a.Name));
         video.DownloadedPath = item.Links.SingleOrDefault(static l => l.RelationshipType == "enclosure")?.Uri.ToString();
+
+        var existingTags = video.Tags.Select(static t => t.Tag);
+        var keywords = (item.ElementExtensions.ReadElementExtensions<string>("keywords", "http://www.itunes.com/dtds/podcast-1.0.dtd") ?? [])
+            .SelectMany(static k => k.Split(','))
+            .Select(static k => k.Trim())
+            .Where(k => !existingTags.Contains(k))
+            .Select(k => new VideoTag()
+            {
+                Video = video,
+                Tag = k,
+            });
+        foreach (var videoTag in keywords)
+            video.Tags.Add(videoTag);
 
         await db.SaveChangesAsync(cancellationToken);
     }

@@ -11,6 +11,8 @@ public class Video
 
     [MaxLength(1000000000)] public required string Name { get; set; }
     [MaxLength(1000000000)] public required string Description { get; set; }
+    public virtual ICollection<VideoTag> Tags { get; init; } = [];
+
     public bool Watched { get; set; }
     public DateTimeOffset? WatchedDate { get; set; }
     [MaxLength(1000000000)] public string? DownloadedPath { get; set; }
