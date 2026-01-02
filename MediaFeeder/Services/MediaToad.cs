@@ -80,7 +80,7 @@ public sealed class MediaToadService(
 
         return new HasMediaReply()
         {
-            Existance = FileExistance.Exists,
+            Existence = FileExistance.Exists,
             Item = mediaItem,
         };
     }
@@ -152,6 +152,9 @@ public sealed class MediaToadService(
         if (user == null)
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Authentication failed"));
 
+        if (request.NodeId == "0")
+            return await ListFolder(null, user, context.CancellationToken);
+
         if (!int.TryParse(request.NodeId[1..], out var nodeId))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid ID"));
 
@@ -192,37 +195,57 @@ public sealed class MediaToadService(
         };
     }
 
-    private async Task<ListNodeReply> ListFolder(int nodeId, AuthUser user, CancellationToken cancellationToken)
+    private async Task<ListNodeReply> ListFolder(int? nodeId, AuthUser user, CancellationToken cancellationToken)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var folder = await context.Folders
+        var query = context.Folders
+            .Where(f => f.UserId == user.Id)
             .Include(static s => s.Subscriptions)
             .Include(static s => s.Subfolders)
-            .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
+            .OrderBy(static f => f.Name);
 
-        if (folder == null)
-            throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
-
-        if (folder.UserId != user.Id)
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
-
-        return new ListNodeReply()
+        MediaNode node;
+        IEnumerable<MediaNode> subnodes;
+        if (nodeId == null)
         {
-            Node =
-            {
-                folder.Subfolders.Select(static f =>
-                        new MediaNode()
-                        {
-                            Id = $"f{f.Id}",
-                            Title = f.Name
-                        })
-                    .Concat(folder.Subscriptions.Select(static s =>
-                        new MediaNode()
-                        {
-                            Id = $"s{s.Id}",
-                            Title = s.Name,
-                        }))
-            }
+            node = mkFolderNode(0, null, "MediaFeeder");
+            subnodes = (await query.Where(static f => f.ParentId == null)
+                .ToListAsync(cancellationToken))
+                .Select(static f => mkFolderNode(f.Id, 0, f.Name));
+        }
+        else
+        {
+            var folder = await query
+                .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
+
+            if (folder == null)
+                throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
+
+            if (folder.UserId != user.Id)
+                throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
+
+            node = mkFolderNode(folder.Id, folder.ParentId, folder.Name);
+            subnodes = folder.Subfolders.Select(static f => mkFolderNode(f.Id, f.ParentId, f.Name))
+                .Concat(folder.Subscriptions.Select(s =>
+                    new MediaNode
+                    {
+                        Id = $"s{s.Id}",
+                        ParentId = node.Id,
+                        Title = s.Name,
+                    }));
+        }
+
+        return new ListNodeReply
+        {
+            Node = node,
+            Child = {subnodes},
         };
+    }
+
+    private static MediaNode mkFolderNode(int id, int? parentId, string title)
+    {
+        var node = new MediaNode{Id = $"f{id}", Title = title};
+        if (parentId != null) node.ParentId = $"f{parentId}";
+        return node;
     }
 }

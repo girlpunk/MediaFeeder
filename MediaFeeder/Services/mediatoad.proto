@@ -14,6 +14,7 @@ package mediatoad;
 message MediaNode {
   string id = 1;
   string title = 2;
+  string parent_id = 3;
 }
 
 message MediaItem {
@@ -22,18 +23,35 @@ message MediaItem {
   string mime_type = 3;
   int64 file_length = 4;
   int64 duration_millis = 5;
+  repeated MediaTag tag = 6;
+  bool excluded = 7;
 }
 
 message MediaTag {
   string tag = 1;
+
+  // use empty string for manually tags, or identifier of tool when tags are determined automatically.
   string cls = 2;
-  int64 modified = 3;
+
+  // unix time stamp in milliseconds.
+  int64 modified_millis = 3;
 }
 
 enum FileExistance {
+  // file dose not exist.
   UNKNOWN = 0;
+
+  // file does exist.
   EXISTS = 1;
+
+  // file previously existed but no longer does.
+  // for special cases, generally only use UNKNOWN and EXISTS.
   MISSING = 2;
+}
+
+message Range {
+  int64 first = 1;
+  int64 last = 2;  // inclusive, same and HTTP Range header.
 }
 
 service Media {
@@ -42,44 +60,151 @@ service Media {
   rpc ReadMedia (ReadMediaRequest) returns (stream ReadMediaReply) {}
   rpc ListNode (ListNodeRequest) returns (ListNodeReply) {}
   rpc Search (SearchRequest) returns (SearchReply) {}
+  rpc ChooseMedia (ChooseMediaRequest) returns (ChooseMediaReply) {}
+  rpc RecordPlayback (RecordPlaybackRequest) returns (RecordPlaybackReply) {}
+  rpc UpdateTags (UpdateTagsRequest) returns (UpdateTagsReply) {}
+  rpc UpdateExcluded (UpdateExcludedRequest) returns (UpdateExcludedReply) {}
 }
 
 message AboutRequest {}
 message AboutReply {
-  // Friendly name of the TD, only used for UI and logging.
+  // Friendly name, only used for UI and logging.
   string name = 1;
+
+  // supported options for other RPCs, so UIs know what to offer.
+  repeated SortField supported_sort_field = 10;
+  repeated ChooseMethod supported_choose_method = 11;
 }
 
 message HasMediaRequest {
   string id = 1;
 }
 message HasMediaReply {
-  FileExistance existance = 1;
+  FileExistance existence = 1;
   MediaItem item = 2;
-  repeated MediaTag tag = 3;
 }
 
 message ReadMediaRequest {
   string id = 1;
-  // TODO range requests.
+  repeated Range range = 2;
 }
 message ReadMediaReply {
   bytes content = 1;
   int64 total_file_length = 2;
   string mime_type = 3;
+
+  // if multiple ranges are requests, indicates which range this is chunk
+  // is part of.  Indexed in the order of in the request.  also indicates
+  // ranged request was honoured, similar to HTTP 206.
+  optional int32 rangeIndex = 4;
 }
 
 message ListNodeRequest {
   string node_id = 1;
 }
 message ListNodeReply {
-  repeated MediaNode node = 1;
-  repeated MediaItem item = 2;
+  MediaNode node = 1;
+  repeated MediaNode child = 2;
+  repeated MediaItem item = 3;
 }
 
+enum SortField {
+  UNSPECIFIED_ORDER = 0;
+  FILE_PATH = 1;
+  DATE_ADDED = 2;
+  DURATION = 3;
+  FILE_SIZE = 4;
+  LAST_PLAYED = 5;
+  PLAYBACK_STARTED = 6;
+  PLAYBACK_COMPLETED = 7;
+}
+enum SortDirection {
+  UNSPECIFIED_DIRECTION = 0;
+  ASC = 1;
+  DESC = 2;
+}
+message SortBy {
+  SortField sort_field = 1;
+  SortDirection direction = 2;
+}
 message SearchRequest {
   string query = 1;
+  int32 max_results = 2;
+  repeated SortBy sort_by = 3;
 }
 message SearchReply {
   repeated MediaItem result = 1;
 }
+
+enum ChooseMethod {
+  // by default, any method the impl desires.
+  UNSPECIFIED_METHOD = 0;
+
+  // impls with specific uses may weight the randomness as desired.
+  RANDOM = 1;
+
+  // prefer to choose media that has not been played recently,
+  // but still some amount of randomness.
+  LESS_RECENT = 2;
+
+  // prefer to choose media that has not been played as many times,
+  // but still some amount of randomness.
+  LESS_PLAYED = 3;
+}
+message ChooseMediaRequest {
+  // scope from which media is chosen.  if omitted then scope is all media.
+  string query = 1;
+
+  // TODO what to do if method is not supported?
+  ChooseMethod method = 2;
+
+  // how many unique files to choose, must be at least 1.
+  int32 count = 3;
+}
+message ChooseMediaReply {
+  repeated MediaItem item = 1;
+}
+
+message RecordPlaybackRequest {
+  // id of media that was played.
+  string id = 1;
+
+  // indicates that the track was played sufficiently to count as completed.
+  // if false, playback started but was abandoned before completion.
+  bool completed = 2;
+
+  // unix time stamp in milliseconds when playback started, so that "last played"
+  // can be recorded based on when it started instead of when it finished.
+  int64 start_time_millis = 3;
+}
+message RecordPlaybackReply {}
+
+enum TagAction {
+  UNSPECIFIED_TAG_ACTION = 0;
+
+  // adds tags if not present, ignores modified on tags.
+  ADD = 1;
+
+  // removes tags if present, ignores modified on tags.
+  REMOVE = 2;
+}
+message TagChange {
+  // id of media to update tag for.
+  string id = 1;
+  TagAction action = 2;
+  repeated MediaTag tag = 3;
+}
+message UpdateTagsRequest {
+  repeated TagChange change = 1;
+}
+message UpdateTagsReply {}
+
+message ExcludedChange {
+  // id of media to update tag for.
+  string id = 1;
+  bool excluded = 2;
+}
+message UpdateExcludedRequest {
+  repeated ExcludedChange change = 1;
+}
+message UpdateExcludedReply {}
