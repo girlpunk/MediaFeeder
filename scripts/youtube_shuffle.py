@@ -17,6 +17,7 @@ from queue import Queue
 from typing import NamedTuple, TypeVar
 
 import grpc
+from casttube.YouTubeSession import BIND_DATA
 import pychromecast
 import pychromecast.config
 import pychromecast.controllers.media
@@ -451,5 +452,8 @@ class Player:
                 else:
                     self.logger.info("Ignoring event: %s", event)
 
+
+# Patch casttube to show MediaFeeder as the connecting app
+BIND_DATA["name"] = "MediaFeeder"
 
 Player().main()
