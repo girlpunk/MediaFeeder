@@ -55,7 +55,7 @@ class QueueEvent(NamedTuple):
     next_video_id: int | None = None
     restore_position_seconds: int | None = None
     watched_to_end: bool = False
-    content_id: str | None = None
+    video_id: int | None = None
 
 
 class PlayerBase(abc.ABC):
@@ -238,10 +238,10 @@ class Shuffler:
 
         await self._status_report_queue.put(status_message)
 
-    async def finished(self, content_id: str) -> None:
+    async def finished(self, video_id: int) -> None:
         """Process that current video has finished playing."""
-        self._logger.debug("Finished playing: content_id=%s", content_id)
-        self._event_queue.put_nowait(QueueEvent(watched_to_end=True, content_id=content_id))
+        self._logger.debug("Finished playing: video_id=%s", video_id)
+        self._event_queue.put_nowait(QueueEvent(watched_to_end=True, video_id=video_id))
 
     async def get_event(self, timeout: int) -> QueueEvent | None:
         """Get next event in queue."""
@@ -258,7 +258,6 @@ class Shuffler:
         self._logger.debug("Start")
 
         current_video_id = None
-        current_content_id = None
         last_save_position_time = time.monotonic()
         position_to_restore_seconds = None
 
@@ -277,7 +276,6 @@ class Shuffler:
             if event and event.next_video_id:
                 current_video_id = event.next_video_id
                 id_response = await self._stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
-                current_content_id = id_response.VideoId
 
                 self._logger.info("Playing %s: %s [%s]", current_video_id, id_response.Title, id_response.VideoId)
                 await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=current_video_id))
@@ -287,14 +285,13 @@ class Shuffler:
                 position_to_restore_seconds = event.restore_position_seconds
 
             elif event and event.watched_to_end:
-                if event.content_id == current_content_id:
+                if event.video_id == current_video_id:
                     self._logger.info("Notifiting server video %s was watched...", current_video_id)
                     await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id))
 
                     current_video_id = None
-                    current_content_id = None
                 else:
-                    self._logger.warning("Mismatched watched_to_end event: expected=%s  got=%s", current_content_id, event.content_id)
+                    self._logger.warning("Mismatched watched_to_end event: expected=%s  got=%s", current_video_id, event.video_id)
 
             elif current_video_id and self._now_state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and self._now_position_seconds and self._now_position_seconds > 0:
                 if position_to_restore_seconds and position_to_restore_seconds > 0:

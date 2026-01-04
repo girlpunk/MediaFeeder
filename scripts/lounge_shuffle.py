@@ -28,6 +28,8 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     _shuffler: common.Shuffler
     _current_player_state: pyytlounge.State | None = None
 
+    _prov_id_to_video_id = {}
+
     _now_provider_id: str | None = None
     _now_duration: float | None = None
 
@@ -68,6 +70,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
         self._logger.debug("Play Video")
+        self._prov_id_to_video_id[video.VideoId] = video.Id
         await self._api.play_video(video.VideoId)
 
     async def play_pause(self) -> None:
@@ -234,12 +237,12 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         if self.is_close(event.current_time, event.duration):
             if self._prev_provider_id and self._prev_duration is not None and self.is_close(self._prev_duration, event.duration):
                 self._logger.debug("Assuming prev video finished: prev_provider_id=%s  prev_duration=%s", self._prev_provider_id, self._prev_duration)
-                await self._shuffler.finished(self._prev_provider_id)
+                await self._shuffler.finished(self._prov_id_to_video_id[self._prev_provider_id])
                 self._prev_provider_id = None
                 self._prev_duration = None
             elif self._now_provider_id and self._now_duration is not None and self.is_close(self._now_duration, event.duration):
                 self._logger.debug("Assuming now video finished: now_provider_id=%s  now_duration=%s", self._now_provider_id, self._now_duration)
-                await self._shuffler.finished(self._now_provider_id)
+                await self._shuffler.finished(self._prov_id_to_video_id[self._now_provider_id])
                 self._now_provider_id = None
                 self._now_duration = None
                 self._prev_provider_id = None
