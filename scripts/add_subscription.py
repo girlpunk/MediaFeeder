@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # vim: tw=0 ts=4 sw=4
 
+"""Add a subscription to MediaFeeder."""
+
 # need:
 # - name
 # - Channel or Playlist ID   UUx6cailiCkg_mlMM7JX5yfA
@@ -29,19 +31,19 @@ print(f"       folder id: {args.folder}")
 
 
 class ChanInfo(NamedTuple):
-    channel_id: str = None
-    pl_id: str = None
-    name: str = None
+    channel_id: str
+    pl_id: str
+    name: str
 
 
-def get_chan_info(youtube_channel_url):
+def get_chan_info(youtube_channel_url: str) -> ChanInfo:
+    """Get information about a channel from the URL."""
     headers = {
         # curl seems to work, but browser agent gets a 302 and the wrong page.
         "User-Agent": "curl/8.14.1",
     }
-    response = requests.get(youtube_channel_url, headers=headers)
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch page: {response.status_code}")
+    response = requests.get(youtube_channel_url, headers=headers, timeout=10)
+    response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -53,8 +55,8 @@ def get_chan_info(youtube_channel_url):
     if not name_tag or not name_tag.get("content"):
         raise Exception("Channel name meta tag not found.")
 
-    channel_id = meta_tag["content"]
-    name = name_tag["content"]
+    channel_id = str(meta_tag["content"])
+    name = str(name_tag["content"])
 
     if not channel_id.startswith("UC"):
         raise Exception(f"Invalid channel_id: {channel_id}")
@@ -70,7 +72,7 @@ print(f"            name: {chan_info.name}")
 
 
 config = auth.MediaFeederConfig()
-bearer_credentials = grpc.metadata_call_credentials(common._AuthGateway(config))
+bearer_credentials = grpc.metadata_call_credentials(common.AuthGateway(config))
 ssl_credentials = grpc.ssl_channel_credentials()
 composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
 

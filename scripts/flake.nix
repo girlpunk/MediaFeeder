@@ -5,7 +5,7 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
@@ -24,12 +24,7 @@
 
   outputs = inputs @ {flake-parts, ...}:
   # https://flake.parts/module-arguments.html
-    flake-parts.lib.mkFlake {inherit inputs;} (top @ {
-      config,
-      withSystem,
-      moduleWithSystem,
-      ...
-    }: {
+    flake-parts.lib.mkFlake {inherit inputs;} ({...}: {
       imports = [
         inputs.make-shell.flakeModules.default
         inputs.treefmt-nix.flakeModule
@@ -43,11 +38,7 @@
         "x86_64-linux"
         # ...
       ];
-      perSystem = {
-        config,
-        pkgs,
-        ...
-      }: let
+      perSystem = {pkgs, ...}: let
         all_dependencies = with pkgs;
           [
             grpc_cli
@@ -69,6 +60,7 @@
             requests
             types-protobuf
             types-pyyaml
+            types-requests
           ]);
       in {
         # Recommended: move all package definitions here.
@@ -110,7 +102,6 @@
           };
           programs.ruff-check = {
             enable = true;
-            # lint.ignore = ["D401", "E501"];
             extendSelect = [
               "A"
               "ANN"
@@ -191,6 +182,12 @@
               fix-byte-order-marker.enable = true;
               #fix-encoding-pragma.enable = true;
               mypy.enable = true;
+              mypy.extraPackages = all_dependencies;
+              mypy.args = ["--follow-untyped-imports"];
+
+              ruff.enable = true;
+
+              ruff-format.enable = true;
 
               #typos.enable = true;
 
