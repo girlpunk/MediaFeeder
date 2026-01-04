@@ -3,23 +3,28 @@
 """Setup and token retrieval for Youtube TV App's 'Lounge' API.."""
 
 import asyncio
+import logging
 
 import pyytlounge
 
+import common
 from auth import MediaFeederConfig
+
+common.set_logging()
+logger = logging.getLogger("LoungeSetup")
 
 
 async def _main() -> None:
-    """Main entrypoint, start playback."""
+    """Begin main entrypoint."""
     async with pyytlounge.YtLoungeApi("MediaFeeder") as api:
         pairing_code = input("Enter pairing code: ")
         paired_and_linked = await api.pair(pairing_code)
         if not paired_and_linked:
-            print("Could not pair")
+            logger.error("Could not pair")
 
         connected = await api.connect()
         if not connected:
-            print("Could not connect")
+            logger.error("Could not connect")
 
         name = input("Enter display name: ")
 

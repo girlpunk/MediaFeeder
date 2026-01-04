@@ -10,17 +10,16 @@ import queue
 import sys
 import time
 import warnings
-from collections.abc import Iterator
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from queue import Queue
-from typing import NamedTuple, TypeVar
+from typing import TYPE_CHECKING, NamedTuple, TypeVar
 
 import grpc
-from casttube.YouTubeSession import BIND_DATA
 import pychromecast
 import pychromecast.config
 import pychromecast.controllers.media
+from casttube.YouTubeSession import BIND_DATA
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
 from pychromecast.controllers.youtube import YouTubeController
 
@@ -28,6 +27,11 @@ import Api_pb2
 import Api_pb2_grpc
 import auth
 import common
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+MINIMUM_SAVE_FREQUENCY = 60
 
 common.set_logging()
 
@@ -37,8 +41,9 @@ common.set_logging()
 # logging.getLogger("pychromecast.socket_client").setLevel(logging.DEBUG)
 
 
-# https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py#L26
-def pycast_status_to_mf_state(status: MediaStatus):
+# https://github.com/home-assistant-libs/pychromecast/blob/d46cc192a8269ea1ce7831fb540d58b02ada7b29/pychromecast/controllers/media.py#L26
+def pycast_status_to_mf_state(status: MediaStatus) -> int:
+    """Convert Chromecast status strings to MediaFeeder status Enum."""
     if not status.supports_seek or not status.supports_pause:
         return Api_pb2.ADVERT
     return {
@@ -53,11 +58,11 @@ def pycast_status_to_mf_state(status: MediaStatus):
 class QueueEvent(NamedTuple):
     """Events for the player to process."""
 
-    next_video_id: int = None
-    restore_position_seconds: int = None
+    next_video_id: int | None = None
+    restore_position_seconds: int | None = None
     watched_to_end: bool = False
     save_position: bool = False  # a hint, not guaranteed
-    content_id: str = None
+    content_id: str | None = None
 
 
 class MyMediaStatusListener(MediaStatusListener):
@@ -69,11 +74,11 @@ class MyMediaStatusListener(MediaStatusListener):
         cast: pychromecast.Chromecast,
         status_queue: Queue,
     ) -> None:
-        """Initial setup."""
+        """Complete initial setup."""
         self.name = name
         self.cast = cast
         self.status_queue = status_queue
-        self.event_queue = Queue()
+        self.event_queue: Queue[QueueEvent] = Queue()
         self._logger = logging.getLogger("MediaStatusListener")
 
     def get_event(self, timeout: int) -> QueueEvent | None:
@@ -119,7 +124,7 @@ class MyMediaStatusListener(MediaStatusListener):
 
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
         """Process a media fail event from youtube."""
-        self._warning(
+        self._logger.warning(
             "load media failed for queue item id: %s with code %s",
             queue_item_id,
             error_code,
@@ -156,14 +161,12 @@ class MyMediaStatusListener(MediaStatusListener):
                 self._logger.warning("can not play/pause in state: %s", self.cast.media_controller.status.player_state)
             return  # so NextVideoId is not treated as skip to next video.
 
-        if rep.ShouldPauseIfPlaying:
-            if self.cast.media_controller.status.player_is_playing:
-                self.cast.media_controller.pause()
-                self._logger.info("Paused")
+        if rep.ShouldPauseIfPlaying and self.cast.media_controller.status.player_is_playing:
+            self.cast.media_controller.pause()
+            self._logger.info("Paused")
 
-        if rep.ShouldSeekRelativeSeconds:
-            if self.cast.media_controller.status.player_is_playing:
-                self.cast.media_controller.seek(self.cast.media_controller.status.current_time + rep.ShouldSeekRelativeSeconds)
+        if rep.ShouldSeekRelativeSeconds and self.cast.media_controller.status.player_is_playing:
+            self.cast.media_controller.seek(self.cast.media_controller.status.current_time + rep.ShouldSeekRelativeSeconds)
 
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
@@ -204,9 +207,11 @@ class MyMediaStatusListener(MediaStatusListener):
                     self.cast.media_controller.enable_subtitle(next(iter(available_subs)).trackId)
 
     def get_state(self) -> int | None:
+        """Get the status of the chromecast, in MediaFeeder format."""
         return pycast_status_to_mf_state(self.cast.media_controller.status)
 
     def get_position(self) -> int | None:
+        """Get the current playback position, as an integer number of seconds."""
         return int(self.cast.media_controller.status.current_time)
 
 
@@ -215,6 +220,14 @@ T = TypeVar("T")
 
 class Player:
     """Main Player."""
+
+    _current_video_id = None
+    _current_content_id = None
+    _last_save_position_time = time.monotonic()
+    _playback_position_to_restore = None
+    _session_reader: Future | None = None
+    _status_message_queue: Queue[Api_pb2.PlaybackSessionRequest] = Queue()
+    _listener_media: MyMediaStatusListener | None = None
 
     def message_queue_iterator(self, queue: Queue[T]) -> Iterator[T]:
         """Send queued messages to MediaFeeder.
@@ -232,25 +245,31 @@ class Player:
 
     def connect_to_server(self) -> None:
         """Connect to MediaFeeder."""
-        if self.session_reader:
-            self.session_reader.cancel()
+        if self._session_reader:
+            self._session_reader.cancel()
 
         self.logger.info("Connecting to server...")
         grpc.channel_ready_future(self.channel).result()
 
         session_iterator = self.stub.PlaybackSession(
-            self.message_queue_iterator(self.status_message_queue),
+            self.message_queue_iterator(self._status_message_queue),
         )
-        self.session_reader = self.executor.submit(self.listener_media.on_ses_rep, session_iterator)
+
+        if self._listener_media is None:
+            raise Exception("_listener_media is None")
+
+        self._session_reader = self._executor.submit(self._listener_media.on_ses_rep, session_iterator)
         self.send_player_title()
 
-        # hack to work around grpc sometimes dropping early msgs.
-        self.executor.submit(self.send_player_title_again)
+        # Work around for grpc sometimes dropping early msgs.
+        self._executor.submit(self.send_player_title_again)
 
-    def send_player_title(self):
-        self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.args.cast))
+    def send_player_title(self) -> None:
+        """Send the player's title."""
+        self._status_message_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.args.cast))
 
-    def send_player_title_again(self):
+    def send_player_title_again(self) -> None:
+        """Wait some time, then send the player's title."""
         time.sleep(2)
         self.send_player_title()
 
@@ -271,7 +290,7 @@ class Player:
             return True
 
     def main(self) -> None:
-        """Main player setup."""
+        """Complete the main setup for the player."""
         # Enable deprecation warnings etc.
         if not sys.warnoptions:
             warnings.simplefilter("default")
@@ -315,7 +334,7 @@ class Player:
             ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
         config = auth.MediaFeederConfig()
-        bearer_credentials = grpc.metadata_call_credentials(common._AuthGateway(config))
+        bearer_credentials = grpc.metadata_call_credentials(common.AuthGateway(config))
         composite_credentials = grpc.composite_channel_credentials(
             ssl_credentials,
             bearer_credentials,
@@ -344,12 +363,11 @@ class Player:
         self.yt = YouTubeController()
         self.cast.register_handler(self.yt)
 
-        self.executor = ThreadPoolExecutor()
-        self.status_message_queue = Queue()
+        self._executor = ThreadPoolExecutor()
 
-        self.listener_media = MyMediaStatusListener(self.cast.name, self.cast, self.status_message_queue)
-        self.cast.media_controller.register_status_listener(self.listener_media)
-        self.session_reader = None
+        self._listener_media = MyMediaStatusListener(self.cast.name, self.cast, self._status_message_queue)
+        self.cast.media_controller.register_status_listener(self._listener_media)
+        self._session_reader = None
 
         try:
             self.connect_to_server()
@@ -363,94 +381,105 @@ class Player:
         browser.stop_discovery()
 
         self.logger.info("fin.")
-        self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession=True))
+        self._status_message_queue.put(Api_pb2.PlaybackSessionRequest(EndSession=True))
 
-        self.executor.shutdown(wait=True, cancel_futures=True)
+        self._executor.shutdown(wait=True, cancel_futures=True)
         sys.exit(0)
 
+    def _watched_to_end(self, event: QueueEvent) -> None:
+        """Handle the Chromecast finishing playback of a video."""
+        # this check is to protected against the chromecast sending multiple finished events.
+        if event.content_id == self._current_content_id:
+            self.logger.info("Notifiting server video %s was watched...", self._current_video_id)
+            self._status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=self._current_video_id))
+
+            self._current_video_id = None
+            self._current_content_id = None
+
+            self.yt.clear_playlist()
+            # let chromecast finish before trying to play next video.
+            time.sleep(1)
+        else:
+            self.logger.info("Ignoring event: %s", event)
+
+    def _play_next_video(self, event: QueueEvent) -> None:
+        """Start playing the next video."""
+        self._current_video_id = event.next_video_id
+        id_response = self.stub.Video(Api_pb2.VideoRequest(Id=self._current_video_id))
+        self._current_content_id = id_response.VideoId
+        self._last_save_position_time = time.monotonic()  # do not save position immediately.
+
+        self.logger.info(
+            "Playing %s: %s [%s]",
+            self._current_video_id,
+            id_response.Title,
+            self._current_content_id,
+        )
+        self._status_message_queue.put(
+            Api_pb2.PlaybackSessionRequest(VideoId=self._current_video_id),
+        )
+
+        # if the chromecast has been used for other apps, cast lib might incorrectly think it is already launched.
+        # this makes sure it reconnects and is ready to receive play commands.  hopefully.
+        self.yt.update_screen_id()
+        self.yt.start_session_if_none()
+        time.sleep(1)
+
+        self.yt.clear_playlist()
+        self.yt.play_video(self._current_content_id)
+        self._playback_position_to_restore = event.restore_position_seconds
+
+    def _save_or_restore_position(self, position: int, state: int, event: QueueEvent | None) -> None:
+        """Save or Restore playback position, as needed."""
+        if self._playback_position_to_restore and self._playback_position_to_restore > 0:
+            self.logger.info("Seeking to restore playback position: %s ...", self._playback_position_to_restore)
+            self.cast.media_controller.seek(self._playback_position_to_restore)
+            self._playback_position_to_restore = None
+            self._last_save_position_time = time.monotonic()  # do not re-save position immediately.
+        elif (event and event.save_position) or (time.monotonic() - self._last_save_position_time > MINIMUM_SAVE_FREQUENCY and state == Api_pb2.PLAYING):
+            self.stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=self._current_video_id, PositionSeconds=position))
+            self._last_save_position_time = time.monotonic()
+            self.logger.debug("Saved playback position: %s", position)
+
     def loop(self) -> None:
-        """Main event loop."""
-        current_video_id = None
-        current_content_id = None
-        last_save_position_time = time.monotonic()
-        playback_position_to_restore = None
+        """Loop forever processing events."""
+        if self._listener_media is None:
+            raise Exception("_listener_media is None")
 
         while True:
-            if not self.session_reader or not self.session_reader.running():
+            if not self._session_reader or not self._session_reader.running():
                 self.connect_to_server()
 
                 # if connection was lost, at least restore what is currently playing.
-                if current_video_id:
-                    self.status_message_queue.put(
+                if self._current_video_id:
+                    self._status_message_queue.put(
                         Api_pb2.PlaybackSessionRequest(
-                            VideoId=current_video_id,
+                            VideoId=self._current_video_id,
                             State=Api_pb2.UNKNOWN,  # reset any previous state
                         ),
                     )
 
             cc_connected = False
-            if current_video_id and self.cast.app_id == pychromecast.config.APP_YOUTUBE:
+            if self._current_video_id and self.cast.app_id == pychromecast.config.APP_YOUTUBE:
                 cc_connected = self.update_cast()
 
-            event = self.listener_media.get_event(5)
+            event = self._listener_media.get_event(5)
 
-            if cc_connected and current_video_id:
-                position = self.listener_media.get_position()
-                state = self.listener_media.get_state()
+            if cc_connected and self._current_video_id:
+                position = self._listener_media.get_position()
+                state = self._listener_media.get_state()
 
-                if state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and position and position >= 1:
-                    if playback_position_to_restore and playback_position_to_restore > 0:
-                        self.logger.info("Seeking to restore playback position: %s ...", playback_position_to_restore)
-                        self.cast.media_controller.seek(playback_position_to_restore)
-                        playback_position_to_restore = None
-                        last_save_position_time = time.monotonic()  # do not re-save position immediately.
-                    elif (event and event.save_position) or (time.monotonic() - last_save_position_time > 60 and state == Api_pb2.PLAYING):
-                        self.stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=current_video_id, PositionSeconds=position))
-                        last_save_position_time = time.monotonic()
-                        self.logger.debug("Saved playback position: %s", position)
+                if state is not None and state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and position and position >= 1:
+                    self._save_or_restore_position(position, state, event)
 
             if not event:
                 continue
 
             if event.next_video_id:
-                current_video_id = event.next_video_id
-                id_response = self.stub.Video(Api_pb2.VideoRequest(Id=current_video_id))
-                current_content_id = id_response.VideoId
-                last_save_position_time = time.monotonic()  # do not save position immediately.
-
-                self.logger.info(
-                    "Playing %s: %s [%s]",
-                    current_video_id,
-                    id_response.Title,
-                    current_content_id,
-                )
-                self.status_message_queue.put(
-                    Api_pb2.PlaybackSessionRequest(VideoId=current_video_id),
-                )
-
-                # if the chromecast has been used for other apps, cast lib might incorrectly think it is already launched.
-                # this makes sure it reconnects and is ready to receive play commands.  hopefully.
-                self.yt.update_screen_id()
-                self.yt.start_session_if_none()
-                time.sleep(1)
-
-                self.yt.clear_playlist()
-                self.yt.play_video(current_content_id)
-                playback_position_to_restore = event.restore_position_seconds
+                self._play_next_video(event)
 
             elif event.watched_to_end:
-                # this check is to protected against the chromecast sending multiple finished events.
-                if event.content_id == current_content_id:
-                    self.logger.info(f"Notifiting server video {current_video_id} was watched...")
-                    self.status_message_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id))
-
-                    current_video_id = None
-                    current_content_id = None
-
-                    self.yt.clear_playlist()
-                    time.sleep(1)  # let chromecast finish before trying to play next video.
-                else:
-                    self.logger.info("Ignoring event: %s", event)
+                self._watched_to_end(event)
 
 
 # Patch casttube to show MediaFeeder as the connecting app

@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
+"""Import watch history from YouTube via a 'Google Takeout' Export."""
 
 import argparse
 import json
+import logging
 import sys
 import urllib.parse
 from datetime import datetime
 
 import grpc
+import Path
 
 import Api_pb2
 import Api_pb2_grpc
 import auth
 import common
+
+common.set_logging()
+logger = logging.getLogger("history-import")
 
 # Enable deprecation warnings etc.
 if not sys.warnoptions:
@@ -30,15 +36,16 @@ parser.add_argument(
 parser.add_argument("--history", help="YouTube watch history JSON file", required=True)
 args = parser.parse_args()
 
-with open(args.history) as f:
+with Path(args.history).open() as f:
     history = json.load(f)
 if not history[0]["titleUrl"]:
-    print(f"Incorrect format: {args.history}")
+    logger.error("Incorrect format: %s", args.history)
     sys.exit(1)
-print(f"History entries: {len(history)}")
+
+logger.info("History entries: %s", len(history))
 
 config = auth.MediaFeederConfig()
-bearer_credentials = grpc.metadata_call_credentials(common._AuthGateway(config))
+bearer_credentials = grpc.metadata_call_credentials(common.AuthGateway(config))
 ssl_credentials = grpc.ssl_channel_credentials()
 composite_credentials = grpc.composite_channel_credentials(
     ssl_credentials,
@@ -66,16 +73,16 @@ entries_modified = 0
 for entry in history:
     entries_read += 1
     if entries_read % 500 == 0:
-        print(f"Read {entries_read} entries, matched {entries_matched}, modified {entries_modified}")
+        logger.info("Read %s entries, matched %s, modified %s", entries_read, entries_matched, entries_modified)
 
-    rawUrl = entry.get("titleUrl")
-    if not rawUrl:
+    raw_url = entry.get("titleUrl")
+    if not raw_url:
         if entry.get("title") in ["Viewed Ads On YouTube Homepage", "Answered survey question"]:
             continue
-        print(f"Unknown entry: {entry}")
+        logger.warning("Unknown entry: %s", entry)
         continue
 
-    url = urllib.parse.urlparse(rawUrl)
+    url = urllib.parse.urlparse(raw_url)
     if "/post/" in url.path:
         continue
 
@@ -83,7 +90,7 @@ for entry in history:
     if "v" not in query:
         if url.netloc == "www.google.com":
             continue
-        print(f"Unknown URL: {rawUrl}")
+        logger.warning("Unknown URL: %s", raw_url)
         continue
     video_id = query["v"][0]
 
@@ -95,7 +102,7 @@ for entry in history:
     if len(search.Videos) == 0:
         continue
     elif len(search.Videos) > 1:
-        print(f"Multiple matches for {video_id}: {[v.VideoId for v in search.Videos]}")
+        logger.warning("Multiple matches for %s: %s", video_id, [v.VideoId for v in search.Videos])
         continue
     entries_matched += 1
 

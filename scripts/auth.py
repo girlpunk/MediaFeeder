@@ -1,5 +1,7 @@
 """Configuration for MediaFeeder Clients."""
 
+from __future__ import annotations
+
 import logging
 import time
 from datetime import datetime, timedelta, timezone
@@ -52,11 +54,11 @@ from config_file import ConfigFile
 class MediaFeederConfig:
     """Configuration for MediaFeeder clients."""
 
-    _metadata: dict[str, str | datetime] = None
+    _metadata: dict[str, str | datetime]
     _config = ConfigFile("appsettings.yaml")
 
     def __init__(self) -> None:
-        """Setup."""
+        """Setup Config."""
         self._logger = logging.getLogger("MediaFeederConfig")
         self._logger.debug("Config init")
 
@@ -108,11 +110,12 @@ class MediaFeederConfig:
             return None
 
     def get_server_token(self) -> str:
-        # TODO caching goes here
+        """Get a token for authenticating to MediaFeeder."""
+        # TODO: caching goes here
         with self._config as cfg:
             return self._get_server_token(cfg)
 
-    def _get_server_token(self, cfg) -> str:
+    def _get_server_token(self, cfg: ConfigFile.Config) -> str:
         """Get a token to authenticate to the MediaFeeder server.
 
         Returns:
@@ -131,15 +134,15 @@ class MediaFeederConfig:
         ):
             return cfg["Auth"]["Server"]["Token"]
 
-        token_endpoint = self._metadata["token_endpoint"]
+        token_endpoint = str(self._metadata["token_endpoint"])
 
         token_response = requests.post(
             token_endpoint,
             data={
                 "grant_type": "client_credentials",
                 "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                "client_assertion": self.get_token(cfg),
-                "client_id": cfg["Auth"]["Server"]["ClientId"],
+                "client_assertion": str(self.get_token(cfg)),
+                "client_id": str(cfg["Auth"]["Server"]["ClientId"]),
             },
             timeout=30,
         )
@@ -157,7 +160,7 @@ class MediaFeederConfig:
         token_response.raise_for_status()
         raise requests.exceptions.RequestException
 
-    def get_token(self, cfg) -> str:
+    def get_token(self, cfg: ConfigFile.Config) -> str:
         """Get an API token for the client.
 
         Returns:
@@ -189,7 +192,7 @@ class MediaFeederConfig:
 
             self._metadata = oidc_configuration
 
-    def _use_refresh(self, cfg) -> str:
+    def _use_refresh(self, cfg: ConfigFile.Config) -> str:
         """Use the stored refresh token to get a new auth token.
 
         Returns:
@@ -203,7 +206,7 @@ class MediaFeederConfig:
         if "Refresh" not in cfg["Auth"]["Device"] or cfg["Auth"]["Device"]["Refresh"] is None:
             return self._get_new_token(cfg)
 
-        token_endpoint = self._metadata["token_endpoint"]
+        token_endpoint = str(self._metadata["token_endpoint"])
 
         client_id = cfg["Auth"]["Device"]["ClientId"]
 
@@ -211,8 +214,8 @@ class MediaFeederConfig:
             token_endpoint,
             data={
                 "grant_type": "refresh_token",
-                "refresh_token": cfg["Auth"]["Device"]["Refresh"],
-                "client_id": client_id,
+                "refresh_token": str(cfg["Auth"]["Device"]["Refresh"]),
+                "client_id": str(client_id),
             },
             timeout=30,
         )
@@ -235,7 +238,7 @@ class MediaFeederConfig:
         refresh_response.raise_for_status()
         raise requests.exceptions.RequestException
 
-    def _get_new_token(self, cfg) -> str:
+    def _get_new_token(self, cfg: ConfigFile.Config) -> str:
         """Get a new refresh token.
 
         Returns:
@@ -246,10 +249,10 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Get new token")
-        client_id = cfg["Auth"]["Device"]["ClientId"]
+        client_id = str(cfg["Auth"]["Device"]["ClientId"])
 
-        device_endpoint = self._metadata["device_authorization_endpoint"]
-        token_endpoint = self._metadata["token_endpoint"]
+        device_endpoint = str(self._metadata["device_authorization_endpoint"])
+        token_endpoint = str(self._metadata["token_endpoint"])
 
         device_auth_response = requests.post(
             device_endpoint,

@@ -1,26 +1,21 @@
 #!/usr/bin/env python
+"""Remote playback for Apple TV."""
 
 import asyncio
 import logging
-import traceback
+from typing import Any
 
 import pyatv
 import pyatv.storage.file_storage
 
+import common
 
-def set_logging():
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler("atv.log"),
-            #            logging.StreamHandler()
-        ],
-    )
-    logging.getLogger("asyncio").setLevel(logging.DEBUG)
+common.set_logging()
+logger = logging.getLogger("ATVShuffle")
 
 
-async def connect():
+async def connect() -> None:
+    """Connect to an Apple TV."""
     try:
         loop = asyncio.get_event_loop()
         loop.set_exception_handler(error)
@@ -37,61 +32,65 @@ async def connect():
 
         # wait forever
         await asyncio.Event().wait()
-    except Exception as e:
-        print(traceback.format_exc())
-        raise e
+    except Exception:
+        logger.exception("Error while connecting")
+        raise
     finally:
         device.close()
 
 
 class MyPushListener(pyatv.interface.PushListener):
-    def __init__(self, device):
+    """Recieve events from Apple TV."""
+
+    def __init__(self, device: pyatv.interface.AppleTV) -> None:
+        """Initialise reciever."""
         try:
             self._device = device
-        except Exception as e:
-            print(traceback.format_exc())
-            raise e
+        except Exception:
+            logger.exception("Error while recieving data from Apple TV")
+            raise
 
-    def playstatus_update(self, updater, playstatus):
+    def playstatus_update(self, _updater: pyatv.interface.PushUpdater, playstatus: pyatv.interface.Playing) -> None:
+        """Update playback status."""
         asyncio.run_coroutine_threadsafe(self._update_playing(playstatus), asyncio.get_event_loop())
 
-    def playstatus_error(self, updater, exception):
-        # Error in exception
-        print("an error happened!")
-        print(exception)
+    def playstatus_error(self, _updater: pyatv.interface.PushUpdater, exception: Exception) -> None:
+        """Report an error in exception."""
+        logger.exception("an error happened! %o", exception)
 
-    async def _update_playing(self, playing):
+    async def _update_playing(self, playing: pyatv.interface.Playing) -> None:
+        """Update playback status."""
         try:
-            print(f"Playing update: {playing}")
-            print(playing)
+            logger.info("Playing update: %s", playing)
+            logger.info(playing)
 
-            print(f"media_type: {playing.media_type.name}")
-            print(f"device_state: {playing.device_state.name}")
-            print(f"title: {playing.title}")
-            print(f"artist: {playing.artist}")
-            print(f"album: {playing.album}")
-            print(f"genre: {playing.genre}")
-            print(f"total_time: {playing.total_time}")
-            print(f"position: {playing.position}")
-            print(f"shuffle: {playing.shuffle.name}")
-            print(f"repeat: {playing.repeat.name}")
-            print(f"hash: {playing.hash}")
-            print(f"series_name: {playing.series_name}")
-            print(f"season_number: {playing.season_number}")
-            print(f"episode_number: {playing.episode_number}")
-            print(f"content_identifier: {playing.content_identifier}")
-            print(f"itunes_store_identifier: {playing.itunes_store_identifier}")
+            logger.info("media_type: %s", playing.media_type.name)
+            logger.info("device_state: %s", playing.device_state.name)
+            logger.info("title: %s", playing.title)
+            logger.info("artist: %s", playing.artist)
+            logger.info("album: %s", playing.album)
+            logger.info("genre: %s", playing.genre)
+            logger.info("total_time: %s", playing.total_time)
+            logger.info("position: %s", playing.position)
+            logger.info("shuffle: %s", playing.shuffle)
+            logger.info("repeat: %s", playing.repeat)
+            logger.info("hash: %s", playing.hash)
+            logger.info("series_name: %s", playing.series_name)
+            logger.info("season_number: %s", playing.season_number)
+            logger.info("episode_number: %s", playing.episode_number)
+            logger.info("content_identifier: %s", playing.content_identifier)
+            logger.info("itunes_store_identifier: %s", playing.itunes_store_identifier)
 
-        except Exception as e:
-            print(traceback.format_exc())
-            raise e
+        except Exception:
+            logger.exception("Error while processing update")
+            raise
 
 
-def error(loop, context):
+def error(_loop: asyncio.events.AbstractEventLoop, context: dict[str, Any]) -> None:
+    """Report an error."""
     exception = context["exception"]
-    print(f"got exception {exception}")
+    logger.exception("got exception %o", exception)
 
 
 if __name__ == "__main__":
-    set_logging()
     device = asyncio.run(connect(), debug=True)

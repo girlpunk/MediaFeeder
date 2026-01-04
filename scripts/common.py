@@ -7,7 +7,7 @@ import abc
 import asyncio
 import logging
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import NamedTuple
 
@@ -17,6 +17,8 @@ import grpc.aio
 import Api_pb2
 import Api_pb2_grpc
 from auth import MediaFeederConfig
+
+MINIMUM_SAVE_FREQUENCY = 60
 
 
 class StatusUpdate:
@@ -50,10 +52,10 @@ class StatusUpdate:
 class QueueEvent(NamedTuple):
     """Internal queue events."""
 
-    next_video_id: int = None
-    restore_position_seconds: int = None
+    next_video_id: int | None = None
+    restore_position_seconds: int | None = None
     watched_to_end: bool = False
-    content_id: int = None
+    content_id: str | None = None
 
 
 class PlayerBase(abc.ABC):
@@ -76,7 +78,7 @@ class PlayerBase(abc.ABC):
         """Seek player to this position."""
 
 
-class _AuthGateway(grpc.AuthMetadataPlugin):
+class AuthGateway(grpc.AuthMetadataPlugin):
     """Metadata pluging to add MediaFeeder authentication tokens."""
 
     def __init__(self, settings: MediaFeederConfig) -> None:
@@ -103,11 +105,10 @@ class Shuffler:
     _now_state: int | None = None
     _now_position_seconds: int | None = None
 
-    _event_queue = asyncio.Queue()
+    _event_queue: asyncio.Queue[QueueEvent] = asyncio.Queue()
 
     _player: PlayerBase
     _session_reader = None
-    _channel: grpc.aio.Channel = None
 
     def __init__(self, name: str, player: PlayerBase, *, verbose: bool) -> None:
         """Prepare state only."""
@@ -129,10 +130,10 @@ class Shuffler:
                 root_certs = f.read()
             ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
 
-        bearer_credentials = grpc.metadata_call_credentials(_AuthGateway(self._settings))
+        bearer_credentials = grpc.metadata_call_credentials(AuthGateway(self._settings))
         composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
 
-        channel_options = [
+        channel_options: list[tuple[str, str | int]] = [
             ("grpc.keepalive_time_ms", 8000),
             ("grpc.keepalive_timeout_ms", 5000),
             ("grpc.http2.max_pings_without_data", 0),
@@ -142,14 +143,16 @@ class Shuffler:
         if server_cert is not None:
             channel_options += [("grpc.ssl_target_name_override", server_cert)]
 
-        self._channel = grpc.aio.secure_channel(self._settings.get_server(), composite_credentials, options=channel_options)
+        self._channel: grpc.aio.Channel = grpc.aio.secure_channel(self._settings.get_server(), composite_credentials, options=channel_options)
         self._stub = Api_pb2_grpc.APIStub(self._channel)
 
     async def __aenter__(self) -> Shuffler:
+        """Start processing playback."""
         await self._channel.__aenter__()
         return self
 
     async def __aexit__(self, *args: object) -> None:
+        """Finish processing playback."""
         await self._channel.__aexit__(*args)
 
     async def _connect_to_server(self) -> None:
@@ -166,7 +169,7 @@ class Shuffler:
         await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.name))
         self._logger.info("Server connected.")
 
-    async def _on_ses_rep(self, iterator: Iterator[Api_pb2.PlaybackSessionReply]) -> None:
+    async def _on_ses_rep(self, iterator: AsyncGenerator[Api_pb2.PlaybackSessionReply]) -> None:
         """Process incoming messages from MediaFeeder."""
         self._logger.debug("On Ses Rep")
         try:
@@ -196,7 +199,7 @@ class Shuffler:
             self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
             self._event_queue.put_nowait(QueueEvent(next_video_id=rep.NextVideoId, restore_position_seconds=rep.PlaybackPosition))
 
-    async def _status_report_queue_iterator(self) -> Iterator[Api_pb2.PlaybackSessionRequest]:
+    async def _status_report_queue_iterator(self) -> AsyncGenerator[Api_pb2.PlaybackSessionRequest]:
         self._logger.debug("Status Report Queue Iterator")
         while True:
             yield await self._status_report_queue.get()
@@ -235,9 +238,9 @@ class Shuffler:
 
         await self._status_report_queue.put(status_message)
 
-    async def finished(self, content_id: int) -> None:
-        """Current video has finished playing."""
-        self._logger.debug(f"Finished playing: content_id={content_id}")
+    async def finished(self, content_id: str) -> None:
+        """Process that current video has finished playing."""
+        self._logger.debug("Finished playing: content_id=%s", content_id)
         self._event_queue.put_nowait(QueueEvent(watched_to_end=True, content_id=content_id))
 
     async def get_event(self, timeout: int) -> QueueEvent | None:
@@ -245,9 +248,10 @@ class Shuffler:
         try:
             item = await asyncio.wait_for(self._event_queue.get(), timeout=timeout)
             self._event_queue.task_done()  # dont care about work tracking.
-            return item
         except TimeoutError:
             return None
+        else:
+            return item
 
     async def start(self) -> None:
         """Start playback, if available."""
@@ -284,7 +288,7 @@ class Shuffler:
 
             elif event and event.watched_to_end:
                 if event.content_id == current_content_id:
-                    self._logger.info(f"Notifiting server video {current_video_id} was watched...")
+                    self._logger.info("Notifiting server video %s was watched...", current_video_id)
                     await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id))
 
                     current_video_id = None
@@ -299,7 +303,7 @@ class Shuffler:
                     position_to_restore_seconds = None
                     last_save_position_time = time.monotonic()  # do not re-save position immediately.
 
-                elif time.monotonic() - last_save_position_time > 60:
+                elif time.monotonic() - last_save_position_time > MINIMUM_SAVE_FREQUENCY:
                     self._stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=current_video_id, PositionSeconds=self._now_position_seconds))
                     last_save_position_time = time.monotonic()
                     self._logger.debug("Saved playback position: %s", self._now_position_seconds)

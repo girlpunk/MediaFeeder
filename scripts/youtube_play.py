@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+"""Play a list of YouTube Videos."""
 
 import argparse
+import logging
 import sys
 import time
 from threading import Event
@@ -9,27 +11,33 @@ import pychromecast
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
 from pychromecast.controllers.youtube import YouTubeController
 
+import common
+
+common.set_logging()
+
+logger = logging.getLogger("youtube_play")
+
 
 class MyMediaStatusListener(MediaStatusListener):
-    """Status media listener"""
+    """Status media listener."""
 
-    def __init__(self, name: str | None, cast: pychromecast.Chromecast) -> None:
-        self.name = name
-        self.cast = cast
+    def __init__(self) -> None:
+        """Complete initial setup."""
+        self._logger = logging.getLogger("MyMediaStatusListener")
         self.last_is_idle = Event()
         self.reset()
 
-    def reset(self):
-        self.mark_watched = True
+    def reset(self) -> None:
+        """Reset the event hook."""
         self.last_is_idle.clear()
-        self.last_status = None
 
-    def wait(self, timeout):
+    def wait(self, timeout: int) -> bool:
+        """Wait for the Chromecast to be idle."""
         return self.last_is_idle.wait(timeout)
 
     def new_media_status(self, status: MediaStatus) -> None:
-        self.last_status = status
-        # print(f"new_media_status: {status}")
+        """Recieve a status update from the Chromecast."""
+        # self._logger.debug("new_media_status: %s", status)
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
             self.last_is_idle.set()
@@ -41,43 +49,12 @@ class MyMediaStatusListener(MediaStatusListener):
             return
 
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
-        print(
-            "load media failed for queue item id: ",
+        """Log results of an error on the Chromecast side."""
+        self._logger.info(
+            "load media failed for queue item id: %s with code: %s",
             queue_item_id,
-            " with code: ",
             error_code,
         )
-
-    def on_ses_rep(self, iterator):
-        try:
-            for rep in iterator:
-                try:
-                    self.on_ses_rep_msg(rep)
-                except Exception as e:
-                    print(f"failed to handle msg {rep}: {e}")
-        except Exception as e:
-            print(f"failed to read stream: {e}")
-
-    def on_ses_rep_msg(self, rep):
-        if rep.ShouldPlayPause:
-            if not self.last_status:
-                print("can not play/pause without last_status.")
-            elif self.last_status.player_is_paused:
-                cast.media_controller.play()
-                print("playing")
-            elif self.last_status.player_is_playing:
-                cast.media_controller.pause()
-                print("paused")
-            else:
-                print(f"can not play/pause in state: {self.last_status.player_state}")
-
-        elif rep.ShouldWatch:
-            self.mark_watched = True
-            self.last_is_idle.set()
-
-        elif rep.ShouldSkip:
-            self.mark_watched = False
-            self.last_is_idle.set()
 
 
 # Enable deprecation warnings etc.
@@ -95,7 +72,7 @@ args = parser.parse_args()
 chromecasts, browser = pychromecast.get_listed_chromecasts(friendly_names=[args.cast], known_hosts=args.known_host)
 
 if not chromecasts:
-    print(f'No chromecast with name "{args.cast}" discovered')
+    logger.error("No chromecast with name %s discovered", args.cast)
     sys.exit(1)
 
 cast = chromecasts[0]
@@ -103,26 +80,26 @@ cast = chromecasts[0]
 cast.wait()
 
 
-print("Videos to play:")
+logger.info("Videos to play:")
 for video in args.videos:
-    print(f"  - {video}")
+    logger.info("  - %s", video)
 
 yt = YouTubeController()
 cast.register_handler(yt)
 
-listenerMedia = MyMediaStatusListener(cast.name, cast)
-cast.media_controller.register_status_listener(listenerMedia)
+listener_media = MyMediaStatusListener()
+cast.media_controller.register_status_listener(listener_media)
 
 
 while len(args.videos) > 0:
     video = args.videos.pop(0)
 
-    print(f"Playing: {video}")
+    logger.info("Playing: %s", video)
 
     yt.play_video(video)
-    listenerMedia.reset()
+    listener_media.reset()
 
-    while not listenerMedia.wait(5):
+    while not listener_media.wait(5):
         cast.media_controller.update_status()
 
     time.sleep(1)
@@ -131,4 +108,4 @@ while len(args.videos) > 0:
 # Shut down discovery
 browser.stop_discovery()
 
-print("fin.")
+logger.info("fin.")
