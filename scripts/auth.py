@@ -54,7 +54,7 @@ from config_file import ConfigFile
 class MediaFeederConfig:
     """Configuration for MediaFeeder clients."""
 
-    _metadata: dict[str, str | datetime]
+    _metadata: dict[str, str | datetime] | None = None
     _config = ConfigFile("appsettings.yaml")
 
     def __init__(self) -> None:
