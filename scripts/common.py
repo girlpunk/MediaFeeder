@@ -8,6 +8,7 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncGenerator
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
 
@@ -179,7 +180,7 @@ class Shuffler:
         try:
             self._logger.info("Started streaming RPC.")
             async for rep in iterator:
-                self._logger.info("Got message from MediaFeeder")
+                self._logger.debug("Got message from MediaFeeder")
                 try:
                     asyncio.get_event_loop().create_task(self._on_ses_rep_msg(rep))
                 except Exception:
@@ -313,13 +314,26 @@ class Shuffler:
                     self._logger.debug("Saved playback position: %s", self._now_position_seconds)
 
 
+class LogbackLikeFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        dt = datetime.fromtimestamp(record.created)
+        return dt.strftime("%m%d %H:%M:%S.") + f"{int(record.msecs):03d}"
+
+    def format(self, record):
+        record.levelname = record.levelname[:1]
+        record.threadName = record.threadName[-10:].rjust(10)
+        record.name = record.name[-15:].rjust(15)
+        return super().format(record)
+
+
 def set_logging() -> None:
     """Set up logging in a standardised mannor."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.StreamHandler(),
-        ],
-    )
+    formatter = LogbackLikeFormatter("%(levelname)s%(asctime)s [%(threadName)s] %(name)s %(message)s")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
     logging.getLogger("asyncio").setLevel(logging.INFO)
