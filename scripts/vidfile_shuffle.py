@@ -14,6 +14,8 @@ from typing_extensions import Self
 import Api_pb2
 import common
 import pychromecast
+from pychromecast.controllers.media import STREAM_TYPE_BUFFERED
+from pychromecast.controllers.media import BaseMediaPlayer
 from pychromecast.controllers.media import MediaStatus
 from pychromecast.controllers.media import MediaStatusListener
 from pychromecast.controllers.media import DefaultMediaReceiverController
@@ -40,7 +42,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     _shuffler: common.Shuffler
     _cast_name: str
     _cast: pychromecast.Chromecast
-    _cast_con: DefaultMediaReceiverController
+    _cast_con: BaseMediaPlayer
     _url_to_video_id: dict[str, int] = {}
 
     def __init__(self, cast_name: str, *, verbose: bool) -> None:
@@ -112,7 +114,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         timeout = 30  # TODO constant or do this better?
         response_handler = WaitResponse(timeout, f"play {media_url}")
-        self._cast_con.play_media(media_url, media_type, callback_function=response_handler.callback)
+        self._cast_con.play_media(media_url, media_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
         response_handler.wait_response()
 
     # PlayerBase
