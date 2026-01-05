@@ -67,6 +67,10 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         await self._shuffler.__aexit__(*args)
         await self._api.__aexit__(*args)
 
+    # PlayerBase
+    async def ensure_ready(self) -> None:
+        pass
+
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
         self._logger.debug("Play Video")
