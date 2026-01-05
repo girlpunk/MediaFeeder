@@ -1,4 +1,6 @@
 using AntDesign;
+using HtmlAgilityPack;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
 
@@ -10,9 +12,9 @@ public class SonarrProvider : IProvider
 
     public Task SynchroniseSubscription(Subscription subscription) => throw new NotImplementedException();
 
-    public Task<bool> ProcessUrl(string url, Subscription subscription) => throw new NotImplementedException();
+    public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc) => Task.FromResult(false);
 
-    public Task<bool> IsUrlValid(string url) => throw new NotImplementedException();
+    public Task CreateSubscription(Uri url, HttpResponseMessage request, HtmlDocument? doc, SubscriptionForm subscription) => throw new NotImplementedException();
 
     public Provider Provider => Provider.Sonarr;
 

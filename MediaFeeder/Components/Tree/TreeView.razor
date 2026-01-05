@@ -3,11 +3,11 @@
 <Flex Direction="FlexDirection.Vertical">
     <Flex Justify="FlexJustify.SpaceEvenly">
         <Tooltip Title="Add Subscription">
-            <Button Icon="@(IconType.Outline.AppstoreAdd)" OnClick="() => EditSubscription(null)"></Button>
+            <Button Icon="@(IconType.Outline.AppstoreAdd)" OnClick="@AddSubscription"></Button>
         </Tooltip>
 
         <Tooltip Title="Add Folder">
-            <Button Icon="@(IconType.Outline.FolderAdd)" OnClick="() => EditFolder(null)"></Button>
+            <Button Icon="@(IconType.Outline.FolderAdd)" OnClick="@(() => EditFolder(null))"></Button>
         </Tooltip>
 
         <Tooltip Title="Import Subscriptions">
@@ -15,11 +15,11 @@
         </Tooltip>
 
         <Tooltip Title="Edit">
-            <Button Icon="@(IconType.Outline.Edit)" OnClick="EditSelected"></Button>
+            <Button Icon="@(IconType.Outline.Edit)" OnClick="@EditSelected"></Button>
         </Tooltip>
 
         <Tooltip Title="Delete">
-            <Button Icon="@(IconType.Outline.Delete)" OnClick="DeleteSelected"></Button>
+            <Button Icon="@(IconType.Outline.Delete)" OnClick="@DeleteSelected"></Button>
         </Tooltip>
     </Flex>
 

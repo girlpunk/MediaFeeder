@@ -106,6 +106,18 @@ public sealed partial class TreeView
         ModalService.CreateModal<EditSubscription, int?>(modalConfig, subscription);
     }
 
+    private void AddSubscription()
+    {
+        var modalConfig = new ModalOptions
+        {
+            Title = "Create Subscription",
+            AfterClose = async () => await UpdateTree(),
+            DestroyOnClose = true,
+        };
+
+        ModalService.CreateModal<EditSubscription, int?>(modalConfig, null);
+    }
+
     private void EditSelected()
     {
         if (SelectedFolder != null)

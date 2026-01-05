@@ -2,7 +2,6 @@ using AntDesign;
 using FluentValidation;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
-using MediaFeeder.Data.Enums;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -20,7 +19,7 @@ public sealed partial class EditSubscription
     public required Form<SubscriptionForm> Form { get; set; }
     private SubscriptionForm? Subscription { get; set; }
     [Inject] public required ILogger<EditSubscription> Logger { get; set; }
-    private IEnumerable<(string ProviderIdentifier, string Name)> providers { get; set; } = [];
+    private IEnumerable<(string ProviderIdentifier, string Name)> Providers { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -67,8 +66,8 @@ public sealed partial class EditSubscription
 
     protected override void OnParametersSet()
     {
-      if (ServiceProvider != null)
-        providers = ServiceProvider.GetServices<IProvider>().Select(provider => (provider.ProviderIdentifier, provider.Name));
+        if (ServiceProvider != null)
+            Providers = ServiceProvider.GetServices<IProvider>().Select(static provider => (provider.ProviderIdentifier, provider.Name));
     }
 
     /// <summary>
@@ -144,21 +143,5 @@ public sealed partial class EditSubscription
             RuleFor(static f => f.ChannelName).NotEmpty();
             RuleFor(static f => f.Provider).NotEmpty();
         }
-    }
-
-    public class SubscriptionForm
-    {
-        public string Name { get; set; } = "";
-        public int ParentFolderId { get; set; }
-        public string PlaylistId { get; set; } = "";
-        public string ChannelId { get; set; } = "";
-        public string ChannelName { get; set; } = "";
-        public bool AutoDownload { get; set; }
-        public int? DownloadLimit { get; set; }
-        public DownloadOrder? DownloadOrder { get; set; }
-        public bool AutomaticallyDeleteWatched { get; set; }
-        public bool RewritePlaylistIndices { get; set; }
-        public string? Provider { get; set; }
-        public bool DisableSync { get; set; }
     }
 }

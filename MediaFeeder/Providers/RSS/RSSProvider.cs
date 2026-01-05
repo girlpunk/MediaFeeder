@@ -1,4 +1,6 @@
 using AntDesign;
+using HtmlAgilityPack;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
 
@@ -11,9 +13,23 @@ public class RSSProvider : IProvider
 
     public string GetUrl(Video video) => video.VideoId;
 
-    public Task<bool> ProcessUrl(string url, Subscription subscription) => throw new NotImplementedException();
+    public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc) =>
+        Task.FromResult(request.Content.Headers.ContentType?.MediaType == "application/rss+xml");
 
-    public Task<bool> IsUrlValid(string url) => throw new NotImplementedException();
+    public Task CreateSubscription(Uri url, HttpResponseMessage request, HtmlDocument? doc, SubscriptionForm subscription)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+
+        subscription.Name = doc.DocumentNode.SelectSingleNode("/rss/channel/title").InnerText;
+        subscription.PlaylistId = url.ToString();
+        //subscription.Description = doc.DocumentNode.SelectSingleNode("/rss/channel/description")?.InnerText;
+        //subscription.Thumbnail = url + doc.DocumentNode.SelectSingleNode("/rss/channel/image/url")?.InnerText
+        subscription.ChannelId = url.ToString();
+        subscription.ChannelName = doc.DocumentNode.SelectSingleNode("/rss/channel/title").InnerText;
+        subscription.Provider = ProviderIdentifier;
+
+        return Task.CompletedTask;
+    }
 
     public Provider Provider => Provider.RSS;
 

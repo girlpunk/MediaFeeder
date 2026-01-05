@@ -1,0 +1,128 @@
+@using Blazored.FluentValidation
+@using Humanizer
+@using MediaFeeder.Data.Enums
+@inherits FeedbackComponent<int?>
+@inject IServiceProvider ServiceProvider
+@inject HttpClient HttpClient
+
+<Steps Current="@ActiveStep" Class="site-navigation-steps">
+    <Step Title="Input Details" />
+    <Step Title="Provider Detection" />
+    <Step Title="Save Changes" />
+</Steps>
+
+@switch (ActiveStep)
+{
+    case 0:
+        <Form Model="@Add"
+              LabelCol="new ColLayoutParam { Span = 8 }"
+              WrapperCol="new ColLayoutParam { Span = 16 }"
+              ValidateOnChange="true"
+              OnFinish="@CheckUrl">
+            <FluentValidationValidator/>
+            <FormItem Label="URL" Required>
+                <Input @bind-Value="@context.Url" required="required"/>
+            </FormItem>
+        </Form>
+        break;
+    case 1:
+    {
+        <div>Show list of providers here!</div>
+        if (FoundProviders != null)
+        {
+            <ul>
+                @foreach (var provider in FoundProviders)
+                {
+                    <li>@provider.Name</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div>Provider list is null!</div>
+        }
+
+        break;
+    }
+    case 2:
+        <Form Model="@Subscription"
+              LabelCol="new ColLayoutParam { Span = 8 }"
+              WrapperCol="new ColLayoutParam { Span = 16 }"
+              ValidateOnChange="true"
+              OnFinish="@OnFinish">
+            <FluentValidationValidator/>
+            <FormItem Label="Name" Required>
+                <Input @bind-Value="@context.Name" required="required"/>
+            </FormItem>
+            <FormItem Label="Parent">
+                <TreeSelect
+                    DataSource="@ExistingFolders"
+                    @bind-Value="@context.ParentFolderId"
+                    Placeholder="Please select"
+                    ItemValue="static item => item.Id"
+                    ItemLabel="static item => item.Name"
+                    AllowClear
+                    EnableSearch
+                    TreeDefaultExpandAll
+                    MatchedStyle="font-weight: bold"
+                    ChildrenExpression="static node => node.DataItem.Subfolders"
+                    TitleExpression="static node => node.DataItem.Name"
+                    TitleTemplate="static node => node.DataItem.Name.ToRenderFragment()"
+                    KeyExpression="static node => node.DataItem.Id.ToString()"
+                    IsLeafExpression="static node => node.DataItem.Subfolders.Count == 0"/>
+            </FormItem>
+            <FormItem Label="Channel or Playlist ID" Required="true">
+                <Input @bind-Value="@context.PlaylistId" required="required" maxlength="128" name="PlaylistId"/>
+            </FormItem>
+            <FormItem Label="Channel ID" Required="true">
+                <Input @bind-Value="@context.ChannelId" required="required" maxlength="128" name="ChannelId"/>
+            </FormItem>
+            <FormItem Label="Channel Name" Required="true">
+                <Input @bind-Value="@context.ChannelName" required="required" maxlength="1024" name="ChannelName"/>
+            </FormItem>
+
+            <FormItem Label="Automatically download videos">
+                <Switch @bind-Checked="@context.AutoDownload"/>
+            </FormItem>
+
+            @if (context.AutoDownload)
+            {
+                <FormItem Label="Number of videos to download">
+                    <AntDesign.InputNumber @bind-Value="@context.DownloadLimit" Min="0"/>
+                </FormItem>
+                <FormItem Label="Download Order">
+                    <InputSelect @bind-Value="context.DownloadOrder" class="form-control">
+                        <option disabled="disabled" selected="@(context.DownloadOrder == null ? "selected" : "")">Please Select</option>
+                        @foreach (var cnt in Enum.GetValues<DownloadOrder>())
+                        {
+                            <option @key="cnt" value="@cnt" selected="@(context.DownloadOrder == cnt ? "selected" : "")">@cnt.Humanize()</option>
+                        }
+                    </InputSelect>
+                </FormItem>
+            }
+
+            <FormItem Label="Automatically delete watched">
+                <Switch @bind-Checked="@context.AutomaticallyDeleteWatched"/>
+            </FormItem>
+
+            <FormItem Label="Rewrite playlist order to when videos were uploaded">
+                <Switch @bind-Checked="@context.RewritePlaylistIndices"/>
+            </FormItem>
+
+            <FormItem Label="Disable synchronisation">
+                <Switch @bind-Checked="@context.DisableSync"/>
+            </FormItem>
+
+            <FormItem Label="Provider" Required="true">
+                <Select @bind-Value="@context.Provider"
+                        DataSource="@Providers"
+                        ItemValue="@(static c => c.ProviderIdentifier)"
+                        ItemLabel="@(static c => c.Name)"
+                        required="required"
+                        Placeholder="Please Select"
+                ></Select>
+            </FormItem>
+
+        </Form>
+        break;
+}
