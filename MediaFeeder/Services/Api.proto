@@ -88,6 +88,7 @@ message VideoReply {
   optional int64 Published = 6;
   optional int32 Duration = 7;
   string VideoId = 8;
+  string MediaUrl = 13;
 
   bool New = 10;
   bool Downloaded = 11;

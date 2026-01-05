@@ -62,6 +62,10 @@ class PlayerBase(abc.ABC):
     """Base class for player implementations."""
 
     @abc.abstractmethod
+    async def ensure_ready(self) -> None:
+        """Check if player is ready and set up if needed."""
+
+    @abc.abstractmethod
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
 
@@ -192,7 +196,7 @@ class Shuffler:
         elif rep.ShouldPauseIfPlaying:
             await self._player.pause_if_playing()
 
-        if rep.ShouldSeekRelativeSeconds:
+        elif rep.ShouldSeekRelativeSeconds:
             await self._player.seek(self._now_position_seconds + rep.ShouldSeekRelativeSeconds)
 
         elif rep.NextVideoId > 0:
@@ -270,6 +274,9 @@ class Shuffler:
                 if current_video_id:
                     await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=current_video_id))
                 self._logger.debug("Loop reconnected.")
+
+            if current_video_id:
+                await self._player.ensure_ready()
 
             event = await self.get_event(5)
 
