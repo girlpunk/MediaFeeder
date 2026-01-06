@@ -252,10 +252,11 @@ public sealed class ApiService(
             New = video.New,
             Watched = video.Watched,
             VideoId = video.VideoId,
-
-            // TODO replace this with a URL to a local download, if available (falling back to external URL)
-            MediaUrl = video.DownloadedPath,
         };
+
+        // TODO replace this with a URL to a local download, if available (falling back to external URL)
+        if (video.DownloadedPath != null)
+            reply.MediaUrl = video.DownloadedPath;
 
         if (video.Duration != null)
             reply.Duration = video.Duration.Value;
