@@ -42,9 +42,11 @@ class StatusUpdate:
 
     """Volume, 0-11 scale"""
     Volume: int | None = None
+    SupportsVolumeChange: bool | None = None
 
     """Rate of playback, 1 being 100%"""
     Rate: float | None = None
+    SupportsRateChange: bool | None = None
 
     """Percent of video loaded into buffer"""
     Loaded: float | None = None
@@ -82,6 +84,14 @@ class PlayerBase(abc.ABC):
     @abc.abstractmethod
     async def seek(self, position_seconds: int) -> None:
         """Seek player to this position."""
+
+    @abc.abstractmethod
+    async def change_volume(self, direction: int) -> None:
+        """Change volume up or down if direction is positive or negative."""
+
+    @abc.abstractmethod
+    async def change_playback_rate(self, direction: int) -> None:
+        """Increase/decrease playback rate if direction is positive or negative."""
 
 
 class AuthGateway(grpc.AuthMetadataPlugin):
@@ -205,6 +215,14 @@ class Shuffler:
             self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
             self._event_queue.put_nowait(QueueEvent(next_video_id=rep.NextVideoId, restore_position_seconds=rep.PlaybackPosition))
 
+        elif rep.ShouldChangeVolume:
+            self._logger.info("Received change volume command: %s", rep.ShouldChangeVolume)
+            await self._player.change_volume(rep.ShouldChangeVolume)
+
+        elif rep.ShouldChangeRate:
+            self._logger.info("Received change rate command: %s", rep.ShouldChangeRate)
+            await self._player.change_playback_rate(rep.ShouldChangeRate)
+
     async def _status_report_queue_iterator(self) -> AsyncGenerator[Api_pb2.PlaybackSessionRequest]:
         self._logger.debug("Status Report Queue Iterator")
         while True:
@@ -235,9 +253,13 @@ class Shuffler:
 
         if status.Volume is not None:
             status_message.Volume = status.Volume
+        if status.SupportsVolumeChange is not None:
+            status_message.SupportsVolumeChange = status.SupportsVolumeChange
 
         if status.Rate is not None:
             status_message.Rate = status.Rate
+        if status.SupportsRateChange is not None:
+            status_message.SupportsRateChange = status.SupportsRateChange
 
         if status.Loaded is not None:
             status_message.Loaded = status.Loaded

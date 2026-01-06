@@ -71,12 +71,14 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     async def ensure_ready(self) -> None:
         pass
 
+    # PlayerBase
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
         self._logger.debug("Play Video")
         self._prov_id_to_video_id[video.VideoId] = video.Id
         await self._api.play_video(video.VideoId)
 
+    # PlayerBase
     async def play_pause(self) -> None:
         """Toggle the paused state."""
         self._logger.debug("Play Pause")
@@ -88,14 +90,24 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         else:
             self._logger.warning("Don't know how to play/pause from state %s", self._current_player_state)
 
+    # PlayerBase
     async def pause_if_playing(self) -> None:
         """Pause, but only if in playing state."""
         if self._current_player_state == pyytlounge.State.Playing:
             await self._api.pause()
 
+    # PlayerBase
     async def seek(self, position_seconds: int) -> None:
         """Seek to a position in the video."""
         await self._api.seek_to(position_seconds)
+
+    # PlayerBase
+    async def change_volume(self, direction: int) -> None:
+        self._logger.info("TODO: impl volume change")
+
+    # PlayerBase
+    async def change_playback_rate(self, direction: int) -> None:
+        self._logger.info("TODO: impl rate change")
 
     async def main(self) -> None:
         """Connect to the Lounge API."""

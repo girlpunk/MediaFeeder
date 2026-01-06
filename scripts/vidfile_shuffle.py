@@ -109,6 +109,8 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     # PlayerBase
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
+        update = common.StatusUpdate()
+
         if video.MediaUrl:
             media_url = video.MediaUrl
             media_type = "video/mp4"  # TODO identify content type, probably back in MF
@@ -122,6 +124,9 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
             self._active_con = self._file_con
 
+            update.SupportsVolumeChange = True
+            update.SupportsRateChange = True
+
         elif video.Provider == "Youtube":
             self._content_id_to_video_id[video.VideoId] = video.Id
 
@@ -134,11 +139,15 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
             self._active_con = self._yt_con
 
+            update.SupportsVolumeChange = True
+            update.SupportsRateChange = False
+
         else:
             self._logger.error("Can not play video: %s", video)
             # TODO signal back that playback failed.
             return
 
+        await self._shuffler.send_status(update)
         self._have_control = True
 
     # PlayerBase
@@ -163,6 +172,33 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     async def seek(self, position_seconds: int) -> None:
         """Seek to a position in the video."""
         self._cast.media_controller.seek(position_seconds)
+
+    # PlayerBase
+    async def change_volume(self, direction: int) -> None:
+        if direction > 0:
+            self._cast.volume_up()
+        else:
+            self._cast.volume_down()
+        await self.update_cast()
+
+    # PlayerBase
+    async def change_playback_rate(self, direction: int) -> None:
+        rate = self._cast.media_controller.status.playback_rate
+        if direction > 0:
+            rate += 0.5
+        else:
+            rate -= 0.5
+        rate = max(rate, 0.25)
+        rate = min(rate, 3)
+
+        self._cast.media_controller.set_playback_rate(rate)
+        self._logger.info("Set rate to: %s", rate)
+
+        update = common.StatusUpdate()
+        update.Rate = rate
+        await self._shuffler.send_status(update)
+
+        await self.update_cast()
 
     async def main(self) -> None:
         """Find chromecast and run main event loop."""
@@ -204,6 +240,9 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         update.State = pycast_status_to_mf_state(status)
 
+        if status.volume_level is not None:
+            update.Volume = int(status.volume_level * 100)
+
         # if advert, only update state and nothing else.
         if update.State == Api_pb2.ADVERT:
             self.sync_send_status(update)
@@ -215,8 +254,8 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         if status.current_time is not None:
             update.Position = int(status.current_time)
-        update.Volume = int(status.volume_level * 100)
         update.Rate = status.playback_rate
+
         # update.Subtitles = str(status.current_subtitle_tracks)  # TODO not in StatusUpdate
 
         self.sync_send_status(update)
