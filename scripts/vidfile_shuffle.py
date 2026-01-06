@@ -27,15 +27,18 @@ from pychromecast.response_handler import WaitResponse
 # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py
 def pycast_status_to_mf_state(status: MediaStatus) -> int:
     """Convert Chromecast status strings to MediaFeeder status Enum."""
-    if not status.supports_seek or not status.supports_pause:
-        return Api_pb2.ADVERT
-    return {
+    mf_stat = {
         "UNKNOWN": Api_pb2.UNKNOWN,
         "BUFFERING": Api_pb2.LOADING,
         "PLAYING": Api_pb2.PLAYING,
         "PAUSED": Api_pb2.PAUSED,
         "IDLE": Api_pb2.IDLE,
     }[status.player_state]
+
+    if mf_stat in (Api_pb2.PLAYING, Api_pb2.PAUSED) and (not status.supports_seek or not status.supports_pause):
+        return Api_pb2.ADVERT
+
+    return mf_stat
 
 
 class VidFilePlayer(common.PlayerBase, MediaStatusListener):
