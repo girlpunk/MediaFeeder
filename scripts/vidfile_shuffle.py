@@ -43,6 +43,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     _cast_name: str
     _cast: pychromecast.Chromecast
     _cast_con: BaseMediaPlayer
+    _have_control: bool = False
     _url_to_video_id: dict[str, int] = {}
 
     def __init__(self, cast_name: str, *, verbose: bool) -> None:
@@ -117,6 +118,8 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         self._cast_con.play_media(media_url, media_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
         response_handler.wait_response()
 
+        self._have_control = True
+
     # PlayerBase
     async def play_pause(self) -> None:
         """Toggle the paused state."""
@@ -166,6 +169,17 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     # MediaStatusListener
     def new_media_status(self, status: MediaStatus) -> None:
         update = common.StatusUpdate()
+
+        if self._have_control and status.content_id not in self._url_to_video_id:
+            self._have_control = False
+            self._logger.warning("Unknown file playing, surrendering control: %s", status.content_id)
+
+            update.State = Api_pb2.UNKNOWN
+            self.sync_send_status(update)
+
+            asyncio.run_coroutine_threadsafe(self._shuffler.playback_abandoned(), self._loop)
+            return
+
         update.State = pycast_status_to_mf_state(status)
 
         # if advert, only update state and nothing else.
@@ -183,11 +197,12 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         self.sync_send_status(update)
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
+            self._have_control = False
             self._logger.info("Received playback finished event: %s", status.content_id)
-            if status.content_id is not None:
+            if status.content_id is not None and status.content_id in self._url_to_video_id:
                 asyncio.run_coroutine_threadsafe(self._shuffler.finished(self._url_to_video_id[status.content_id]), self._loop)
             else:
-                self._logger.warning("End of playbacks status missing content_id: %s", status)
+                self._logger.warning("End of playbacks status content_id missing or unknown: %s", status)
 
     # MediaStatusListener
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:

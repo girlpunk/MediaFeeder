@@ -57,6 +57,7 @@ class QueueEvent(NamedTuple):
     restore_position_seconds: int | None = None
     watched_to_end: bool = False
     video_id: int | None = None
+    abandoned: bool = False
 
 
 class PlayerBase(abc.ABC):
@@ -248,6 +249,11 @@ class Shuffler:
         self._logger.debug("Finished playing: video_id=%s", video_id)
         self._event_queue.put_nowait(QueueEvent(watched_to_end=True, video_id=video_id))
 
+    async def playback_abandoned(self) -> None:
+        """Process that current video has been abandoned."""
+        self._logger.debug("Playback abandoned.")
+        self._event_queue.put_nowait(QueueEvent(abandoned=True))
+
     async def get_event(self, timeout: int) -> QueueEvent | None:
         """Get next event in queue."""
         try:
@@ -300,6 +306,10 @@ class Shuffler:
                     current_video_id = None
                 else:
                     self._logger.warning("Mismatched watched_to_end event: expected=%s  got=%s", current_video_id, event.video_id)
+
+            elif event and event.abandoned:
+                self._logger.info("Playback abandoned.")
+                current_video_id = None
 
             elif current_video_id and self._now_state in [Api_pb2.PLAYING, Api_pb2.PAUSED] and self._now_position_seconds and self._now_position_seconds > 0:
                 if position_to_restore_seconds and position_to_restore_seconds > 0:
