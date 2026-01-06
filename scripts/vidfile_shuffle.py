@@ -8,6 +8,7 @@ import argparse
 import asyncio
 import logging
 import sys
+import time
 
 from typing_extensions import Self
 
@@ -19,6 +20,7 @@ from pychromecast.controllers.media import BaseMediaPlayer
 from pychromecast.controllers.media import MediaStatus
 from pychromecast.controllers.media import MediaStatusListener
 from pychromecast.controllers.media import DefaultMediaReceiverController
+from pychromecast.controllers.youtube import YouTubeController
 from pychromecast.response_handler import WaitResponse
 
 
@@ -41,10 +43,14 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
     _shuffler: common.Shuffler
     _cast_name: str
+
     _cast: pychromecast.Chromecast
-    _cast_con: BaseMediaPlayer
+    _active_con: BaseMediaPlayer
+    _file_con: BaseMediaPlayer
+    _yt_con: YouTubeController
+
     _have_control: bool = False
-    _url_to_video_id: dict[str, int] = {}
+    _content_id_to_video_id: dict[str, int] = {}
 
     def __init__(self, cast_name: str, *, verbose: bool) -> None:
         """Set up variables, but doesn't connect yet."""
@@ -58,7 +64,8 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         # only has for play_media(), rest is via _cast.media_controller
         # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py
-        self._cast_con = DefaultMediaReceiverController()
+        self._file_con = DefaultMediaReceiverController()
+        self._yt_con = YouTubeController()
 
     async def __aenter__(self) -> Self:
         """Connect to Chromecast.
@@ -96,27 +103,41 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
     # PlayerBase
     async def ensure_ready(self) -> None:
-        if self._cast.app_id == pychromecast.config.APP_MEDIA_RECEIVER:
+        if self._cast.app_id == self._active_con.supporting_app_id:
             await self.update_cast()
 
     # PlayerBase
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
-        self._logger.debug("Play Video")
+        if video.MediaUrl:
+            media_url = video.MediaUrl
+            media_type = "video/mp4"  # TODO identify content type, probably back in MF
+            self._content_id_to_video_id[media_url] = video.Id
+            self._logger.info("Media %s: %s (%s)", video.Id, media_url, media_type)
 
-        if not video.MediaUrl:
-            self._logger.error("Can not play video without a MediaUrl: %s", video)
+            timeout = 30  # TODO constant or do this better?
+            response_handler = WaitResponse(timeout, f"play {media_url}")
+            self._file_con.play_media(media_url, media_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
+            response_handler.wait_response()
+
+            self._active_con = self._file_con
+
+        elif video.Provider == "Youtube":
+            self._content_id_to_video_id[video.VideoId] = video.Id
+
+            self._yt_con.update_screen_id()
+            self._yt_con.start_session_if_none()
+            await asyncio.sleep(1)
+
+            self._yt_con.clear_playlist()
+            self._yt_con.play_video(video.VideoId)
+
+            self._active_con = self._yt_con
+
+        else:
+            self._logger.error("Can not play video: %s", video)
             # TODO signal back that playback failed.
             return
-
-        media_url = video.MediaUrl
-        media_type = "video/mp4"  # TODO identify content type, probably back in MF
-        self._url_to_video_id[media_url] = video.Id
-
-        timeout = 30  # TODO constant or do this better?
-        response_handler = WaitResponse(timeout, f"play {media_url}")
-        self._cast_con.play_media(media_url, media_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
-        response_handler.wait_response()
 
         self._have_control = True
 
@@ -160,7 +181,8 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             sys.exit(1)
         self._cast = chromecasts[0]
         self._cast.wait()  # Start socket client's worker thread and wait for initial status update
-        self._cast.register_handler(self._cast_con)
+        self._cast.register_handler(self._file_con)
+        self._cast.register_handler(self._yt_con)
         self._cast.media_controller.register_status_listener(self)
 
     def sync_send_status(self, update: common.StatusUpdate):
@@ -170,7 +192,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     def new_media_status(self, status: MediaStatus) -> None:
         update = common.StatusUpdate()
 
-        if self._have_control and status.content_id not in self._url_to_video_id:
+        if self._have_control and status.content_id and status.content_id not in self._content_id_to_video_id:
             self._have_control = False
             self._logger.warning("Unknown file playing, surrendering control: %s", status.content_id)
 
@@ -187,20 +209,28 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             self.sync_send_status(update)
             return
 
+        if status.content_type == "x-youtube/video":
+            update.Provider = "Youtube"
+            # TODO what should this be if not youtube?
+
         if status.current_time is not None:
             update.Position = int(status.current_time)
         update.Volume = int(status.volume_level * 100)
         update.Rate = status.playback_rate
         # update.Subtitles = str(status.current_subtitle_tracks)  # TODO not in StatusUpdate
-        # update.Provider = "Youtube"  # TODO what should this be?
 
         self.sync_send_status(update)
 
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
             self._have_control = False
             self._logger.info("Received playback finished event: %s", status.content_id)
-            if status.content_id is not None and status.content_id in self._url_to_video_id:
-                asyncio.run_coroutine_threadsafe(self._shuffler.finished(self._url_to_video_id[status.content_id]), self._loop)
+            if status.content_id is not None and status.content_id in self._content_id_to_video_id:
+                asyncio.run_coroutine_threadsafe(self._shuffler.finished(self._content_id_to_video_id[status.content_id]), self._loop)
+
+                if self._active_con == self._yt_con:
+                    self._yt_con.clear_playlist()
+                    time.sleep(1)  # let chromecast finish before trying to play next video.
+
             else:
                 self._logger.warning("End of playbacks status content_id missing or unknown: %s", status)
 

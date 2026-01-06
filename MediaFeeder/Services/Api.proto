@@ -89,6 +89,7 @@ message VideoReply {
   optional int32 Duration = 7;
   string VideoId = 8;
   optional string MediaUrl = 13;
+  optional string Provider = 14;
 
   bool New = 10;
   bool Downloaded = 11;

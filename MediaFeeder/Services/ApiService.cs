@@ -223,6 +223,7 @@ public sealed class ApiService(
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
         var video = await db.Videos
+            .Include(static v => v.Subscription)
             .Where(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id)
             .Select(static v => new
             {
@@ -236,7 +237,8 @@ public sealed class ApiService(
                 v.VideoId,
                 v.Views,
                 v.Watched,
-                v.DownloadedPath
+                v.DownloadedPath,
+                v.Subscription
             })
             .SingleOrDefaultAsync(context.CancellationToken);
 
@@ -257,6 +259,9 @@ public sealed class ApiService(
         // TODO replace this with a URL to a local download, if available (falling back to external URL)
         if (video.DownloadedPath != null)
             reply.MediaUrl = video.DownloadedPath;
+
+        if (video.Subscription?.Provider != null)
+            reply.Provider = video.Subscription.Provider;
 
         if (video.Duration != null)
             reply.Duration = video.Duration.Value;
