@@ -13,7 +13,7 @@ public class YoutubeProvider : IProvider
 
     public string GetUrl(Video video) => $"https://www.youtube.com/watch?v={video.VideoId}";
 
-    public async Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc)
+    public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc)
     {
         //1. Does it _look_ like a YouTube URL
         if ((url.Host != "kids.youtube.com" &&
