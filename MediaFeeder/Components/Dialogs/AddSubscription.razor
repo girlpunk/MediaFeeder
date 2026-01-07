@@ -4,7 +4,7 @@
 @inherits FeedbackComponent<int?>
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<AddSubscription> Logger
-@inject IList<IProvider> Providers
+@inject IEnumerable<IProvider> Providers
 
 <Steps Current="@ActiveStep" Class="site-navigation-steps">
     <Step Title="Input Details" />
