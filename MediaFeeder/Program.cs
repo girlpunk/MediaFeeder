@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using FluentValidation;
 using Google.Apis.Services;
 using MassTransit;
@@ -17,6 +16,7 @@ using MediaFeeder.Data.Identity;
 using MediaFeeder.Helpers;
 using MediaFeeder.PlaybackManager;
 using MediaFeeder.Providers;
+using MediaFeeder.Providers.CCC;
 using MediaFeeder.Providers.RSS;
 using MediaFeeder.Providers.Youtube;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -34,7 +34,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
-using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
@@ -305,6 +304,7 @@ builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
 
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
+builder.Services.AddScoped<IProvider, CCCProvider>();
 
 builder.Services.AddSingleton<PlaybackSessionManager>();
 builder.Services.AddSingleton<TokenHelper>();
