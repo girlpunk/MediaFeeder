@@ -24,6 +24,7 @@
             <FormItem Label="URL" Required>
                 <Input @bind-Value="@context.Url" required="required"/>
             </FormItem>
+            <Button Type="@ButtonType.Primary" HtmlType="submit">Continue</Button>
         </Form>
         break;
     case 1:
@@ -124,6 +125,7 @@
                 ></Select>
             </FormItem>
 
+            <Button Type="@ButtonType.Primary" HtmlType="submit">Save</Button>
         </Form>
         break;
 }

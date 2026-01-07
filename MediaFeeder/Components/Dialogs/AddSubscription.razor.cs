@@ -143,6 +143,7 @@ public partial class AddSubscription
     /// </summary>
     private async Task OnFinish(EditContext editContext)
     {
+        Logger.LogInformation("Trying to save new subscription");
         ArgumentNullException.ThrowIfNull(Add);
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
