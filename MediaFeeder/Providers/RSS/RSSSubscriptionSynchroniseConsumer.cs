@@ -23,7 +23,7 @@ public class RSSSubscriptionSynchroniseConsumer(
 
         if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
         {
-            logger.LogInformation("Subscription {} was already synchronised {} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
+            logger.LogInformation("Subscription {Subscription} was already synchronised {Time} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
             return;
         }
 
@@ -53,6 +53,7 @@ public class RSSSubscriptionSynchroniseConsumer(
         // Need to make absolute
         subscription.Thumb = new Uri(new Uri(subscription.ChannelId), feed.ImageUrl).AbsoluteUri;
         subscription.Thumbnail = new Uri(new Uri(subscription.ChannelId), feed.ImageUrl).AbsoluteUri;
+        subscription.LastSynchronised = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(context.CancellationToken);
 
@@ -68,7 +69,7 @@ public class RSSSubscriptionSynchroniseConsumer(
             .FirstOrDefault() ?? item.Id;
 
         var video = await db.Videos
-            .Include(v => v.Tags)
+            .Include(static v => v.Tags)
             .SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken);
 
         if (video == null)

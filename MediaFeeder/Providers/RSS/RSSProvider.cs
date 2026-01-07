@@ -6,7 +6,7 @@ using MediaFeeder.Data.Enums;
 
 namespace MediaFeeder.Providers.RSS;
 
-public class RSSProvider : IProvider
+public sealed class RSSProvider : IProvider
 {
     public string Name => "RSS";
     public string Icon => IconType.Outline.Api;
