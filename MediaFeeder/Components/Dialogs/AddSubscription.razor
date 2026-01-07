@@ -38,10 +38,12 @@
                     <li>@provider.Name</li>
                 }
             </ul>
-        }
-        else
+        } else if (FoundProvider != null)
         {
-            <div>Provider list is null!</div>
+            <div>Getting details from @FoundProvider.Name, please wait...</div>
+        } else
+        {
+            <div>Unable to find any providers for this URL!</div>
         }
 
         break;
