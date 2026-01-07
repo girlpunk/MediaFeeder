@@ -44,7 +44,7 @@
         # ...
       ];
       perSystem = {pkgs, ...}: let
-        pbpy = pkgs.python3.withPackages (p: with p; [ grpcio-tools ]);
+        pbpy = pkgs.python3.withPackages (p: with p; [ grpcio-tools mypy-protobuf ]);
         mfprotos = pkgs.python313Packages.buildPythonPackage {
             name = "mfprotos";
             src = inputs.mfcode + "/Services";
@@ -54,16 +54,18 @@
             buildPhase = ''
               runHook preBuild
               ${pbpy}/bin/python3 -m grpc_tools.protoc \
+                --plugin=${pbpy.pkgs.mypy-protobuf}/bin/protoc-gen-mypy \
                 --proto_path=$src \
                 --python_out=. \
                 --grpc_python_out=. \
+                --mypy_out=. \
                 $src/Api.proto
               runHook postBuild
             '';
             installPhase = ''
               runHook preInstall
               mkdir -p $out/${pbpy.sitePackages}
-              install -m644 -D *.py $out/${pbpy.sitePackages}/
+              install -m644 -D *.py *.pyi $out/${pbpy.sitePackages}/
               runHook postInstall
             '';
         };
