@@ -111,6 +111,18 @@
         "type": "github"
       }
     },
+    "mfcode": {
+      "flake": false,
+      "locked": {
+        "path": "../MediaFeeder",
+        "type": "path"
+      },
+      "original": {
+        "path": "../MediaFeeder",
+        "type": "path"
+      },
+      "parent": []
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1767480499,
@@ -147,6 +159,7 @@
         "flake-parts": "flake-parts",
         "git-hooks-nix": "git-hooks-nix",
         "make-shell": "make-shell",
+        "mfcode": "mfcode",
         "nixpkgs": "nixpkgs",
         "treefmt-nix": "treefmt-nix"
       }

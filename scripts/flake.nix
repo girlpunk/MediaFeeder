@@ -20,6 +20,11 @@
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    mfcode = {
+      url = "path:../MediaFeeder";
+      flake = false;
+    };
   };
 
   outputs = inputs @ {flake-parts, ...}:
@@ -39,12 +44,37 @@
         # ...
       ];
       perSystem = {pkgs, ...}: let
+        pbpy = pkgs.python3.withPackages (p: with p; [ grpcio-tools ]);
+        mfprotos = pkgs.python313Packages.buildPythonPackage {
+            name = "mfprotos";
+            src = inputs.mfcode + "/Services";
+            dontUnpack = true;
+            format = "other";
+            propagatedBuildInputs = [ pkgs.protobuf ];
+            buildPhase = ''
+              runHook preBuild
+              ${pbpy}/bin/python3 -m grpc_tools.protoc \
+                --proto_path=$src \
+                --python_out=. \
+                --grpc_python_out=. \
+                $src/Api.proto
+              runHook postBuild
+            '';
+            installPhase = ''
+              runHook preInstall
+              mkdir -p $out/${pbpy.sitePackages}
+              install -m644 -D *.py $out/${pbpy.sitePackages}/
+              runHook postInstall
+            '';
+        };
+
         all_dependencies = with pkgs;
           [
             grpc_cli
             python3
             #(pkgs.callPackage wakepy {})
           ]
+          ++ [ mfprotos ]
           ++ (with pkgs.python3.pkgs; [
             aiofiles
             beautifulsoup4
