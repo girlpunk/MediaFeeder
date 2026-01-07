@@ -30,7 +30,7 @@ public class YoutubeProvider : IProvider
 
         var nameTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='name']");
         if (nameTag.SingleOrDefault() == null ||
-            string.IsNullOrWhiteSpace(nameTag.SingleOrDefault()?.GetAttributeValue("content", "")))
+            string.IsNullOrWhiteSpace(nameTag.FirstOrDefault()?.GetAttributeValue("content", "")))
             return Task.FromResult(false);
 
         var channelId = metaTag.SingleOrDefault()?.GetAttributeValue("content", "") ?? "";

@@ -6,7 +6,7 @@ using MediaFeeder.Data.Enums;
 
 namespace MediaFeeder.Providers.CCC;
 
-public class CCCProvider(IHttpClientFactory httpClientFactory) : IProvider
+public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvider> logger) : IProvider
 {
     public string Name => "CCC Media";
     public string Icon => IconType.Outline.Laptop;
@@ -15,8 +15,12 @@ public class CCCProvider(IHttpClientFactory httpClientFactory) : IProvider
 
     public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc)
     {
+        logger.LogDebug("Checking URL {Url}", url);
+
         if (url.Host != "media.ccc.de" && url.Host != "api.media.ccc.de")
             return Task.FromResult(false);
+
+        logger.LogDebug("Host looks ok, checking path: {path}", url.AbsolutePath);
 
         return Task.FromResult(url.AbsolutePath.StartsWith("/c/", StringComparison.Ordinal) ||
                                url.AbsolutePath == "/" ||
