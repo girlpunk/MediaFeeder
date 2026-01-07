@@ -20,7 +20,7 @@ public partial class AddSubscription
     private AddForm Add { get; set; } = new AddForm();
     private SubscriptionForm Subscription { get; set; } = new SubscriptionForm();
 
-    private IList<IProvider> Providers { get; set; } = [];
+    // private IList<IProvider> Providers { get; set; } = [];
     private IProvider? FoundProvider { get; set; }
     private IList<IProvider>? FoundProviders { get; set; }
     private int ActiveStep { get; set; }
@@ -46,8 +46,8 @@ public partial class AddSubscription
 
     protected override void OnParametersSet()
     {
-        if (ServiceProvider != null)
-            Providers = ServiceProvider.GetServices<IProvider>().ToList();
+        // if (ServiceProvider != null && Providers.Count == 0)
+        //     Providers = ServiceProvider.GetServices<IProvider>().ToList();
     }
 
     private async Task CheckUrl(EditContext editContext)
@@ -73,7 +73,19 @@ public partial class AddSubscription
 
         // Offer page to all providers
         var providerMatches = Providers
-            .Select(async provider => (provider, match: await provider.IsUrlValid(new Uri(Add.Url), UrlRequest, UrlDocument)))
+            .Select(async provider =>
+            {
+                try
+                {
+                    Logger.LogDebug("Offering URL to provider {}", provider.Name);
+                    return (provider, match: await provider.IsUrlValid(new Uri(Add.Url), UrlRequest, UrlDocument));
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "Error while offering URL to provider");
+                    return (provider, match: false);
+                }
+            })
             .ToList();
         await Task.WhenAll(providerMatches);
         var matches = providerMatches

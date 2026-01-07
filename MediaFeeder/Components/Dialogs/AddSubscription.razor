@@ -2,8 +2,9 @@
 @using Humanizer
 @using MediaFeeder.Data.Enums
 @inherits FeedbackComponent<int?>
-@inject IServiceProvider ServiceProvider
 @inject IHttpClientFactory HttpClientFactory
+@inject ILogger<AddSubscription> Logger
+@inject IList<IProvider> Providers
 
 <Steps Current="@ActiveStep" Class="site-navigation-steps">
     <Step Title="Input Details" />
