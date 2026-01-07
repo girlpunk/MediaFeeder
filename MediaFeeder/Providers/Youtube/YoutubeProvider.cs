@@ -26,11 +26,11 @@ public class YoutubeProvider : IProvider
 
         //2. Does it have the attributes we need
         var metaTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='identifier']");
-        if (metaTag?.SingleOrDefault() == null || string.IsNullOrWhiteSpace(metaTag.SingleOrDefault()?.GetAttributeValue("content", "")))
+        if (metaTag.SingleOrDefault() == null || string.IsNullOrWhiteSpace(metaTag.SingleOrDefault()?.GetAttributeValue("content", "")))
             return Task.FromResult(false);
 
         var nameTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='name']");
-        if (nameTag?.SingleOrDefault() == null ||
+        if (nameTag.FirstOrDefault() == null ||
             string.IsNullOrWhiteSpace(nameTag.FirstOrDefault()?.GetAttributeValue("content", "")))
             return Task.FromResult(false);
 
