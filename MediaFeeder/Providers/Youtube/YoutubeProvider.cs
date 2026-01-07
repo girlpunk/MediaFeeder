@@ -50,8 +50,8 @@ public class YoutubeProvider : IProvider
         var metaTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='identifier']");
         var nameTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='name']");
 
-        var channelId = metaTag.SingleOrDefault()?.GetAttributeValue("content", "") ?? "";
-        var name = nameTag.SingleOrDefault()?.GetAttributeValue("content", "") ?? "";
+        var channelId = metaTag.FirstOrDefault()?.GetAttributeValue("content", "") ?? "";
+        var name = nameTag.FirstOrDefault()?.GetAttributeValue("content", "") ?? "";
         var playlistId = "UU" + channelId[2..];
 
         subscription.Name = name;
