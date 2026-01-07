@@ -27,6 +27,7 @@ public partial class AddSubscription
     private HtmlDocument? UrlDocument { get; set; }
     private HttpResponseMessage? UrlRequest { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
+    private HttpClient? HttpClient { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -37,6 +38,8 @@ public partial class AddSubscription
 
         Add = new AddForm();
         Subscription = new SubscriptionForm();
+        HttpClient?.Dispose();
+        HttpClient = HttpClientFactory.CreateClient("retry");
 
         await base.OnInitializedAsync();
     }
@@ -49,6 +52,8 @@ public partial class AddSubscription
 
     private async Task CheckUrl(EditContext editContext)
     {
+        ArgumentNullException.ThrowIfNull(HttpClient);
+
         ActiveStep = 1;
 
         // Download Page
@@ -176,5 +181,16 @@ public partial class AddSubscription
     public class AddForm
     {
         internal string Url { get; set; } = "";
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            UrlRequest?.Dispose();
+            HttpClient?.Dispose();
+        }
+
+        base.Dispose(disposing);
     }
 }

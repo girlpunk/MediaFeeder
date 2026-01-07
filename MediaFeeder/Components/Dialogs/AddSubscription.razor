@@ -3,7 +3,7 @@
 @using MediaFeeder.Data.Enums
 @inherits FeedbackComponent<int?>
 @inject IServiceProvider ServiceProvider
-@inject HttpClient HttpClient
+@inject IHttpClientFactory HttpClientFactory
 
 <Steps Current="@ActiveStep" Class="site-navigation-steps">
     <Step Title="Input Details" />
