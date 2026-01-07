@@ -20,16 +20,17 @@ public class YoutubeProvider : IProvider
              url.Host != "m.youtube.com" &&
              url.Host != "youtu.be" &&
              url.Host != "youtube-nocookie.com" &&
-             url.Host != "youtube.com") || doc == null)
+             url.Host != "youtube.com" &&
+             url.Host != "www.youtube.com") || doc == null)
             return Task.FromResult(false);
 
         //2. Does it have the attributes we need
         var metaTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='identifier']");
-        if (metaTag.SingleOrDefault() == null || string.IsNullOrWhiteSpace(metaTag.SingleOrDefault()?.GetAttributeValue("content", "")))
+        if (metaTag?.SingleOrDefault() == null || string.IsNullOrWhiteSpace(metaTag.SingleOrDefault()?.GetAttributeValue("content", "")))
             return Task.FromResult(false);
 
         var nameTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='name']");
-        if (nameTag.SingleOrDefault() == null ||
+        if (nameTag?.SingleOrDefault() == null ||
             string.IsNullOrWhiteSpace(nameTag.FirstOrDefault()?.GetAttributeValue("content", "")))
             return Task.FromResult(false);
 
