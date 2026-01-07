@@ -23,6 +23,10 @@ public partial class AddSubscription
     // private IList<IProvider> Providers { get; set; } = [];
     private IProvider? FoundProvider { get; set; }
     private IList<IProvider>? FoundProviders { get; set; }
+
+    private IEnumerable<(string ProviderIdentifier, string Name)> ProviderNames =>
+        Providers.Select(static provider => (provider.ProviderIdentifier, provider.Name));
+
     private int ActiveStep { get; set; }
     private HtmlDocument? UrlDocument { get; set; }
     private HttpResponseMessage? UrlRequest { get; set; }

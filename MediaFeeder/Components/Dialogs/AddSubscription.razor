@@ -116,7 +116,7 @@
 
             <FormItem Label="Provider" Required="true">
                 <Select @bind-Value="@context.Provider"
-                        DataSource="@Providers"
+                        DataSource="@ProviderNames"
                         ItemValue="@(static c => c.ProviderIdentifier)"
                         ItemLabel="@(static c => c.Name)"
                         required="required"
