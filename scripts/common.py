@@ -8,6 +8,8 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncGenerator
+from cryptography import x509
+from cryptography.x509.oid import NameOID
 from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
@@ -141,10 +143,15 @@ class Shuffler:
         ssl_credentials = grpc.ssl_channel_credentials()
 
         server_cert = self._settings.get_certificate_path()
+        cert_cn = None
         if server_cert is not None:
+            self._logger.info("Using server cert: %s", server_cert)
             with Path(server_cert).open("rb") as f:
                 root_certs = f.read()
             ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
+
+            cert_info = x509.load_pem_x509_certificate(root_certs)
+            cert_cn = str(cert_info.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value)
 
         bearer_credentials = grpc.metadata_call_credentials(AuthGateway(self._settings))
         composite_credentials = grpc.composite_channel_credentials(ssl_credentials, bearer_credentials)
@@ -156,8 +163,9 @@ class Shuffler:
             ("grpc.keepalive_permit_without_calls", 1),
         ]
 
-        if server_cert is not None:
-            channel_options += [("grpc.ssl_target_name_override", server_cert)]
+        if cert_cn is not None:
+            self._logger.info("Using cert CN: %s", cert_cn)
+            channel_options += [("grpc.ssl_target_name_override", cert_cn)]
 
         self._channel: grpc.aio.Channel = grpc.aio.secure_channel(self._settings.get_server(), composite_credentials, options=channel_options)
         self._stub = Api_pb2_grpc.APIStub(self._channel)
