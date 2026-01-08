@@ -141,6 +141,10 @@ public sealed class PlaybackSession : IDisposable
         video.MarkWatched(true);
         await db.SaveChangesAsync();
 
+        // clear this to match what MarkWatched() does above, since this is what is sent when a video is replayed
+        // by play/pause when the video is not already playing (or paused).
+        CurrentPosition = null;
+
         await PlayNextInPlaylist();
     }
 

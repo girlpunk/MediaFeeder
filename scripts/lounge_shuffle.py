@@ -79,7 +79,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         await self._api.play_video(video.VideoId)
 
     # PlayerBase
-    async def play_pause(self) -> None:
+    async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
         """Toggle the paused state."""
         self._logger.debug("Play Pause")
 

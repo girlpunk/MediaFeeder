@@ -154,7 +154,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         self._have_control = True
 
     # PlayerBase
-    async def play_pause(self) -> None:
+    async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
         """Toggle the paused state."""
         if self._cast.media_controller.status.player_is_paused:
             self._logger.info("PlayPause: playing...")
@@ -162,6 +162,11 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         elif self._cast.media_controller.status.player_is_playing:
             self._logger.info("PlayPause: pausing...")
             self._cast.media_controller.pause()
+        elif (
+            self._cast.media_controller.status.player_is_idle or self._cast.media_controller.status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN
+        ) and resume_video_id:
+            self._logger.info("Player is idle so requesting replay of %s from %s seconds.", resume_video_id, resume_from_position)
+            await self._shuffler.play_video(resume_video_id, resume_from_position)
         else:
             self._logger.warning("Don't know how to play/pause from state %s", self._cast.media_controller.status.player_state)
 

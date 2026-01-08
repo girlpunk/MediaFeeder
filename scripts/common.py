@@ -76,7 +76,7 @@ class PlayerBase(abc.ABC):
         """Play a video immidiately."""
 
     @abc.abstractmethod
-    async def play_pause(self) -> None:
+    async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
         """Toggle the paused state."""
 
     @abc.abstractmethod
@@ -211,7 +211,7 @@ class Shuffler:
         """Process message from MediaFeeder."""
         self._logger.debug("On Ses Rep Msg")
         if rep.ShouldPlayPause:
-            await self._player.play_pause()
+            await self._player.play_pause(rep.NextVideoId, rep.PlaybackPosition)
 
         elif rep.ShouldPauseIfPlaying:
             await self._player.pause_if_playing()
@@ -221,7 +221,7 @@ class Shuffler:
 
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
-            self._event_queue.put_nowait(QueueEvent(next_video_id=rep.NextVideoId, restore_position_seconds=rep.PlaybackPosition))
+            await self.play_video(rep.NextVideoId, rep.PlaybackPosition)
 
         elif rep.ShouldChangeVolume:
             self._logger.info("Received change volume command: %s", rep.ShouldChangeVolume)
@@ -273,6 +273,9 @@ class Shuffler:
             status_message.Loaded = status.Loaded
 
         await self._status_report_queue.put(status_message)
+
+    async def play_video(self, video_id: int, from_position: int | None) -> None:
+        self._event_queue.put_nowait(QueueEvent(next_video_id=video_id, restore_position_seconds=from_position))
 
     async def finished(self, video_id: int) -> None:
         """Process that current video has finished playing."""
