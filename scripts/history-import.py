@@ -9,7 +9,7 @@ import urllib.parse
 from datetime import datetime
 
 import grpc
-import Path
+from pathlib import Path
 
 import Api_pb2
 import Api_pb2_grpc
