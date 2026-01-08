@@ -3,6 +3,8 @@ using FluentValidation;
 using HtmlAgilityPack;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
+using MediaFeeder.Helpers;
+using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -143,8 +145,8 @@ public partial class AddSubscription
     /// </summary>
     private async Task OnFinish(EditContext editContext)
     {
-        Logger.LogInformation("Trying to save new subscription");
         ArgumentNullException.ThrowIfNull(Add);
+        ArgumentNullException.ThrowIfNull(FoundProvider);
 
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
@@ -171,6 +173,13 @@ public partial class AddSubscription
         Context.Subscriptions.Add(subscription);
 
         await Context.SaveChangesAsync();
+
+        var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(FoundProvider.GetType());
+        var contract = Activator.CreateInstance(contractType, new object[] { subscription });
+        ArgumentNullException.ThrowIfNull(contract);
+
+        await Bus.PublishWithGuid(contract);
+
         await FeedbackRef.CloseAsync();
     }
 

@@ -1,10 +1,12 @@
 @using Blazored.FluentValidation
 @using Humanizer
+@using MassTransit
 @using MediaFeeder.Data.Enums
 @inherits FeedbackComponent<int?>
 @inject IHttpClientFactory HttpClientFactory
 @inject ILogger<AddSubscription> Logger
 @inject IEnumerable<IProvider> Providers
+@inject IBus Bus
 
 <Steps Current="@ActiveStep" Class="site-navigation-steps">
     <Step Title="Input Details" />
@@ -21,6 +23,7 @@
               ValidateOnChange="true"
               OnFinish="@CheckUrl">
             <FluentValidationValidator/>
+            <ValidationSummary/>
             <FormItem Label="URL" Required>
                 <Input @bind-Value="@context.Url" required="required"/>
             </FormItem>
@@ -55,6 +58,7 @@
               ValidateOnChange="true"
               OnFinish="@OnFinish">
             <FluentValidationValidator/>
+            <ValidationSummary/>
             <FormItem Label="Name" Required>
                 <Input @bind-Value="@context.Name" required="required"/>
             </FormItem>
