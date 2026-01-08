@@ -113,6 +113,7 @@ public sealed partial class TreeView
             Title = "Create Subscription",
             AfterClose = async () => await UpdateTree(),
             DestroyOnClose = true,
+            Footer = ModalFooter.DefaultCancelFooter,
         };
 
         ModalService.CreateModal<AddSubscription, int?>(modalConfig, null);
