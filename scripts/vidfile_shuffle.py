@@ -120,10 +120,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             self._content_id_to_video_id[media_url] = video.Id
             self._logger.info("Media %s: %s (%s)", video.Id, media_url, media_type)
 
-            timeout = 30  # TODO constant or do this better?
-            response_handler = WaitResponse(timeout, f"play {media_url}")
-            self._file_con.play_media(media_url, media_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
-            response_handler.wait_response()
+            await asyncio.to_thread(self.sync_play_url, media_url, media_type)
 
             self._active_con = self._file_con
 
@@ -133,12 +130,9 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         elif video.Provider == "Youtube":
             self._content_id_to_video_id[video.VideoId] = video.Id
 
-            self._yt_con.update_screen_id()
-            self._yt_con.start_session_if_none()
+            await asyncio.to_thread(self.sync_ready_yt)
             await asyncio.sleep(1)
-
-            self._yt_con.clear_playlist()
-            self._yt_con.play_video(video.VideoId)
+            await asyncio.to_thread(self.sync_play_yt, video.VideoId)
 
             self._active_con = self._yt_con
 
@@ -152,6 +146,20 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         await self._shuffler.send_status(update)
         self._have_control = True
+
+    def sync_play_url(self, media_url: str, content_type: str):
+        timeout = 30  # TODO constant or do this better?
+        response_handler = WaitResponse(timeout, f"play {media_url}")
+        self._file_con.play_media(media_url, content_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
+        response_handler.wait_response()
+
+    def sync_ready_yt(self):
+        self._yt_con.update_screen_id()
+        self._yt_con.start_session_if_none()
+
+    def sync_play_yt(self, content_id: str):
+        self._yt_con.clear_playlist()
+        self._yt_con.play_video(content_id)
 
     # PlayerBase
     async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
