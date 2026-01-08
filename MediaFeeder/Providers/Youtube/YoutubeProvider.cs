@@ -55,6 +55,7 @@ public class YoutubeProvider : IProvider
         var playlistId = "UU" + channelId[2..];
 
         subscription.Name = name;
+        subscription.ChannelName = name;
         subscription.ChannelId = channelId;
         subscription.PlaylistId = playlistId;
         subscription.Provider = ProviderIdentifier;
