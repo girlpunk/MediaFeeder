@@ -22,7 +22,6 @@ public partial class AddSubscription
     private AddForm Add { get; set; } = new AddForm();
     private SubscriptionForm Subscription { get; set; } = new SubscriptionForm();
 
-    // private IList<IProvider> Providers { get; set; } = [];
     private IProvider? FoundProvider { get; set; }
     private IList<IProvider>? FoundProviders { get; set; }
 
@@ -48,12 +47,6 @@ public partial class AddSubscription
         HttpClient = HttpClientFactory.CreateClient("retry");
 
         await base.OnInitializedAsync();
-    }
-
-    protected override void OnParametersSet()
-    {
-        // if (ServiceProvider != null && Providers.Count == 0)
-        //     Providers = ServiceProvider.GetServices<IProvider>().ToList();
     }
 
     private async Task CheckUrl(EditContext editContext)

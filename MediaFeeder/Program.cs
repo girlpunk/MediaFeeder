@@ -223,6 +223,7 @@ builder.Services.AddMassTransit(config =>
     config.AddConsumer<YouTubeDownloadVideoConsumer>();
 
     config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();
+    config.AddConsumer<CCCSubscriptionSynchroniseConsumer>();
 });
 
 if (useDatabaseMessageQueue)
