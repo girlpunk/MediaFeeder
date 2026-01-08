@@ -10,7 +10,8 @@ public partial class DownloadedVideoFrame
     {
         Console.WriteLine($"CanPlay {JsonSerializer.Serialize(obj)}");
 
-        Player?.Play(obj);
+        if (obj != null)
+            Player?.Play(obj);
     }
 
     private void Ended(VideoState obj)
@@ -25,7 +26,8 @@ public partial class DownloadedVideoFrame
     {
         Console.WriteLine($"CanPlayThrough {JsonSerializer.Serialize(obj)}");
 
-        Player?.Play(obj);
+        if (obj != null)
+            Player?.Play(obj);
     }
 
     public BlazoredVideo? Player { get; set; }
