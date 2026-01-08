@@ -38,7 +38,7 @@ public class Video
 
     public string? DownloadError { get; set; }
 
-    [MaxLength(100)] public string? Thumb { get; set; }
+    [MaxLength(255)] public string? Thumb { get; set; }
 
     [NotMapped]
     public TimeSpan? DurationSpan
