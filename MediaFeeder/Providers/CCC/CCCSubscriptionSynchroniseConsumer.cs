@@ -18,7 +18,8 @@ public class CCCSubscriptionSynchroniseConsumer(
 
         var subscription = await db.Subscriptions.SingleAsync(s => s.Id == context.Message.SubscriptionId, context.CancellationToken);
 
-        if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
+        subscription.LastSynchronised ??= DateTimeOffset.UtcNow - TimeSpan.FromDays(1);
+        if (subscription.LastSynchronised > DateTimeOffset.UtcNow - TimeSpan.FromHours(1))
         {
             logger.LogInformation("Subscription {Subscription} was already synchronised {Time} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
             return;
@@ -133,7 +134,7 @@ public class CCCSubscriptionSynchroniseConsumer(
 
         video.Name = $"{item.Title} - {item.Subtitle} ({item.ConferenceTitle})";
         video.New = DateTimeOffset.UtcNow - item.Date <= TimeSpan.FromDays(7);
-        video.PublishDate = item.Date;
+        video.PublishDate = item.Date?.UtcDateTime;
         video.Thumb = item.PosterUrl?.ToString();
         video.Description = item.Description ?? "";
         video.Duration = item.Duration;
