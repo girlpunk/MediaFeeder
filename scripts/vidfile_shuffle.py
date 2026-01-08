@@ -161,15 +161,27 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         self._yt_con.clear_playlist()
         self._yt_con.play_video(content_id)
 
+    def sync_play(self):
+        self._cast.media_controller.play()
+
+    def sync_pause(self):
+        self._cast.media_controller.pause()
+
+    def sync_seek(self, position_seconds: int):
+        self._cast.media_controller.seek(position_seconds)
+
+    def sync_set_rate(self, rate: float):
+        self._cast.media_controller.set_playback_rate(rate)
+
     # PlayerBase
     async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
         """Toggle the paused state."""
         if self._cast.media_controller.status.player_is_paused:
             self._logger.info("PlayPause: playing...")
-            self._cast.media_controller.play()
+            await asyncio.to_thread(self.sync_play)
         elif self._cast.media_controller.status.player_is_playing:
             self._logger.info("PlayPause: pausing...")
-            self._cast.media_controller.pause()
+            await asyncio.to_thread(self.sync_pause)
         elif (
             self._cast.media_controller.status.player_is_idle or self._cast.media_controller.status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN
         ) and resume_video_id:
@@ -182,12 +194,12 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     async def pause_if_playing(self) -> None:
         """Pause, but only if in playing state."""
         if self._cast.media_controller.status.player_is_playing:
-            self._cast.media_controller.pause()
+            await asyncio.to_thread(self.sync_pause)
 
     # PlayerBase
     async def seek(self, position_seconds: int) -> None:
         """Seek to a position in the video."""
-        self._cast.media_controller.seek(position_seconds)
+        await asyncio.to_thread(self.sync_seek, position_seconds)
 
     # PlayerBase
     async def change_volume(self, direction: int) -> None:
@@ -207,7 +219,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         rate = max(rate, 0.25)
         rate = min(rate, 3)
 
-        self._cast.media_controller.set_playback_rate(rate)
+        await asyncio.to_thread(self.sync_set_rate, rate)
         self._logger.info("Set rate to: %s", rate)
 
         update = common.StatusUpdate()
