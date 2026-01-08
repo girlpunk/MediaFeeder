@@ -5,7 +5,7 @@ namespace MediaFeeder.Providers.CCC;
 [Serializable]
 public record Event
 {
-    [JsonPropertyName("guid")] public Guid? Guid { get; init; }
+    [JsonPropertyName("guid")] public string? Guid { get; init; }
 
     [JsonPropertyName("title")] public string? Title { get; init; }
 
