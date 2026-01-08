@@ -72,9 +72,9 @@ public class CCCSubscriptionSynchroniseConsumer(
         }
         else
         {
-            var page = await pageResponse.Content.ReadFromJsonAsync<Event[]>(cancellationToken);
+            var page = await pageResponse.Content.ReadFromJsonAsync<EventList>(cancellationToken);
             ArgumentNullException.ThrowIfNull(page);
-            return await ProcessEventsPage(page, subscription, client, cancellationToken);
+            return await ProcessEventsPage(page.Events, subscription, client, cancellationToken);
         }
     }
 
