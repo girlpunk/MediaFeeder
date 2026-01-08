@@ -168,7 +168,7 @@ public partial class AddSubscription
         await Context.SaveChangesAsync();
 
         var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(FoundProvider.GetType());
-        var contract = Activator.CreateInstance(contractType, new object[] { subscription });
+        var contract = Activator.CreateInstance(contractType, subscription.Id);
         ArgumentNullException.ThrowIfNull(contract);
 
         await Bus.PublishWithGuid(contract);
