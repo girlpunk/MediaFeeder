@@ -18,7 +18,8 @@ public class CCCSubscriptionSynchroniseConsumer(
 
         var subscription = await db.Subscriptions.SingleAsync(s => s.Id == context.Message.SubscriptionId, context.CancellationToken);
 
-        subscription.LastSynchronised ??= DateTimeOffset.UtcNow - TimeSpan.FromDays(1);
+        // LastSynchronised needs a value as it is later used in a >= comparison, which is always false if one side is null.
+        subscription.LastSynchronised ??= DateTimeOffset.UnixEpoch;
         if (subscription.LastSynchronised > DateTimeOffset.UtcNow - TimeSpan.FromHours(1))
         {
             logger.LogInformation("Subscription {Subscription} was already synchronised {Time} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
