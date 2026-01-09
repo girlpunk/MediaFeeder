@@ -73,10 +73,15 @@ public sealed partial class SessionInfo
 
     private string? GetProviderUrl()
     {
-        if (Session?.Video == null || Session?.Provider == null) return null;
+        if (Session?.Video == null) return null;
 
         var provider = ServiceProvider.GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == Session.Video.Subscription!.Provider);
+
+        // TODO ideally this would be in PlaybackSession.PlayNextInPlaylist, but issue with:
+        // Cannot resolve scoped service 'System.Collections.Generic.IEnumerable`1[MediaFeeder.IProvider]' from root provider.
+        Session.Provider ??= provider.Provider;
+
         return provider.GetUrl(Session.Video);
     }
 

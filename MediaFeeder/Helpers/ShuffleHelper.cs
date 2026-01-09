@@ -68,6 +68,7 @@ public class ShuffleHelper
                                 && v.Watched == false
                                 && !reply.Contains(v)
                                 && !excludeOrEmpty.Contains(v))
+                    .Include(static v => v.Subscription)
                     .OrderBy(static v => v.PublishDate)
                     .FirstOrDefaultAsync(cancellationToken);
 

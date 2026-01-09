@@ -78,10 +78,7 @@
             <CardMeta Style="display: block;">
                 <TitleTemplate>
                     <Flex Justify="FlexJustify.SpaceBetween">
-                        @if (Session is { Video: not null, Provider: not null })
-                        {
-                            <span><a href="@(GetProviderUrl())">@(Session.Provider.Humanize())</a></span>
-                        }
+                        <span><a href="@(GetProviderUrl())">@(Session.Provider?.Humanize())</a></span>
                         <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString()) @(Session.RateAdjustedDuration())</span>
                     </Flex>
                 </TitleTemplate>
