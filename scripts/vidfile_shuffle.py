@@ -62,7 +62,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             self._logger.setLevel(logging.DEBUG)
         self._logger.debug("VideoFilePlayer Init")
 
-        self._shuffler = common.Shuffler(f"{cast_name} (file)", self, verbose=verbose)
+        self._shuffler = common.Shuffler(cast_name, self, verbose=verbose)
         self._cast_name = cast_name
 
         # only has for play_media(), rest is via _cast.media_controller
