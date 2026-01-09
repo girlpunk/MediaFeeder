@@ -6,12 +6,11 @@ namespace MediaFeeder.PlaybackManager;
 
 public sealed class PlaybackSessionManager(IDbContextFactory<MediaFeederDataContext> dbContextFactory)
 {
-    private IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; set; } = dbContextFactory;
     internal List<PlaybackSession> PlaybackSessions { get; } = new();
 
     internal PlaybackSession NewSession(AuthUser user)
     {
-        var session = new PlaybackSession(this, user, DbContextFactory);
+        var session = new PlaybackSession(this, user, dbContextFactory);
         session.UpdateEvent += () => UpdateEvent?.Invoke();
         PlaybackSessions.Add(session);
 

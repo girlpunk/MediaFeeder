@@ -9,7 +9,7 @@ public sealed class PlaybackSession : IDisposable
 {
     public readonly string SessionId = Guid.NewGuid().ToString();
     private readonly PlaybackSessionManager _manager;
-    public IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
+    private IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
 
     private Video? _video;
     private TimeSpan? _currentPosition;
