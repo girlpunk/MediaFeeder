@@ -195,6 +195,7 @@ class Shuffler:
 
         await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Title=self.name))
         self._logger.info("Server connected.")
+        await asyncio.sleep(2)  # sometimes msgs sent soon after connecting seem to go missing.
 
     async def _on_ses_rep(self, iterator: AsyncGenerator[Api_pb2.PlaybackSessionReply]) -> None:
         """Process incoming messages from MediaFeeder."""
@@ -319,6 +320,7 @@ class Shuffler:
                 # if connection was lost, at least restore what is currently playing.
                 if current_video_id:
                     await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=current_video_id))
+                    self._logger.info("Restored VideoId: %s", current_video_id)
                 self._logger.debug("Loop reconnected.")
 
             if current_video_id:
