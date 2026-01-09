@@ -212,10 +212,10 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     async def change_playback_rate(self, direction: int) -> None:
         rate = self._cast.media_controller.status.playback_rate
         if direction > 0:
-            rate += 0.5
+            rate += 0.2
         else:
-            rate -= 0.5
-        rate = max(rate, 0.25)
+            rate -= 0.2
+        rate = max(rate, 0.2)
         rate = min(rate, 3)
 
         await asyncio.to_thread(self.sync_set_rate, rate)
