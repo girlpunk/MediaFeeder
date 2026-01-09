@@ -155,6 +155,7 @@ public sealed class PlaybackSession : IDisposable
         var nextVideo = PopPlaylistHead();
         if (nextVideo != null)
         {
+            Video = nextVideo;
             var position = PlaybackPositionToRestore(nextVideo);
             StartPlayingVideo.Invoke(nextVideo, position);
         }
