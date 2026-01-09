@@ -129,6 +129,7 @@ public partial class AddSubscription
             .Include(static f => f.Subfolders)
             .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)
+            .OrderBy(static f => f.Name)
             .ToListAsync();
 
         await FoundProvider.CreateSubscription(new Uri(Add.Url), UrlRequest, UrlDocument, Subscription);

@@ -45,6 +45,7 @@ public partial class EditFolder
             .Include(static f => f.Subfolders)
             .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)
+            .OrderBy(static f => f.Name)
             .ToListAsync();
 
         await base.OnInitializedAsync();
