@@ -1,3 +1,4 @@
+using BlazorComponentUtilities;
 using Google.Protobuf;
 using Grpc.Core;
 using MassTransit;
@@ -623,6 +624,9 @@ public sealed class ApiService(
 
                 if (requestStream.Current.HasSubtitles)
                     session.Subtitles = requestStream.Current.Subtitles;
+
+                if (requestStream.Current.HasBannerMessage)
+                    session.Message = requestStream.Current.BannerMessage.NullIfEmpty();
 
                 // process actions after status updates so that status is up to date for whatever the actiond does.
                 switch (requestStream.Current.Action)

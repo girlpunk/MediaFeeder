@@ -4,7 +4,7 @@
     @if(Session != null) {
         @if (Session.Message != null)
         {
-            <Alert Message="@Session.Message" Type="AlertType.Error" />
+            <Alert Style="margin-bottom: 16px;" Message="@Session.Message" Type="AlertType.Error" />
         }
 
         <GridRow Gutter="16" OnBreakpoint="HandleBreakpoint">

@@ -123,8 +123,6 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             await asyncio.to_thread(self.sync_play_url, media_url, media_type)
 
             self._active_con = self._file_con
-
-            update.SupportsVolumeChange = True
             update.SupportsRateChange = True
 
         elif video.Provider == "Youtube":
@@ -135,15 +133,16 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             await asyncio.to_thread(self.sync_play_yt, video.VideoId)
 
             self._active_con = self._yt_con
-
-            update.SupportsVolumeChange = True
             update.SupportsRateChange = False
 
         else:
             self._logger.error("Can not play video: %s", video)
-            # TODO signal back that playback failed.
+            update.BannerMessage = f"Can not play video: {video.Id} {Video.Title}"
+            await self._shuffler.send_status(update)
             return
 
+        update.SupportsVolumeChange = True
+        update.BannerMessage = ""
         await self._shuffler.send_status(update)
         self._have_control = True
 

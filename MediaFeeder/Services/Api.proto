@@ -210,6 +210,8 @@ message PlaybackSessionRequest {
   optional bool SupportsRateChange = 13;
   optional bool SupportsVolumeChange = 14;
   optional bool SupportsSubtitles = 15;
+
+  optional string BannerMessage = 16;
 }
 
 message PlaybackSessionReply {

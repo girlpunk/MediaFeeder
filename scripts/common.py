@@ -53,6 +53,9 @@ class StatusUpdate:
     """Percent of video loaded into buffer"""
     Loaded: float | None = None
 
+    """Message to show to user when something went wrong."""
+    BannerMessage: float | None = None
+
 
 class QueueEvent(NamedTuple):
     """Internal queue events."""
@@ -271,6 +274,9 @@ class Shuffler:
 
         if status.Loaded is not None:
             status_message.Loaded = status.Loaded
+
+        if status.BannerMessage is not None:
+            status_message.BannerMessage = status.BannerMessage;
 
         await self._status_report_queue.put(status_message)
 
