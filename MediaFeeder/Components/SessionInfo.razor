@@ -82,7 +82,7 @@
                         {
                             <span><a href="@(GetProviderUrl())">@(Session.Provider.Humanize())</a></span>
                         }
-                        <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString())</span>
+                        <span>@(Session.CurrentPosition?.ToString()) / @(Session.Video?.DurationSpan.ToString()) @(Session.RateAdjustedDuration())</span>
                     </Flex>
                 </TitleTemplate>
             </CardMeta>

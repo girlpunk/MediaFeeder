@@ -165,6 +165,15 @@ public sealed class PlaybackSession : IDisposable
         }
     }
 
+    public string RateAdjustedDuration()
+    {
+        var rate = _rate;
+        var video = _video;
+        if (rate is null or 1.0f || video?.Duration == null) return "";
+        var span = TimeSpan.FromSeconds((long)(video.Duration / rate));
+        return $" ({span.ToString()})";
+    }
+
     public Video? Video
     {
         get => _video;
