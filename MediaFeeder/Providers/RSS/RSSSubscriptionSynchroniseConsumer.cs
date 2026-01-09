@@ -5,13 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using System.ServiceModel.Syndication;
 using System.Xml;
 using MediaFeeder.Data.db;
+using MediaFeeder.Data.Enums;
 
 namespace MediaFeeder.Providers.RSS;
 
 public class RSSSubscriptionSynchroniseConsumer(
     ILogger<RSSSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    Metrics metrics
 ) : IConsumer<SynchroniseSubscriptionContract<RSSProvider>>
 {
     public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<RSSProvider>> context)
@@ -72,6 +74,7 @@ public class RSSSubscriptionSynchroniseConsumer(
             .Include(static v => v.Tags)
             .SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken);
 
+        metrics.incProviderVideoChanged(Provider.RSS, video == null);
         if (video == null)
         {
             video = new Video

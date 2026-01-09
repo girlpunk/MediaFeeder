@@ -4,6 +4,7 @@ using Google.Apis.YouTube.v3.Data;
 using JetBrains.Annotations;
 using MassTransit;
 using MediaFeeder.Data;
+using MediaFeeder.Data.Enums;
 using MediaFeeder.Filters;
 using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
@@ -20,7 +21,8 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     IHttpClientFactory httpClientFactory,
     IBus bus,
     Utils utils,
-    YouTubeService youTubeService
+    YouTubeService youTubeService,
+    Metrics metrics
 ) : IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>
 {
     public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<YoutubeProvider>> context)
@@ -275,6 +277,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
                 db.Videos.Add(video);
                 await db.SaveChangesAsync(cancellationToken);
+                metrics.incProviderVideoChanged(Provider.YouTube, true);
 
                 await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
             }
@@ -352,6 +355,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         db.Videos.Add(video);
         await db.SaveChangesAsync(cancellationToken);
+        metrics.incProviderVideoChanged(Provider.YouTube, true);
 
         await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
     }

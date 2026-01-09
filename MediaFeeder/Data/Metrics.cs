@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using MediaFeeder.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Data;
@@ -20,6 +21,8 @@ public sealed class Metrics : IDisposable
     private ObservableGauge<int> FolderUnwatchedGauge { get; }
     private ObservableGauge<int> FolderUnwatchedDurationGauge { get; }
     private ObservableGauge<int> FolderWatchedDurationGauge { get; }
+
+    private Counter<int> ProviderVideoChanges { get; }
 
     public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory)
     {
@@ -171,6 +174,15 @@ public sealed class Metrics : IDisposable
                     .ToList();
             },
             "Seconds");
+
+        ProviderVideoChanges = _meter.CreateCounter<int>("provider-video-changes", "Video");
+    }
+
+    public void incProviderVideoChanged(Provider provider, bool newVideo)
+    {
+        ProviderVideoChanges.Add(1,
+            new KeyValuePair<string, object?>("provider", provider.ToString()),
+            new KeyValuePair<string, object?>("change", newVideo ? "new" : "update"));
     }
 
     public void Dispose()

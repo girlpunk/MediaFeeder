@@ -3,13 +3,15 @@ using MediaFeeder.Data;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MediaFeeder.Data.db;
+using MediaFeeder.Data.Enums;
 
 namespace MediaFeeder.Providers.CCC;
 
 public class CCCSubscriptionSynchroniseConsumer(
     ILogger<CCCSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    Metrics metrics
 ) : IConsumer<SynchroniseSubscriptionContract<CCCProvider>>
 {
     public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<CCCProvider>> context)
@@ -119,6 +121,7 @@ public class CCCSubscriptionSynchroniseConsumer(
             .Include(static v => v.Tags)
             .SingleOrDefaultAsync(v => v.VideoId == item.Guid.ToString() && v.SubscriptionId == subscription.Id, cancellationToken);
 
+        metrics.incProviderVideoChanged(Provider.CCC, video == null);
         if (video == null)
         {
             video = new Video
