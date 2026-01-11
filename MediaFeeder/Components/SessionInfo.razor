@@ -135,6 +135,9 @@
                     </GridCol>
                 }
                 <GridCol Style="flex-grow: 0;">
+                    <Switch Checked="true" CheckedChildren="Sleep" UnCheckedChildren="Sleep" @bind-Value="@Session.SleepMode" />
+                </GridCol>
+                <GridCol Style="flex-grow: 0;">
                     @Session.Playlist.Count() Queued,
                     @Remaining().ToString("hh':'mm':'ss")
                 </GridCol>

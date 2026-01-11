@@ -40,6 +40,7 @@ public sealed class PlaybackSession : IDisposable
     public event Action? SkipEvent;
     public int? SelectedFolderId { get; set; }
     public event Action<Int32>? AddVideos;
+    public bool SleepMode;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
     public void SeekRelative(int seconds) => SeekRelativeEvent?.Invoke(seconds);
@@ -123,14 +124,19 @@ public sealed class PlaybackSession : IDisposable
         await PlayNextInPlaylist();
     }
 
-    public async Task MarkAsWatchedAndGoNext()
+    public async Task OnWatchedToEnd(int videoId)
+    {
+        await MarkVideoPlayedToEnd(videoId, !SleepMode);
+    }
+
+    private async Task MarkAsWatchedAndGoNext()
     {
         var video = Video;  // capture for thread safety.
         if (video == null) throw new InvalidOperationException("Video not set in session.");
-        await OnWatchedToEnd(video.Id);
+        await MarkVideoPlayedToEnd(video.Id, true);
     }
 
-    public async Task OnWatchedToEnd(int videoId)
+    private async Task MarkVideoPlayedToEnd(int videoId, bool markWatchedAndGoNext)
     {
         var video = Video;  // capture for thread safety.
         if (video == null) throw new InvalidOperationException("Video not set in session.");
@@ -138,14 +144,15 @@ public sealed class PlaybackSession : IDisposable
 
         await using var db = await DbContextFactory.CreateDbContextAsync();
         db.Attach(video);
-        video.MarkWatched(true);
+        if (markWatchedAndGoNext) video.MarkWatched(true);
+        video.PlaybackPosition = null;  // clear this even if not marking as watched so next play is from begnnning.
         await db.SaveChangesAsync();
 
-        // clear this to match what MarkWatched() does above, since this is what is sent when a video is replayed
+        // clear this to match above, since this is what is sent when a video is replayed
         // by play/pause when the video is not already playing (or paused).
         CurrentPosition = null;
 
-        await PlayNextInPlaylist();
+        if (markWatchedAndGoNext) await PlayNextInPlaylist();
     }
 
     public async Task PlayNextInPlaylist()
