@@ -24,6 +24,14 @@
               OnFinish="@CheckUrl">
             <FluentValidationValidator/>
             <ValidationSummary/>
+
+            <div style="margin: 1em;">
+                <Title Level="5">Supported URL formats:</Title>
+                <Text>https://www.youtube.com/@@{channel name}</Text><br />
+                <Text>https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx</Text><br />
+                <Text>https://media.ccc.de/c/{conference}</Text><br />
+            </div>
+
             <FormItem Label="URL" Required>
                 <Input @bind-Value="@context.Url" required="required"/>
             </FormItem>
