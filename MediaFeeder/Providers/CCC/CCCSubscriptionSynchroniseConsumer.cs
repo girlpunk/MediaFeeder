@@ -4,6 +4,7 @@ using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
+using MediaFeeder.Helpers;
 
 namespace MediaFeeder.Providers.CCC;
 
@@ -67,6 +68,7 @@ public class CCCSubscriptionSynchroniseConsumer(
         using var pageResponse = await client.GetAsync(url.ToString(), cancellationToken);
         pageResponse.EnsureSuccessStatusCode();
 
+        await HttpHelper.EnsureContentTypeHeader(pageResponse, "application/json");
         if (subscription.ChannelId.Contains("/conferences/"))
         {
             var page = await pageResponse.Content.ReadFromJsonAsync<Conference>(cancellationToken);

@@ -3,6 +3,7 @@ using HtmlAgilityPack;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
+using MediaFeeder.Helpers;
 
 namespace MediaFeeder.Providers.CCC;
 
@@ -68,6 +69,7 @@ public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvid
 
     private async Task CreateConferenceSubscription(HttpResponseMessage request, SubscriptionForm subscription)
     {
+        await HttpHelper.EnsureContentTypeHeader(request, "application/json");
         var conference = await request.Content.ReadFromJsonAsync<Conference>();
         ArgumentNullException.ThrowIfNull(conference);
 
