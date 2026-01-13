@@ -152,7 +152,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-Downloader
 
       - name: Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache
         with:
           path: |
