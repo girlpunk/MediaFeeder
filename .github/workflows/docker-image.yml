@@ -27,7 +27,7 @@ jobs:
     steps:
       # Git Checkout
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0 # If you use VALIDATE_ALL_CODEBASE = true, you can remove this line to improve performances
@@ -89,7 +89,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # setup Docker buld action
       - name: Set up Docker Buildx
         id: buildx
@@ -135,7 +135,7 @@ jobs:
       packages: write
     steps:
       - name: "Checkout Repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: "Setup Docker"
         uses: docker/setup-buildx-action@v3
       - name: "Log into Registry ${{ env.REGISTRY }}"
