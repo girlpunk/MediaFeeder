@@ -15,5 +15,6 @@
   "ignorePaths": ["**/Might be useful/**"],
   "lockFileMaintenance": {
     "enabled": true
-  }
+  },
+  "dependencyDashboardApproval": false
 }
