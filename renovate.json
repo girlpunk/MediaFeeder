@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "assignAutomerge": true,
+  "additionalReviewers": ["girlpunk", "haku"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    }
+  ],
+  "configMigration": true,
+  "ignorePaths": ["**/Might be useful/**"],
+  "lockFileMaintenance": {
+    "enabled": true
+  }
+}
