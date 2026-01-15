@@ -2,7 +2,7 @@
 
 <Card Loading="@(Video == null)" BodyStyle="padding:0.5em;">
     <Cover>
-        <BadgeRibbon Text="@(Badge)" Placement="@(Badge == null ? "hidden" : "end")" Color="@BadgeColour">
+        <BadgeRibbon Text="@(Badge)" Placement="end" Style="@(Badge == null ? "display: none;" : "")" Color="@BadgeColour">
             <a @onclick="@OnClick" @onclick:preventDefault="OnClickPreventDefault" href="@($"video/{Video?.Id}")">
                 <Image
                     Src="@($"api/video/{Video?.Id}/thumbnail/")"
