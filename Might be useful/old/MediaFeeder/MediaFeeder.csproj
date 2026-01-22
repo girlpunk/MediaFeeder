@@ -35,7 +35,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
         <PackageReference Include="WorkflowCore" Version="3.9.0" />
         <PackageReference Include="WorkflowCore.Persistence.EntityFramework" Version="3.9.0" />
         <PackageReference Include="WorkflowCore.Persistence.PostgreSQL" Version="3.9.0" />
