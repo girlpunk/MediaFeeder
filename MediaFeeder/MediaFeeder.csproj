@@ -56,7 +56,7 @@
         </PackageReference>
         <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
         <PackageReference Include="Polly.RateLimiting" Version="8.6.5" />
-        <PackageReference Include="ResQueue.MassTransit" Version="1.4.1" />
+        <PackageReference Include="ResQueue.MassTransit" Version="1.5.0" />
         <PackageReference Include="System.ServiceModel.Syndication" Version="9.0.12" />
     </ItemGroup>
 
