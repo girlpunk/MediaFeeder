@@ -341,8 +341,8 @@ class Shuffler:
 
             elif event and event.watched_to_end:
                 if event.video_id == current_video_id:
-                    self._logger.info("Notifiting server video %s was watched...", current_video_id)
                     await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id))
+                    self._logger.info("Notified server video was watched: %s", current_video_id)
 
                     current_video_id = None
                 else:
