@@ -268,7 +268,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
                 {
                     _lastRestoredPositionVideoId = Video.Id;
 
-                    var positionToRestore = PlaybackSession.PlaybackPositionToRestore();
+                    var positionToRestore = await PlaybackSession.PlaybackPositionToRestore();
                     Console.WriteLine($"(session: {PlaybackSession.SessionId}) Restoring position: {positionToRestore}");
 
                     if (positionToRestore != null)

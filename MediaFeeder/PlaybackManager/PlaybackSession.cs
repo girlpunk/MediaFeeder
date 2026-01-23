@@ -163,7 +163,7 @@ public sealed class PlaybackSession : IDisposable
         if (nextVideo != null)
         {
             Video = nextVideo;
-            var position = PlaybackPositionToRestore(nextVideo);
+            var position = await PlaybackPositionToRestore(nextVideo);
             StartPlayingVideo.Invoke(nextVideo, position);
         }
         else
@@ -328,10 +328,13 @@ public sealed class PlaybackSession : IDisposable
         }
     }
 
-    public int? PlaybackPositionToRestore(Video? alt = default)
+    public async Task<int?> PlaybackPositionToRestore(Video? alt = default)
     {
         var v = alt ?? Video;
         if (v == null) return null;
+
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        await db.Entry(v).ReloadAsync();
 
         var position = v?.PlaybackPosition ?? 0;
         if (position > 0 && position < v.Duration - 10)
