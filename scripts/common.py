@@ -221,7 +221,7 @@ class Shuffler:
             await self._player.pause_if_playing()
 
         elif rep.ShouldSeekRelativeSeconds and self._now_position_seconds is not None:
-            await self._player.seek(self._now_position_seconds + rep.ShouldSeekRelativeSeconds)
+            await self._player.seek(max(0, self._now_position_seconds + rep.ShouldSeekRelativeSeconds))
 
         elif rep.NextVideoId > 0:
             self._logger.info("Received next video ID: %s from %s seconds", rep.NextVideoId, rep.PlaybackPosition)
