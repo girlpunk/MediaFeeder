@@ -95,8 +95,8 @@ class PlayerBase(abc.ABC):
         """Change volume up or down if direction is positive or negative."""
 
     @abc.abstractmethod
-    async def change_playback_rate(self, direction: int) -> None:
-        """Increase/decrease playback rate if direction is positive or negative."""
+    async def change_playback_rate(self, rate: float) -> None:
+        """Set playback rate to specified value.."""
 
 
 class AuthGateway(grpc.AuthMetadataPlugin):
@@ -125,6 +125,8 @@ class Shuffler:
 
     _now_state: int | None = None
     _now_position_seconds: int | None = None
+    _now_rate: float | None = None
+    _saved_rate: float | None = None
 
     _event_queue: asyncio.Queue[QueueEvent] = asyncio.Queue()
 
@@ -232,8 +234,23 @@ class Shuffler:
             await self._player.change_volume(rep.ShouldChangeVolume)
 
         elif rep.ShouldChangeRate:
-            self._logger.info("Received change rate command: %s", rep.ShouldChangeRate)
-            await self._player.change_playback_rate(rep.ShouldChangeRate)
+            self._logger.debug("Received change rate command: %s", rep.ShouldChangeRate)
+            rate = self._now_rate
+            if rep.ShouldChangeRate > 0:
+                rate += 0.2
+            else:
+                rate -= 0.2
+            rate = max(rate, 0.2)
+            rate = min(rate, 3)
+
+            # updating UI is more urgent than applying change.
+            update = StatusUpdate()
+            update.Rate = rate
+            await self.send_status(update)
+
+            await self._player.change_playback_rate(rate)
+            self._saved_rate = rate
+            self._logger.info("Set rate to: %s", rate)
 
     async def _status_report_queue_iterator(self) -> AsyncGenerator[Api_pb2.PlaybackSessionRequest]:
         self._logger.debug("Status Report Queue Iterator")
@@ -270,6 +287,9 @@ class Shuffler:
 
         if status.Rate is not None:
             status_message.Rate = status.Rate
+            self._now_rate = status.Rate
+            if not self._saved_rate:
+                self._saved_rate = status.Rate
         if status.SupportsRateChange is not None:
             status_message.SupportsRateChange = status.SupportsRateChange
 
@@ -311,6 +331,7 @@ class Shuffler:
         current_video_id = None
         last_save_position_time = time.monotonic()
         position_to_restore_seconds = None
+        rate_to_restore = None
 
         while True:
             if self._session_reader is None or self._session_reader.done():
@@ -338,6 +359,7 @@ class Shuffler:
                 self._last_save_position_time = time.monotonic()  # do not save position immediately.
                 await self._player.play_video(id_response)
                 position_to_restore_seconds = event.restore_position_seconds
+                rate_to_restore = self._saved_rate
 
             elif event and event.watched_to_end:
                 if event.video_id == current_video_id:
@@ -363,6 +385,11 @@ class Shuffler:
                     self._stub.SavePlaybackPosition(Api_pb2.SavePlaybackPositionRequest(Id=current_video_id, PositionSeconds=self._now_position_seconds))
                     last_save_position_time = time.monotonic()
                     self._logger.debug("Saved playback position: %s", self._now_position_seconds)
+
+                if rate_to_restore and rate_to_restore > 1:
+                    self._logger.info("Restore playback rate: %s ...", rate_to_restore)
+                    await self._player.change_playback_rate(rate_to_restore)
+                    rate_to_restore = None
 
 
 class LogbackLikeFormatter(logging.Formatter):

@@ -106,7 +106,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.info("TODO: impl volume change")
 
     # PlayerBase
-    async def change_playback_rate(self, direction: int) -> None:
+    async def change_playback_rate(self, rate: float) -> None:
         self._logger.info("TODO: impl rate change")
 
     async def main(self) -> None:
