@@ -76,7 +76,8 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         """Play a video immidiately."""
         self._logger.debug("Play Video")
         self._prov_id_to_video_id[video.VideoId] = video.Id
-        await self._api.play_video(video.VideoId)
+
+        await self._api._command("setPlaylist", {"videoId": video.VideoId})
 
     # PlayerBase
     async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
@@ -87,6 +88,9 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             await self._api.play()
         elif self._current_player_state == pyytlounge.State.Playing:
             await self._api.pause()
+        elif self._current_player_state == pyytlounge.State.Starting and resume_video_id:
+            self._logger.info("Player is idle so requesting replay of %s from %s seconds.", resume_video_id, resume_from_position)
+            await self._shuffler.play_video(resume_video_id, resume_from_position)
         else:
             self._logger.warning("Don't know how to play/pause from state %s", self._current_player_state)
 
@@ -161,6 +165,15 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         update.Provider = "Youtube"
 
         await self._shuffler.send_status(update)
+
+        if event.current_time is None and event.state == pyytlounge.State.Starting and event.video_id == self._now_provider_id and self._now_provider_id is not None and self._now_duration is not None:
+            self._logger.debug("Assuming video finished: now_provider_id=%s  now_duration=%s", self._now_provider_id, self._now_duration)
+            await self._shuffler.finished(self._prov_id_to_video_id[self._now_provider_id])
+            self._now_provider_id = None
+            self._now_duration = None
+            self._prev_provider_id = None
+            self._prev_duration = None
+
 
     async def ad_playing_changed(self, event: pyytlounge.AdPlayingEvent) -> None:
         """Process an ad playing."""
@@ -277,7 +290,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             pyytlounge.State.Buffering: Api_pb2.LOADING,
             pyytlounge.State.Playing: Api_pb2.PLAYING,
             pyytlounge.State.Paused: Api_pb2.PAUSED,
-            pyytlounge.State.Starting: Api_pb2.LOADING,
+            pyytlounge.State.Starting: Api_pb2.IDLE,
             pyytlounge.State.Advertisement: Api_pb2.ADVERT,
         }[state]
 
