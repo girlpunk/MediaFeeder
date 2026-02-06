@@ -301,6 +301,15 @@ class Shuffler:
 
         await self._status_report_queue.put(status_message)
 
+    async def send_banner(self, message: str, exception: Exception | None = None) -> None:
+        m = message
+        if exception:
+            m += f": {type(exception).__name__} {str(exception)}"
+
+        update = StatusUpdate()
+        update.BannerMessage = m
+        await self.send_status(update)
+
     async def play_video(self, video_id: int, from_position: int | None) -> None:
         self._event_queue.put_nowait(QueueEvent(next_video_id=video_id, restore_position_seconds=from_position))
 
@@ -357,7 +366,13 @@ class Shuffler:
                 await self._status_report_queue.put(Api_pb2.PlaybackSessionRequest(VideoId=current_video_id))
 
                 self._last_save_position_time = time.monotonic()  # do not save position immediately.
-                await self._player.play_video(id_response)
+                try:
+                    await self._player.play_video(id_response)
+                    await self.send_banner("")  # clear any previous message
+                except Exception as e:
+                    self._logger.exception("Can not play video")
+                    await self.send_banner(f"Can not play video \"{id_response.Title}\" ({id_response.Id})", e)
+
                 position_to_restore_seconds = event.restore_position_seconds
                 rate_to_restore = self._saved_rate
 

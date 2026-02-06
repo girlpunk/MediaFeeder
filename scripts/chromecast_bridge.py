@@ -137,7 +137,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         else:
             self._logger.error("Can not play video: %s", video)
-            update.BannerMessage = f"Can not play video: {video.Id} {Video.Title}"
+            update.BannerMessage = f"Can not play video: {video.Id} {video.Title}"
             await self._shuffler.send_status(update)
             return
 
