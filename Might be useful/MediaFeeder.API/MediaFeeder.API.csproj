@@ -46,7 +46,7 @@
     <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.5" />
     <PackageReference Include="NuGet.Common" Version="6.12.1" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.12.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
