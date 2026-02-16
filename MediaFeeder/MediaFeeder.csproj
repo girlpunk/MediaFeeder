@@ -42,7 +42,7 @@
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.12" />
         <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.12" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-        <PackageReference Include="Npgsql.OpenTelemetry" Version="9.0.3" />
+        <PackageReference Include="Npgsql.OpenTelemetry" Version="9.0.4" />
         <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.11.0" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.11.2-beta.1" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
