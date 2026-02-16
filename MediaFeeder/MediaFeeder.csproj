@@ -17,10 +17,10 @@
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
         <PackageReference Include="Google.Apis.YouTube.v3" Version="1.73.0.4053" />
         <PackageReference Include="Google.Protobuf" Version="3.30.2" />
-        <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
-        <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.70.0" />
-        <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.70.0" />
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.76.0" />
+        <PackageReference Include="Grpc.AspNetCore.HealthChecks" Version="2.76.0" />
+        <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.76.0" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.76.0" />
         <PackageReference Include="Grpc.Tools" Version="2.78.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
