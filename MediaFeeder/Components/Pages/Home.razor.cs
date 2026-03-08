@@ -121,8 +121,6 @@ public sealed partial class Home
                 Title = (await context.Subscriptions.FindAsync(SubscriptionId))?.Name ?? "";
             }
 
-            source = source.SortVideos(SortOrder);
-
             if (ShowFilters.HasFlag(VideosShowOnly.Watched) ^ ShowFilters.HasFlag(VideosShowOnly.NotWatched))
             {
                 if (ShowFilters.HasFlag(VideosShowOnly.Watched)) source = source.Where(v => v.Watched);
@@ -157,6 +155,8 @@ public sealed partial class Home
 
             ItemsAvailable = await source.CountAsync();
             Duration = TimeSpan.FromSeconds(await source.SumAsync(static v => v.Duration ?? 0));
+
+            source = source.SortVideos(SortOrder);
             Videos = await source
                 .Skip((PageNumber - 1) * ResultsPerPage)
                 .Take(ResultsPerPage)
