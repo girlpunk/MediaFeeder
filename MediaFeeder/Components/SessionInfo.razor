@@ -24,7 +24,7 @@
                     </TitleTemplate>
                     <DescriptionTemplate>
                         <span>
-                            @(Session.Video?.Subscription?.Name)
+                            <a href="subscription/@(Session.Video?.Subscription?.Id)">@(Session.Video?.Subscription?.Name)</a>
                             •
                             @(Session.Video?.PublishDate.Humanize() ?? "")
                         </span>
