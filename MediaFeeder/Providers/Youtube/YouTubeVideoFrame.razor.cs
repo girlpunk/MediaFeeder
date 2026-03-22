@@ -254,17 +254,17 @@ public sealed partial class YouTubeVideoFrame : IDisposable
 
             try
             {
-                PlaybackSession.Volume = await callJsOrNull<int?>(_player, "getVolume");
-                PlaybackSession.Loaded = await callJsOrNull<float?>(_player, "getVideoLoadedFraction");
+                PlaybackSession.Volume = await CallJsOrNull<int?>(_player, "getVolume");
+                PlaybackSession.Loaded = await CallJsOrNull<float?>(_player, "getVideoLoadedFraction");
 
                 // TODO error: Could not find 'getSubtitles' ('getSubtitles' was undefined).
                 //PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
 
-                var progress = await callJsOrNull<float?>(_player, "getCurrentTime");
+                var progress = await CallJsOrNull<float?>(_player, "getCurrentTime");
                 PlaybackSession.CurrentPosition = progress != null ? TimeSpan.FromSeconds(progress.Value) : null;
 
                 // trying to seek before playback has actually started seems to do nothing.
-                if (progress != null && progress > 0 && _lastRestoredPositionVideoId != Video.Id)
+                if (progress != null && progress > 0 && Video != null && _lastRestoredPositionVideoId != Video.Id)
                 {
                     _lastRestoredPositionVideoId = Video.Id;
 
@@ -295,7 +295,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
     }
 
     // for some reason changes to this method do not actually get picked up by hot-reload.
-    private static async Task<T?> callJsOrNull<T>(IJSObjectReference? thing, string method)
+    private static async Task<T?> CallJsOrNull<T>(IJSObjectReference? thing, string method)
     {
         if (thing == null) return default;
 
@@ -312,7 +312,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             if (e.Message.Contains("The JSON value could not be converted"))
                 return default;
 
-            throw e;
+            throw;
         }
     }
 

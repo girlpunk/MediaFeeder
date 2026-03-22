@@ -6,7 +6,7 @@ namespace MediaFeeder;
 public class AppJwtBearerEvents : JwtBearerEvents
 {
     private readonly ILogger<AppJwtBearerEvents> _logger;
- 
+
     public AppJwtBearerEvents(ILogger<AppJwtBearerEvents> logger)
     {
         _logger = logger;
@@ -28,7 +28,7 @@ public class AppJwtBearerEvents : JwtBearerEvents
         if (values.Count > 1)
         {
             _logger.LogInformation("More than one parameter found");
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            context.Response.StatusCode = (int) HttpStatusCode.Unauthorized;
             context.Fail(
                 "Only one 'access_token' query string parameter can be defined. " +
                 $"However, {values.Count:N0} were included in the request."
@@ -42,7 +42,7 @@ public class AppJwtBearerEvents : JwtBearerEvents
         if (string.IsNullOrWhiteSpace(token))
         {
             _logger.LogInformation("Empty parameter");
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            context.Response.StatusCode = (int) HttpStatusCode.Unauthorized;
             context.Fail(
                 "The 'access_token' query string parameter was defined, " +
                 "but a value to represent the token was not included."

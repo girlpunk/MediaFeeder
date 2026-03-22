@@ -341,7 +341,7 @@ public sealed class ApiService(
         return new SavePlaybackPositionReply();
     }
 
-    private async Task<Video?> CheckAuthAndGetVideo(ServerCallContext context, MediaFeederDataContext db, int videoId)
+    private async Task<Video> CheckAuthAndGetVideo(ServerCallContext context, MediaFeederDataContext db, int videoId)
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
@@ -353,6 +353,7 @@ public sealed class ApiService(
 
         if (video == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
+
         return video;
     }
 
@@ -388,7 +389,7 @@ public sealed class ApiService(
         var reply = new SearchReply();
         foreach (var video in videos)
         {
-            var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched,  Star = video.Star };
+            var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched, Star = video.Star };
             if (video.WatchedDate != null) found.WatchedWhenSeconds = video.WatchedDate.Value.ToUnixTimeSeconds();
             if (video.VideoId != null) found.ProviderVideoId = video.VideoId;
             reply.Videos.Add(found);
@@ -533,7 +534,7 @@ public sealed class ApiService(
             if (session.Video?.Id != null) reply.NextVideoId = session.Video.Id;
 
             int p = 0;
-            if (session.CurrentPosition != null) p = (int)session.CurrentPosition.Value.TotalSeconds;
+            if (session.CurrentPosition != null) p = (int) session.CurrentPosition.Value.TotalSeconds;
             if (p <= 0) p = await session.PlaybackPositionToRestore() ?? 0;
             if (p > 0) reply.PlaybackPosition = p;
 

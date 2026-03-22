@@ -23,7 +23,7 @@ public sealed class YouTubeDownloadVideoConsumer(
 
         if (video.IsDownloaded)
         {
-            logger.LogInformation("Cancelling download of {}: Video is already downloaded ({})", video.Id, video.DownloadedPath);
+            logger.LogInformation("Cancelling download of {Video}: Video is already downloaded ({Path})", video.Id, video.DownloadedPath);
             return;
         }
 
@@ -41,13 +41,13 @@ public sealed class YouTubeDownloadVideoConsumer(
 
         if (downloadResponse.Status == Status.Done)
         {
-            logger.LogInformation("Successfully downloaded {} to {}", context.Message.VideoId, downloadResponse.Filename);
+            logger.LogInformation("Successfully downloaded {Video} to {Path}", context.Message.VideoId, downloadResponse.Filename);
             video.DownloadedPath = downloadResponse.Filename;
             await dbContext.SaveChangesAsync();
         }
         else
         {
-            logger.LogError("Problem while downloading {}:  {}", context.Message.VideoId, downloadResponse.ExitCode);
+            logger.LogError("Problem while downloading {Video}:  {Error}", context.Message.VideoId, downloadResponse.ExitCode);
         }
 
         await context.RespondAsync(downloadResponse);

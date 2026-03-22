@@ -34,7 +34,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
 
         if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
         {
-            logger.LogInformation("Subscription {} was already synchronised {} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
+            logger.LogInformation("Subscription {Name} was already synchronised {Time} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
             return;
         }
 
@@ -67,7 +67,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             var channelResult = channelResponse?.Items?.SingleOrDefault();
 
             if (channelResult == null)
-                logger.LogError("Could not load channel details for {} (channel {})", subscription.Id,
+                logger.LogError("Could not load channel details for {Subscription} (channel {Channel})", subscription.Id,
                     subscription.ChannelId);
 
             if (channelResult?.Snippet?.Title != null)
@@ -305,7 +305,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 ? playlistItems.OrderBy(static i => i.Snippet.PublishedAtDateTimeOffset).ToList()
                 : playlistItems.OrderBy(static i => i.Snippet.Position).ToList();
 
-            logger.LogInformation("Got page of {} videos for {}, next page will be {}", playlistItems.Count, subscription.Name, playlistResponse.NextPageToken);
+            logger.LogInformation("Got page of {Count} videos for {Subscription}, next page will be {Page}", playlistItems.Count, subscription.Name, playlistResponse.NextPageToken);
 
             foreach (var item in playlistItems)
                 await AddVideoFromApi(subscription, db, cancellationToken, item);
@@ -346,7 +346,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             New = true,
             DownloadedPath = null,
             SubscriptionId = subscription.Id,
-            PlaylistIndex = (int)(item.Snippet.Position ?? 0),
+            PlaylistIndex = (int) (item.Snippet.Position ?? 0),
             PublishDate = item.Snippet.PublishedAtDateTimeOffset,
             Thumb = thumbnailPath,
             Thumbnail = thumbnailPath,

@@ -71,7 +71,7 @@ public sealed class MediaToadService(
         var mediaItem = new MediaItem()
         {
             Id = video.Id.ToString(),
-            DurationMillis = (long)(video.DurationSpan?.TotalMilliseconds ?? 0),
+            DurationMillis = (long) (video.DurationSpan?.TotalMilliseconds ?? 0),
             Title = video.Name,
         };
 
@@ -187,7 +187,7 @@ public sealed class MediaToadService(
                     new MediaItem()
                     {
                         Id = v.Id.ToString(),
-                        DurationMillis = (long)(v.DurationSpan?.TotalMilliseconds ?? 0),
+                        DurationMillis = (long) (v.DurationSpan?.TotalMilliseconds ?? 0),
                         Title = v.Name
                     }
                 )
@@ -208,10 +208,10 @@ public sealed class MediaToadService(
         IEnumerable<MediaNode> subnodes;
         if (nodeId == null)
         {
-            node = mkFolderNode(0, null, "MediaFeeder");
+            node = MkFolderNode(0, null, "MediaFeeder");
             subnodes = (await query.Where(static f => f.ParentId == null)
-                .ToListAsync(cancellationToken))
-                .Select(static f => mkFolderNode(f.Id, 0, f.Name));
+                    .ToListAsync(cancellationToken))
+                .Select(static f => MkFolderNode(f.Id, 0, f.Name));
         }
         else
         {
@@ -224,8 +224,8 @@ public sealed class MediaToadService(
             if (folder.UserId != user.Id)
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
 
-            node = mkFolderNode(folder.Id, folder.ParentId, folder.Name);
-            subnodes = folder.Subfolders.Select(static f => mkFolderNode(f.Id, f.ParentId, f.Name))
+            node = MkFolderNode(folder.Id, folder.ParentId, folder.Name);
+            subnodes = folder.Subfolders.Select(static f => MkFolderNode(f.Id, f.ParentId, f.Name))
                 .Concat(folder.Subscriptions.Select(s =>
                     new MediaNode
                     {
@@ -238,13 +238,17 @@ public sealed class MediaToadService(
         return new ListNodeReply
         {
             Node = node,
-            Child = {subnodes},
+            Child = { subnodes },
         };
     }
 
-    private static MediaNode mkFolderNode(int id, int? parentId, string title)
+    private static MediaNode MkFolderNode(int id, int? parentId, string title)
     {
-        var node = new MediaNode{Id = $"f{id}", Title = title};
+        var node = new MediaNode
+        {
+            Id = $"f{id}",
+            Title = title
+        };
         if (parentId != null) node.ParentId = $"f{parentId}";
         return node;
     }

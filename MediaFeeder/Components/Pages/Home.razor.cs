@@ -23,7 +23,7 @@ public sealed partial class Home
     [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; } = null!;
 
     [Inject] public required UserManager<AuthUser> UserManager { get; set; }
-    [Inject] public PlaybackSessionManager? SessionManager { get; set; }
+    [Inject] public required PlaybackSessionManager SessionManager { get; set; }
     [Inject] public required MessageService MessageService { get; set; }
 
     public bool isMobile;

@@ -6,7 +6,6 @@ namespace MediaFeeder.Helpers;
 
 public class ShuffleHelper
 {
-
     public static async Task<List<Video>> Shuffle(
         MediaFeederDataContext dataContext,
         AuthUser user,
@@ -88,5 +87,4 @@ public class ShuffleHelper
 
         return reply;
     }
-
 }

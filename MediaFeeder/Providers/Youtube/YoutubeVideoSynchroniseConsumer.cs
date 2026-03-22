@@ -89,7 +89,7 @@ public sealed class YoutubeVideoSynchroniseConsumer(
             if (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount > 0)
                 video.Rating = (videoStats.Statistics.LikeCount / (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount));
 
-            video.Views = (int?)videoStats.Statistics.ViewCount;
+            video.Views = (int?) videoStats.Statistics.ViewCount;
 
             // This can be null if the video "Premieres" in the future
             if (!string.IsNullOrWhiteSpace(videoStats.ContentDetails.Duration))
@@ -135,7 +135,7 @@ public sealed class YoutubeVideoSynchroniseConsumer(
             if (video.Watched && (video.Subscription!.AutomaticallyDeleteWatched))
             {
                 // Video is watched and subscription is set to automatically delete watched videos
-                logger.LogInformation("Deleting file {} for {}, as video has been watched", video.DownloadedPath, video.Id);
+                logger.LogInformation("Deleting file {downloadedPath} for {Id}, as video has been watched", video.DownloadedPath, video.Id);
 
                 File.Delete(video.DownloadedPath);
                 video.DownloadedPath = null;

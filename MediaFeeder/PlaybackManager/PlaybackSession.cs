@@ -31,15 +31,15 @@ public sealed class PlaybackSession : IDisposable
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
     public event Action? PauseIfPlayingEvent;
-    public event Action<Video, int?>? StartPlayingVideo;  // params: video, position to play from in seconds.
-    public event Action<Int32>? SeekRelativeEvent;  // param: position to play from in seconds.
+    public event Action<Video, int?>? StartPlayingVideo; // params: video, position to play from in seconds.
+    public event Action<int>? SeekRelativeEvent; // param: position to play from in seconds.
     public event Action? ToggleSubtitleEvent;
     public event Action<bool>? ChangeRateEvent;
     public event Action<bool>? ChangeVolumeEvent;
     public event Action? WatchEvent;
     public event Action? SkipEvent;
     public int? SelectedFolderId { get; set; }
-    public event Action<Int32>? AddVideos;
+    public event Action<int>? AddVideos;
     public bool SleepMode;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
@@ -72,7 +72,9 @@ public sealed class PlaybackSession : IDisposable
 
     public bool AddToPlaylistIfNotPresent(Video video)
     {
-        if (Playlist.Contains(video)) return false;
+        if (Playlist.Contains(video))
+            return false;
+
         Playlist.Add(video);
         UpdateEvent?.Invoke();
         return true;
@@ -131,14 +133,17 @@ public sealed class PlaybackSession : IDisposable
 
     private async Task MarkAsWatchedAndGoNext()
     {
-        var video = Video;  // capture for thread safety.
-        if (video == null) throw new InvalidOperationException("Video not set in session.");
+        var video = Video; // capture for thread safety.
+
+        if (video == null)
+            throw new InvalidOperationException("Video not set in session.");
+
         await MarkVideoPlayedToEnd(video.Id, true);
     }
 
     private async Task MarkVideoPlayedToEnd(int videoId, bool markWatchedAndGoNext)
     {
-        var video = Video;  // capture for thread safety.
+        var video = Video; // capture for thread safety.
         if (video == null) throw new InvalidOperationException("Video not set in session.");
         if (videoId != video.Id) throw new InvalidOperationException("Video ID does not match current video.");
 
@@ -336,7 +341,7 @@ public sealed class PlaybackSession : IDisposable
         await using var db = await DbContextFactory.CreateDbContextAsync();
         await db.Entry(v).ReloadAsync();
 
-        var position = v?.PlaybackPosition ?? 0;
+        var position = v.PlaybackPosition ?? 0;
         if (position > 0 && position < v.Duration - 10)
             return position;
 

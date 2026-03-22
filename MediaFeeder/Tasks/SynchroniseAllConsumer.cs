@@ -1,5 +1,4 @@
 using MassTransit;
-using MassTransit.Scheduling;
 using MediaFeeder.Data;
 using MediaFeeder.Helpers;
 using Microsoft.EntityFrameworkCore;
