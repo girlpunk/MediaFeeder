@@ -77,13 +77,13 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Group)
                 .WithMany(static p => p.AuthGroupPermissions)
                 .HasForeignKey(static d => d.GroupId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_group_permissions_group_id_b120cbf9_fk_auth_group_id");
 
             entity.HasOne(static d => d.Permission)
                 .WithMany(static p => p.AuthGroupPermissions)
                 .HasForeignKey(static d => d.PermissionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_group_permissio_permission_id_84c5c92e_fk_auth_perm");
         });
 
@@ -105,7 +105,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.ContentType)
                 .WithMany(static p => p.AuthPermissions)
                 .HasForeignKey(static d => d.ContentTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_permission_content_type_id_2f476e4b_fk_django_co");
         });
 
@@ -163,13 +163,13 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Group)
                 .WithMany(static p => p.AuthUserGroups)
                 .HasForeignKey(static d => d.GroupId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_user_groups_group_id_97559544_fk_auth_group_id");
 
             entity.HasOne(static d => d.User)
                 .WithMany(static p => p.AuthUserGroups)
                 .HasForeignKey(static d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_user_groups_user_id_6a12ed8b_fk_auth_user_id");
         });
 
@@ -191,13 +191,13 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Permission)
                 .WithMany(static p => p.AuthUserUserPermissions)
                 .HasForeignKey(static d => d.PermissionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm");
 
             entity.HasOne(static d => d.User)
                 .WithMany(static p => p.AuthUserUserPermissions)
                 .HasForeignKey(static d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id");
         });
 
@@ -388,7 +388,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Instance)
                 .WithMany(static p => p.DynamicPreferencesUsersUserpreferencemodels)
                 .HasForeignKey(static d => d.InstanceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("dynamic_preferences__instance_id_bf1d7718_fk_auth_user");
         });
 
@@ -444,7 +444,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Source)
                 .WithMany(static p => p.EasyThumbnailsThumbnails)
                 .HasForeignKey(static d => d.SourceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("easy_thumbnails_thum_source_id_5b57bc77_fk_easy_thum");
         });
 
@@ -463,7 +463,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Thumbnail)
                 .WithOne(static p => p.EasyThumbnailsThumbnaildimension)
                 .HasForeignKey<EasyThumbnailsThumbnaildimension>(static d => d.ThumbnailId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("easy_thumbnails_thum_thumbnail_id_c3a0c549_fk_easy_thum");
         });
 
@@ -503,7 +503,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Job)
                 .WithMany(static p => p.Jobmessages)
                 .HasForeignKey(static d => d.JobId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("YtManagerApp_jobmess_job_id_ec6435ce_fk_YtManager");
         });
 
@@ -545,7 +545,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.User)
                 .WithMany(static p => p.Subscriptions)
                 .HasForeignKey(static d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("YtManagerApp_subscription_user_id_9d38617d_fk_auth_user_id");
         });
 
@@ -569,7 +569,7 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.User)
                 .WithMany(static p => p.Folders)
                 .HasForeignKey(static d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("YtManagerApp_subscri_user_id_6fb12da0_fk_auth_user");
         });
 
@@ -601,13 +601,14 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
             entity.HasOne(static d => d.Subscription)
                 .WithMany(static p => p.Videos)
                 .HasForeignKey(static d => d.SubscriptionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("YtManagerApp_video_subscription_id_720d4227_fk_YtManager");
 
             entity.Property(static e => e.IsDownloaded)
                 .HasComputedColumnSql("downloaded_path IS NOT NULL", true);
 
-            entity.HasMany(static e => e.Tags).WithOne(static e => e.Video)
+            entity.HasMany(static e => e.Tags)
+                .WithOne(static e => e.Video)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // entity.HasIndex(e => e.SubscriptionId, "YtManagerApp_video_subscription_id_720d4227");
