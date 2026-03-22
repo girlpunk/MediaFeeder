@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
+    "protobuf >= 6.33.5",
     "grpcio-tools>=1.78.0",
 #    "grpcio>=1.70.0",
     "grpcio-health-checking>=1.78.0",
