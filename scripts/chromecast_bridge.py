@@ -42,6 +42,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
     _shuffler: common.Shuffler
     _cast_name: str
+    _cast_host: str
 
     _cast: pychromecast.Chromecast
     _active_con: BaseMediaPlayer
@@ -51,7 +52,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     _have_control: bool = False
     _content_id_to_video_id: dict[str, int] = {}
 
-    def __init__(self, cast_name: str, *, verbose: bool) -> None:
+    def __init__(self, cast_name: str, cast_host: str, verbose: bool) -> None:
         """Set up variables, but doesn't connect yet."""
         self._logger = logging.getLogger(f"VidFilePlayer: {cast_name}")
         if verbose:
@@ -60,6 +61,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
         self._shuffler = common.Shuffler(cast_name, self, verbose=verbose)
         self._cast_name = cast_name
+        self._cast_host = cast_host
 
         # only has for play_media(), rest is via _cast.media_controller
         # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py
@@ -220,7 +222,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     def sync_find_cast(self):
         chromecasts, browser = pychromecast.get_listed_chromecasts(
             friendly_names=[self._cast_name],
-            known_hosts=[],
+            known_hosts=self._cast_host,
         )
         if not chromecasts:
             self._logger.error('No chromecast with name "%s" discovered', self._cast_name)
@@ -295,13 +297,14 @@ async def _main() -> None:
 
     parser = argparse.ArgumentParser(description="Youtube Chromecast Video File Controller.")
     parser.add_argument("--cast", required=True, help="Name of cast device")
+    parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
     parser.add_argument("--verbose", "-v", action="store_true", help="Set log level to DEBUG")
     args = parser.parse_args()
 
     if args.verbose:
         logging.getLogger("pychromecast").setLevel(logging.DEBUG)
 
-    async with VidFilePlayer(cast_name=args.cast, verbose=args.verbose) as player:
+    async with VidFilePlayer(cast_name=args.cast, cast_host=args.known_host, verbose=args.verbose) as player:
         await player.main()
 
 
