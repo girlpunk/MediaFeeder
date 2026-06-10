@@ -7,6 +7,7 @@ import abc
 import asyncio
 import logging
 import time
+import sys
 from collections.abc import AsyncGenerator
 from datetime import datetime
 from pathlib import Path
@@ -116,34 +117,18 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         callback(metadata, None)
 
 
-class Shuffler:
+class MfClient:
     """MediaFeeder API Connection."""
 
-    name: str
-    _stub: Api_pb2_grpc.APIStub
     _settings: MediaFeederConfig
+    _stub: Api_pb2_grpc.APIStub
 
-    _now_state: int | None = None
-    _now_position_seconds: int | None = None
-    _now_rate: float | None = None
-    _saved_rate: float | None = None
-
-    _event_queue: asyncio.Queue[QueueEvent] = asyncio.Queue()
-
-    _player: PlayerBase
-    _session_reader = None
-
-    def __init__(self, name: str, player: PlayerBase, *, verbose: bool) -> None:
+    def __init__(self, *, verbose: bool = False) -> None:
         """Prepare state only."""
-        self._logger = logging.getLogger("Shuffler")
+        self._logger = logging.getLogger(self.__class__.__name__)
         if verbose:
             self._logger.setLevel(logging.DEBUG)
-        self._logger.debug("Shuffler Init")
-
-        self.name = name
-        self._player = player
         self._settings = MediaFeederConfig()
-        self._status_report_queue: asyncio.Queue[Api_pb2.PlaybackSessionRequest] = asyncio.Queue()
 
         ssl_credentials = grpc.ssl_channel_credentials()
 
@@ -178,11 +163,38 @@ class Shuffler:
     async def __aenter__(self) -> Shuffler:
         """Start processing playback."""
         await self._channel.__aenter__()
+        await self._channel.channel_ready()
         return self
 
     async def __aexit__(self, *args: object) -> None:
         """Finish processing playback."""
         await self._channel.__aexit__(*args)
+
+
+class Shuffler(MfClient):
+    """Framework for MediaFeeder remote player."""
+
+    name: str
+
+    _now_state: int | None = None
+    _now_position_seconds: int | None = None
+    _now_rate: float | None = None
+    _saved_rate: float | None = None
+
+    _event_queue: asyncio.Queue[QueueEvent] = asyncio.Queue()
+
+    _player: PlayerBase
+    _session_reader = None
+
+    def __init__(self, name: str, player: PlayerBase, *, verbose: bool) -> None:
+        """Prepare state only."""
+        super().__init__(verbose=verbose)
+        self._logger.debug("Shuffler Init")
+
+        self.name = name
+        self._player = player
+        self._settings = MediaFeederConfig()
+        self._status_report_queue: asyncio.Queue[Api_pb2.PlaybackSessionRequest] = asyncio.Queue()
 
     async def _connect_to_server(self) -> None:
         """Connect to the MediaFeeder server."""
@@ -421,10 +433,14 @@ class LogbackLikeFormatter(logging.Formatter):
         return super().format(record)
 
 
-def set_logging() -> None:
+def set_logging(stream=None) -> None:
     """Set up logging in a standardised mannor."""
+
+    if stream is None:
+        stream = sys.stdout
+
     formatter = LogbackLikeFormatter("%(levelname)s%(asctime)s [%(threadName)s] %(name)s %(message)s")
-    handler = logging.StreamHandler()
+    handler = logging.StreamHandler(stream)
     handler.setFormatter(formatter)
 
     logger = logging.getLogger()
