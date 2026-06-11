@@ -4,7 +4,7 @@ let ready = false;
 export function helperReady(DotNetHelper) {
     "use strict";
     helper = DotNetHelper;
-    
+
     if (ready === true) {
         helper.invokeMethodAsync('OnLibraryLoaded');
     }

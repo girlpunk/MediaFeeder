@@ -52,7 +52,9 @@ public class YoutubeProvider : IProvider
 
         var channelId = metaTag.FirstOrDefault()?.GetAttributeValue("content", "") ?? "";
         var name = nameTag.FirstOrDefault()?.GetAttributeValue("content", "") ?? "";
-        var playlistId = "UU" + channelId[2..];
+
+        //TODO: What happens if we give this a playlist URL?
+        var playlistId = "UULF" + channelId[2..];
 
         subscription.Name = name;
         subscription.ChannelName = name;

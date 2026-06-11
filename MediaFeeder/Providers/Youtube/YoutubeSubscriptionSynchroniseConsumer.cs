@@ -221,7 +221,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         using var httpClient = httpClientFactory.CreateClient("retry");
 
         using var rssRequest =
-            await httpClient.GetAsync("https://www.youtube.com/feeds/videos.xml?channel_id=" + subscription.ChannelId, cancellationToken);
+            await httpClient.GetAsync("https://www.youtube.com/feeds/videos.xml?playlist_id=" + subscription.PlaylistId, cancellationToken);
         rssRequest.EnsureSuccessStatusCode();
 
         var rss = await XDocument.LoadAsync(await rssRequest.Content.ReadAsStreamAsync(cancellationToken), LoadOptions.None, cancellationToken);
@@ -306,6 +306,8 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 : playlistItems.OrderBy(static i => i.Snippet.Position).ToList();
 
             logger.LogInformation("Got page of {Count} videos for {Subscription}, next page will be {Page}", playlistItems.Count, subscription.Name, playlistResponse.NextPageToken);
+
+            //TODO: Break if every vido in the page was already known (I think this is safe)
 
             foreach (var item in playlistItems)
                 await AddVideoFromApi(subscription, db, cancellationToken, item);
