@@ -13,7 +13,8 @@ namespace MediaFeeder.Data.Migrations
         {
             migrationBuilder.DropForeignKey(
                 name: "YtManagerApp_subscri_parent_folder_id_c4c64c21_fk_YtManager",
-                table: "YtManagerApp_subscription");
+                table: "YtManagerApp_subscription"
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "views",
@@ -21,7 +22,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "integer",
                 nullable: true,
                 oldClrType: typeof(int),
-                oldType: "integer");
+                oldType: "integer"
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumb",
@@ -31,7 +33,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(100)",
-                oldMaxLength: 100);
+                oldMaxLength: 100
+            );
 
             migrationBuilder.AlterColumn<double>(
                 name: "rating",
@@ -39,7 +42,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "double precision",
                 nullable: true,
                 oldClrType: typeof(double),
-                oldType: "double precision");
+                oldType: "double precision"
+            );
 
             migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "publish_date",
@@ -47,7 +51,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "timestamp with time zone",
                 nullable: true,
                 oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
+                oldType: "timestamp with time zone"
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "playlist_index",
@@ -55,7 +60,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "integer",
                 nullable: true,
                 oldClrType: typeof(int),
-                oldType: "integer");
+                oldType: "integer"
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "duration",
@@ -63,7 +69,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "integer",
                 nullable: true,
                 oldClrType: typeof(int),
-                oldType: "integer");
+                oldType: "integer"
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumb",
@@ -73,7 +80,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(100)",
-                oldMaxLength: 100);
+                oldMaxLength: 100
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "parent_folder_id",
@@ -83,7 +91,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: 0,
                 oldClrType: typeof(int),
                 oldType: "integer",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "YtManagerApp_subscri_parent_folder_id_c4c64c21_fk_YtManager",
@@ -91,7 +100,8 @@ namespace MediaFeeder.Data.Migrations
                 column: "parent_folder_id",
                 principalTable: "YtManagerApp_subscriptionfolder",
                 principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
 
         /// <inheritdoc />
@@ -99,7 +109,8 @@ namespace MediaFeeder.Data.Migrations
         {
             migrationBuilder.DropForeignKey(
                 name: "YtManagerApp_subscri_parent_folder_id_c4c64c21_fk_YtManager",
-                table: "YtManagerApp_subscription");
+                table: "YtManagerApp_subscription"
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "views",
@@ -109,7 +120,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: 0,
                 oldClrType: typeof(int),
                 oldType: "integer",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumb",
@@ -121,7 +133,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(100)",
                 oldMaxLength: 100,
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<double>(
                 name: "rating",
@@ -131,7 +144,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: 0.0,
                 oldClrType: typeof(double),
                 oldType: "double precision",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "publish_date",
@@ -141,7 +155,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                 oldClrType: typeof(DateTimeOffset),
                 oldType: "timestamp with time zone",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "playlist_index",
@@ -151,7 +166,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: 0,
                 oldClrType: typeof(int),
                 oldType: "integer",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "duration",
@@ -161,7 +177,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: 0,
                 oldClrType: typeof(int),
                 oldType: "integer",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumb",
@@ -173,7 +190,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(100)",
                 oldMaxLength: 100,
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<int>(
                 name: "parent_folder_id",
@@ -181,14 +199,16 @@ namespace MediaFeeder.Data.Migrations
                 type: "integer",
                 nullable: true,
                 oldClrType: typeof(int),
-                oldType: "integer");
+                oldType: "integer"
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "YtManagerApp_subscri_parent_folder_id_c4c64c21_fk_YtManager",
                 table: "YtManagerApp_subscription",
                 column: "parent_folder_id",
                 principalTable: "YtManagerApp_subscriptionfolder",
-                principalColumn: "id");
+                principalColumn: "id"
+            );
         }
     }
 }

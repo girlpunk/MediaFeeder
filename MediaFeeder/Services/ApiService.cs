@@ -22,7 +22,11 @@ public sealed class ApiService(
     ILogger<ApiService> logger
 ) : API.APIBase
 {
-    public override async Task ListFolder(ListFolderRequest request, IServerStreamWriter<FolderReply> responseStream, ServerCallContext context)
+    public override async Task ListFolder(
+        ListFolderRequest request,
+        IServerStreamWriter<FolderReply> responseStream,
+        ServerCallContext context
+    )
     {
         logger.LogError(userManager.GetType().ToString());
 
@@ -31,35 +35,31 @@ public sealed class ApiService(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var folders = db.Folders
-            .Where(folder => folder.UserId == user.Id && folder.ParentId == null)
+        var folders = db
+            .Folders.Where(folder => folder.UserId == user.Id && folder.ParentId == null)
             .Select(static folder => new
             {
                 folder.Name,
                 folder.Id,
                 ChildFolders = folder.Subfolders.Select(static f => f.Id).ToList(),
-                ChildSubscriptions = folder.Subscriptions.Select(static s => s.Id).ToList()
+                ChildSubscriptions = folder.Subscriptions.Select(static s => s.Id).ToList(),
             });
 
         foreach (var folder in folders)
         {
-            var folderReply = new FolderReply()
-            {
-                Name = folder.Name,
-                Id = folder.Id,
-            };
+            var folderReply = new FolderReply() { Name = folder.Name, Id = folder.Id };
             folderReply.ChildFolders.AddRange(folder.ChildFolders);
             folderReply.ChildSubscriptions.AddRange(folder.ChildSubscriptions);
 
             if (request.IncludeUnwatchedCounts)
             {
-                var videos = db.Videos
-                    .Where(v => v.Subscription!.ParentFolderId == folder.Id);
+                var videos = db.Videos.Where(v => v.Subscription!.ParentFolderId == folder.Id);
 
                 folderReply.UnwatchedCounts = new UnwatchedCounts
                 {
                     UnwatchedCount = videos.Count(static v => !v.Watched),
-                    UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+                    UnwatchedDuration =
+                        videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0,
                 };
             }
 
@@ -74,8 +74,8 @@ public sealed class ApiService(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var folder = await db.Folders
-            .Select(static folder => new
+        var folder = await db
+            .Folders.Select(static folder => new
             {
                 folder.Name,
                 folder.Id,
@@ -83,35 +83,37 @@ public sealed class ApiService(
                 ChildFolders = folder.Subfolders.Select(static f => f.Id).ToList(),
                 ChildSubscriptions = folder.Subscriptions.Select(static s => s.Id).ToList(),
             })
-            .SingleOrDefaultAsync(f => f.Id == request.Id && f.UserId == user.Id, context.CancellationToken);
+            .SingleOrDefaultAsync(
+                f => f.Id == request.Id && f.UserId == user.Id,
+                context.CancellationToken
+            );
 
         if (folder == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
-        var reply = new FolderReply
-        {
-            Id = folder.Id,
-            Name = folder.Name,
-        };
+        var reply = new FolderReply { Id = folder.Id, Name = folder.Name };
         reply.ChildFolders.AddRange(folder.ChildFolders);
         reply.ChildSubscriptions.AddRange(folder.ChildSubscriptions);
 
         if (request.IncludeUnwatchedCounts)
         {
-            var videos = db.Videos
-                .Where(v => v.Subscription!.ParentFolderId == folder.Id);
+            var videos = db.Videos.Where(v => v.Subscription!.ParentFolderId == folder.Id);
 
             reply.UnwatchedCounts = new UnwatchedCounts
             {
                 UnwatchedCount = videos.Count(static v => !v.Watched),
-                UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+                UnwatchedDuration =
+                    videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0,
             };
         }
 
         return reply;
     }
 
-    public override async Task<AddSubscriptionReply> AddSubscription(AddSubscriptionRequest request, ServerCallContext context)
+    public override async Task<AddSubscriptionReply> AddSubscription(
+        AddSubscriptionRequest request,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
@@ -139,7 +141,7 @@ public sealed class ApiService(
             PlaylistId = request.PlaylistId,
             Provider = request.Provider ?? throw new InvalidOperationException(),
             Description = "",
-            UserId = user.Id
+            UserId = user.Id,
         };
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
@@ -149,32 +151,36 @@ public sealed class ApiService(
         return new AddSubscriptionReply { SubscriptionId = subscription.Id };
     }
 
-    public override async Task ListSubscription(ListSubscriptionRequest request, IServerStreamWriter<SubscriptionReply> responseStream, ServerCallContext context)
+    public override async Task ListSubscription(
+        ListSubscriptionRequest request,
+        IServerStreamWriter<SubscriptionReply> responseStream,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var subscriptions = db.Subscriptions
-            .Where(subscription => subscription.UserId == user.Id)
+        var subscriptions = db
+            .Subscriptions.Where(subscription => subscription.UserId == user.Id)
             .Select(static subscription => new SubscriptionReply
             {
                 Name = subscription.Name,
-                Id = subscription.Id
+                Id = subscription.Id,
             });
 
         foreach (var subscription in subscriptions)
         {
             if (request.IncludeUnwatchedCounts)
             {
-                var videos = db.Videos
-                    .Where(v => v.SubscriptionId == subscription.Id);
+                var videos = db.Videos.Where(v => v.SubscriptionId == subscription.Id);
 
                 subscription.UnwatchedCounts = new UnwatchedCounts()
                 {
                     UnwatchedCount = videos.Count(static v => !v.Watched),
-                    UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+                    UnwatchedDuration =
+                        videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0,
                 };
             }
 
@@ -182,15 +188,20 @@ public sealed class ApiService(
         }
     }
 
-    public override async Task<SubscriptionReply> Subscription(SubscriptionRequest request, ServerCallContext context)
+    public override async Task<SubscriptionReply> Subscription(
+        SubscriptionRequest request,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var subscription = await db.Subscriptions
-            .Where(subscription => subscription.UserId == user.Id && subscription.Id == request.Id)
+        var subscription = await db
+            .Subscriptions.Where(subscription =>
+                subscription.UserId == user.Id && subscription.Id == request.Id
+            )
             .Select(static subscription => new SubscriptionReply
             {
                 Name = subscription.Name,
@@ -203,13 +214,13 @@ public sealed class ApiService(
 
         if (request.IncludeUnwatchedCounts)
         {
-            var videos = db.Videos
-                .Where(v => v.SubscriptionId == subscription.Id);
+            var videos = db.Videos.Where(v => v.SubscriptionId == subscription.Id);
 
             subscription.UnwatchedCounts = new UnwatchedCounts()
             {
                 UnwatchedCount = videos.Count(static v => !v.Watched),
-                UnwatchedDuration = videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0
+                UnwatchedDuration =
+                    videos.Where(static v => !v.Watched).Sum(static v => v.Duration) ?? 0,
             };
         }
 
@@ -223,9 +234,11 @@ public sealed class ApiService(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var video = await db.Videos
-            .Include(static v => v.Subscription)
-            .Where(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id)
+        var video = await db
+            .Videos.Include(static v => v.Subscription)
+            .Where(v =>
+                v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id
+            )
             .Select(static v => new
             {
                 v.Id,
@@ -239,7 +252,7 @@ public sealed class ApiService(
                 v.Views,
                 v.Watched,
                 v.DownloadedPath,
-                v.Subscription
+                v.Subscription,
             })
             .SingleOrDefaultAsync(context.CancellationToken);
 
@@ -276,22 +289,31 @@ public sealed class ApiService(
         return reply;
     }
 
-    public override async Task<DownloadReply> StartDownload(DownloadRequest request, ServerCallContext context)
+    public override async Task<DownloadReply> StartDownload(
+        DownloadRequest request,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var video = await db.Videos
-            .Include(static v => v.Subscription)
-            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id,
-                context.CancellationToken);
+        var video = await db
+            .Videos.Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v =>
+                    v.Subscription != null
+                    && v.Subscription.UserId == user.Id
+                    && v.Id == request.Id,
+                context.CancellationToken
+            );
 
         if (video == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
-        var videoProvider = serviceProvider.GetServices<IProvider>()
+        var videoProvider = serviceProvider
+            .GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == video.Subscription?.Provider);
 
         var contractType = typeof(DownloadVideoContract<>).MakeGenericType(videoProvider.GetType());
@@ -308,13 +330,13 @@ public sealed class ApiService(
         //     ExitCode = -1
         // };
 
-        return new DownloadReply
-        {
-            Status = DownloadStatus.InProgress,
-        };
+        return new DownloadReply { Status = DownloadStatus.InProgress };
     }
 
-    public override async Task<WatchedReply> Watched(WatchedRequest request, ServerCallContext context)
+    public override async Task<WatchedReply> Watched(
+        WatchedRequest request,
+        ServerCallContext context
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await CheckAuthAndGetVideo(context, db, request.Id);
@@ -328,28 +350,39 @@ public sealed class ApiService(
         return new WatchedReply();
     }
 
-    public override async Task<SavePlaybackPositionReply> SavePlaybackPosition(SavePlaybackPositionRequest request, ServerCallContext context)
+    public override async Task<SavePlaybackPositionReply> SavePlaybackPosition(
+        SavePlaybackPositionRequest request,
+        ServerCallContext context
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await CheckAuthAndGetVideo(context, db, request.Id);
 
         if (request.PositionSeconds < 0 || request.PositionSeconds > video.Duration)
-            throw new RpcException(context.Status = new Status(StatusCode.InvalidArgument, "Invalid PositionSeconds."));
+            throw new RpcException(
+                context.Status = new Status(StatusCode.InvalidArgument, "Invalid PositionSeconds.")
+            );
 
         video.PlaybackPosition = request.PositionSeconds;
         await db.SaveChangesAsync(context.CancellationToken);
         return new SavePlaybackPositionReply();
     }
 
-    private async Task<Video> CheckAuthAndGetVideo(ServerCallContext context, MediaFeederDataContext db, int videoId)
+    private async Task<Video> CheckAuthAndGetVideo(
+        ServerCallContext context,
+        MediaFeederDataContext db,
+        int videoId
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
-        var video = await db.Videos
-            .Include(static v => v.Subscription)
-            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == videoId,
-                context.CancellationToken);
+        var video = await db
+            .Videos.Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == videoId,
+                context.CancellationToken
+            );
 
         if (video == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
@@ -364,8 +397,7 @@ public sealed class ApiService(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var query = db.Videos.AsQueryable()
-            .Where(v => v.Subscription!.UserId == user.Id);
+        var query = db.Videos.AsQueryable().Where(v => v.Subscription!.UserId == user.Id);
 
         if (request.HasProvider)
             query = query.Where(v => v.Subscription.Provider == request.Provider);
@@ -375,7 +407,11 @@ public sealed class ApiService(
 
         if (request.HasFolderId)
         {
-            var subfolderIds = await Data.db.Folder.RecursiveFolderIds(db, request.FolderId, user.Id);
+            var subfolderIds = await Data.db.Folder.RecursiveFolderIds(
+                db,
+                request.FolderId,
+                user.Id
+            );
             query = query.Where(v => subfolderIds.Contains(v.Subscription!.ParentFolderId));
         }
 
@@ -389,28 +425,41 @@ public sealed class ApiService(
         var reply = new SearchReply();
         foreach (var video in videos)
         {
-            var found = new FoundVideo { VideoId = video.Id, Watched = video.Watched, Star = video.Star };
-            if (video.WatchedDate != null) found.WatchedWhenSeconds = video.WatchedDate.Value.ToUnixTimeSeconds();
-            if (video.VideoId != null) found.ProviderVideoId = video.VideoId;
+            var found = new FoundVideo
+            {
+                VideoId = video.Id,
+                Watched = video.Watched,
+                Star = video.Star,
+            };
+            if (video.WatchedDate != null)
+                found.WatchedWhenSeconds = video.WatchedDate.Value.ToUnixTimeSeconds();
+            if (video.VideoId != null)
+                found.ProviderVideoId = video.VideoId;
             reply.Videos.Add(found);
         }
 
         return reply;
     }
 
-    public override async Task<ShuffleReply> Shuffle(ShuffleRequest request, ServerCallContext context)
+    public override async Task<ShuffleReply> Shuffle(
+        ShuffleRequest request,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var dataContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        await using var dataContext = await contextFactory.CreateDbContextAsync(
+            context.CancellationToken
+        );
         var videos = await ShuffleHelper.Shuffle(
             dataContext,
             user,
             request.DurationMinutes,
             request.HasFolderId ? request.FolderId : null,
             request.HasSubscriptionId ? request.SubscriptionId : null,
-            cancellationToken: context.CancellationToken);
+            cancellationToken: context.CancellationToken
+        );
         var reply = new ShuffleReply();
         foreach (var video in videos)
             reply.Id.Add(video.Id);
@@ -418,23 +467,30 @@ public sealed class ApiService(
         return reply;
     }
 
-    public override async Task GetSubscriptionThumbnail(GetSubscriptionThumbnailRequest request, IServerStreamWriter<GetSubscriptionThumbnailReply> responseStream,
-        ServerCallContext context)
+    public override async Task GetSubscriptionThumbnail(
+        GetSubscriptionThumbnailRequest request,
+        IServerStreamWriter<GetSubscriptionThumbnailReply> responseStream,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var subscription = await db.Subscriptions
-            .Where(subscription => subscription.UserId == user.Id && subscription.Id == request.Id)
+        var subscription = await db
+            .Subscriptions.Where(subscription =>
+                subscription.UserId == user.Id && subscription.Id == request.Id
+            )
             .SingleOrDefaultAsync(context.CancellationToken);
 
         if (subscription == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
         if (subscription.Thumb == null)
-            throw new RpcException(context.Status = new Status(StatusCode.Unavailable, "Not Downloaded"));
+            throw new RpcException(
+                context.Status = new Status(StatusCode.Unavailable, "Not Downloaded")
+            );
 
         await using var file = File.OpenRead(subscription.Thumb);
 
@@ -444,28 +500,36 @@ public sealed class ApiService(
         {
             var reply = new GetSubscriptionThumbnailReply()
             {
-                Data = ByteString.CopyFrom(buffer, 0, bytesRead)
+                Data = ByteString.CopyFrom(buffer, 0, bytesRead),
             };
 
             await responseStream.WriteAsync(reply, context.CancellationToken);
         }
     }
 
-    public override async Task GetVideoThumbnail(GetVideoThumbnailRequest request, IServerStreamWriter<GetVideoThumbnailReply> responseStream, ServerCallContext context)
+    public override async Task GetVideoThumbnail(
+        GetVideoThumbnailRequest request,
+        IServerStreamWriter<GetVideoThumbnailReply> responseStream,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var video = await db.Videos
-            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id, context.CancellationToken);
+        var video = await db.Videos.SingleOrDefaultAsync(
+            v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id,
+            context.CancellationToken
+        );
 
         if (video == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
         if (video.Thumb == null)
-            throw new RpcException(context.Status = new Status(StatusCode.Unavailable, "Not Downloaded"));
+            throw new RpcException(
+                context.Status = new Status(StatusCode.Unavailable, "Not Downloaded")
+            );
 
         await using var file = File.OpenRead(video.Thumb);
 
@@ -475,28 +539,36 @@ public sealed class ApiService(
         {
             var reply = new GetVideoThumbnailReply()
             {
-                Data = ByteString.CopyFrom(buffer, 0, bytesRead)
+                Data = ByteString.CopyFrom(buffer, 0, bytesRead),
             };
 
             await responseStream.WriteAsync(reply, context.CancellationToken);
         }
     }
 
-    public override async Task GetVideo(GetVideoRequest request, IServerStreamWriter<GetVideoReply> responseStream, ServerCallContext context)
+    public override async Task GetVideo(
+        GetVideoRequest request,
+        IServerStreamWriter<GetVideoReply> responseStream,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var video = await db.Videos
-            .SingleOrDefaultAsync(v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id, context.CancellationToken);
+        var video = await db.Videos.SingleOrDefaultAsync(
+            v => v.Subscription != null && v.Subscription.UserId == user.Id && v.Id == request.Id,
+            context.CancellationToken
+        );
 
         if (video == null)
             throw new RpcException(context.Status = new Status(StatusCode.NotFound, "Not Found"));
 
         if (video.DownloadedPath == null)
-            throw new RpcException(context.Status = new Status(StatusCode.Unavailable, "Not Downloaded"));
+            throw new RpcException(
+                context.Status = new Status(StatusCode.Unavailable, "Not Downloaded")
+            );
 
         await using var file = File.OpenRead(video.DownloadedPath);
 
@@ -504,16 +576,17 @@ public sealed class ApiService(
         int bytesRead;
         while ((bytesRead = await file.ReadAsync(buffer, context.CancellationToken)) > 0)
         {
-            var reply = new GetVideoReply()
-            {
-                Data = ByteString.CopyFrom(buffer, 0, bytesRead)
-            };
+            var reply = new GetVideoReply() { Data = ByteString.CopyFrom(buffer, 0, bytesRead) };
 
             await responseStream.WriteAsync(reply, context.CancellationToken);
         }
     }
 
-    public override async Task PlaybackSession(IAsyncStreamReader<PlaybackSessionRequest> requestStream, IServerStreamWriter<PlaybackSessionReply> responseStream, ServerCallContext context)
+    public override async Task PlaybackSession(
+        IAsyncStreamReader<PlaybackSessionRequest> requestStream,
+        IServerStreamWriter<PlaybackSessionReply> responseStream,
+        ServerCallContext context
+    )
     {
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
@@ -524,36 +597,63 @@ public sealed class ApiService(
         session.StartPlayingVideo += async (video, positionSeconds) =>
         {
             var reply = new PlaybackSessionReply { NextVideoId = video.Id };
-            if (positionSeconds != null) reply.PlaybackPosition = positionSeconds.Value;
+            if (positionSeconds != null)
+                reply.PlaybackPosition = positionSeconds.Value;
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
 
         session.PlayPauseEvent += async () =>
         {
             var reply = new PlaybackSessionReply { ShouldPlayPause = true };
-            if (session.Video?.Id != null) reply.NextVideoId = session.Video.Id;
+            if (session.Video?.Id != null)
+                reply.NextVideoId = session.Video.Id;
 
             int p = 0;
-            if (session.CurrentPosition != null) p = (int) session.CurrentPosition.Value.TotalSeconds;
-            if (p <= 0) p = await session.PlaybackPositionToRestore() ?? 0;
-            if (p > 0) reply.PlaybackPosition = p;
+            if (session.CurrentPosition != null)
+                p = (int)session.CurrentPosition.Value.TotalSeconds;
+            if (p <= 0)
+                p = await session.PlaybackPositionToRestore() ?? 0;
+            if (p > 0)
+                reply.PlaybackPosition = p;
 
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
 
-        session.PauseIfPlayingEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldPauseIfPlaying = true }, context.CancellationToken);
-        session.SeekRelativeEvent += async seconds => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds }, context.CancellationToken);
-        session.ChangeRateEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeRate = direction ? 1 : -1 }, context.CancellationToken);
-        session.ChangeVolumeEvent += async (direction) => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldChangeVolume = direction ? 1 : -1 }, context.CancellationToken);
-        session.ToggleSubtitleEvent += async () => await responseStream.WriteAsync(new PlaybackSessionReply { ShouldToggleSubtitles = true }, context.CancellationToken);
+        session.PauseIfPlayingEvent += async () =>
+            await responseStream.WriteAsync(
+                new PlaybackSessionReply { ShouldPauseIfPlaying = true },
+                context.CancellationToken
+            );
+        session.SeekRelativeEvent += async seconds =>
+            await responseStream.WriteAsync(
+                new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds },
+                context.CancellationToken
+            );
+        session.ChangeRateEvent += async (direction) =>
+            await responseStream.WriteAsync(
+                new PlaybackSessionReply { ShouldChangeRate = direction ? 1 : -1 },
+                context.CancellationToken
+            );
+        session.ChangeVolumeEvent += async (direction) =>
+            await responseStream.WriteAsync(
+                new PlaybackSessionReply { ShouldChangeVolume = direction ? 1 : -1 },
+                context.CancellationToken
+            );
+        session.ToggleSubtitleEvent += async () =>
+            await responseStream.WriteAsync(
+                new PlaybackSessionReply { ShouldToggleSubtitles = true },
+                context.CancellationToken
+            );
 
         // TODO move to PlaybackSession.
         session.AddVideos += async minutes =>
         {
-            if (session.SelectedFolderId == null) return;
+            if (session.SelectedFolderId == null)
+                return;
 
             var exclude = new List<Video>(session.Playlist);
-            if (session.Video != null) exclude.Add(session.Video);
+            if (session.Video != null)
+                exclude.Add(session.Video);
 
             await using var dataContext = await contextFactory.CreateDbContextAsync();
             var videos = await ShuffleHelper.Shuffle(
@@ -562,7 +662,8 @@ public sealed class ApiService(
                 minutes,
                 session.SelectedFolderId,
                 null,
-                exclude);
+                exclude
+            );
             session.AddToPlaylist(videos);
         };
 
@@ -576,7 +677,10 @@ public sealed class ApiService(
                     session.Title = requestStream.Current.Title;
 
                 if (requestStream.Current.HasPosition)
-                    session.CurrentPosition = requestStream.Current.Position != null ? TimeSpan.FromSeconds(requestStream.Current.Position) : null;
+                    session.CurrentPosition =
+                        requestStream.Current.Position != null
+                            ? TimeSpan.FromSeconds(requestStream.Current.Position)
+                            : null;
 
                 if (requestStream.Current.HasLoaded)
                     session.Loaded = requestStream.Current.Loaded;
@@ -584,8 +688,11 @@ public sealed class ApiService(
                 if (requestStream.Current.HasProvider)
                 {
                     if (requestStream.Current.Provider != null)
-                        session.Provider = serviceProvider.GetServices<IProvider>()
-                            .SingleOrDefault(provider => provider.ProviderIdentifier == requestStream.Current.Provider)
+                        session.Provider = serviceProvider
+                            .GetServices<IProvider>()
+                            .SingleOrDefault(provider =>
+                                provider.ProviderIdentifier == requestStream.Current.Provider
+                            )
                             ?.Provider;
                     else
                         session.Provider = null;
@@ -604,11 +711,16 @@ public sealed class ApiService(
                 {
                     if (requestStream.Current.VideoId != null)
                     {
-                        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+                        await using var db = await contextFactory.CreateDbContextAsync(
+                            context.CancellationToken
+                        );
 
-                        session.Video = await db.Videos
-                            .Include(static v => v.Subscription)
-                            .SingleAsync(v => v.Id == requestStream.Current.VideoId, context.CancellationToken);
+                        session.Video = await db
+                            .Videos.Include(static v => v.Subscription)
+                            .SingleAsync(
+                                v => v.Id == requestStream.Current.VideoId,
+                                context.CancellationToken
+                            );
                     }
                     else
                     {

@@ -20,8 +20,15 @@ public class TokenHelper(IConfiguration configuration)
         var authSettings = configuration.GetSection("Auth");
         var selfIssuer = authSettings.GetValue<string>("issuer", "MediaFeeder");
 
-        var issuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()));
-        var signinCredentials = new SigningCredentials(issuerSigningKey, SecurityAlgorithms.HmacSha256);
+        var issuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()
+            )
+        );
+        var signinCredentials = new SigningCredentials(
+            issuerSigningKey,
+            SecurityAlgorithms.HmacSha256
+        );
 
         var tokenOptions = new JwtSecurityToken(
             selfIssuer,
@@ -40,14 +47,21 @@ public class TokenHelper(IConfiguration configuration)
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.Role, "Download"),
-            new("Video", videoId.ToString())
+            new("Video", videoId.ToString()),
         };
 
         var authSettings = configuration.GetSection("Auth");
         var selfIssuer = authSettings.GetValue<string>("issuer", "MediaFeeder");
 
-        var issuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()));
-        var signinCredentials = new SigningCredentials(issuerSigningKey, SecurityAlgorithms.HmacSha256);
+        var issuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                authSettings.GetValue<string>("secret") ?? throw new InvalidOperationException()
+            )
+        );
+        var signinCredentials = new SigningCredentials(
+            issuerSigningKey,
+            SecurityAlgorithms.HmacSha256
+        );
 
         var tokenOptions = new JwtSecurityToken(
             selfIssuer,

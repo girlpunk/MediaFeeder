@@ -43,13 +43,20 @@ public sealed class PlaybackSession : IDisposable
     public bool SleepMode;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
+
     public void SeekRelative(int seconds) => SeekRelativeEvent?.Invoke(seconds);
 
     public void ToggleSubtitles() => ToggleSubtitleEvent?.Invoke();
+
     public void ChangeRate(bool increase) => ChangeRateEvent?.Invoke(increase);
+
     public void ChangeVolume(bool increase) => ChangeVolumeEvent?.Invoke(increase);
 
-    internal PlaybackSession(PlaybackSessionManager manager, AuthUser user, IDbContextFactory<MediaFeederDataContext> dbContextFactory)
+    internal PlaybackSession(
+        PlaybackSessionManager manager,
+        AuthUser user,
+        IDbContextFactory<MediaFeederDataContext> dbContextFactory
+    )
     {
         _manager = manager;
         _user = user;
@@ -144,25 +151,30 @@ public sealed class PlaybackSession : IDisposable
     private async Task MarkVideoPlayedToEnd(int videoId, bool markWatchedAndGoNext)
     {
         var video = Video; // capture for thread safety.
-        if (video == null) throw new InvalidOperationException("Video not set in session.");
-        if (videoId != video.Id) throw new InvalidOperationException("Video ID does not match current video.");
+        if (video == null)
+            throw new InvalidOperationException("Video not set in session.");
+        if (videoId != video.Id)
+            throw new InvalidOperationException("Video ID does not match current video.");
 
         await using var db = await DbContextFactory.CreateDbContextAsync();
         db.Attach(video);
-        if (markWatchedAndGoNext) video.MarkWatched(true);
-        video.PlaybackPosition = null;  // clear this even if not marking as watched so next play is from begnnning.
+        if (markWatchedAndGoNext)
+            video.MarkWatched(true);
+        video.PlaybackPosition = null; // clear this even if not marking as watched so next play is from begnnning.
         await db.SaveChangesAsync();
 
         // clear this to match above, since this is what is sent when a video is replayed
         // by play/pause when the video is not already playing (or paused).
         CurrentPosition = null;
 
-        if (markWatchedAndGoNext) await PlayNextInPlaylist();
+        if (markWatchedAndGoNext)
+            await PlayNextInPlaylist();
     }
 
     public async Task PlayNextInPlaylist()
     {
-        if (StartPlayingVideo == null) throw new InvalidOperationException("StartPlayingVideo not defined.");
+        if (StartPlayingVideo == null)
+            throw new InvalidOperationException("StartPlayingVideo not defined.");
 
         var nextVideo = PopPlaylistHead();
         if (nextVideo != null)
@@ -181,7 +193,8 @@ public sealed class PlaybackSession : IDisposable
     {
         var rate = _rate;
         var video = _video;
-        if (rate is null or 1.0f || video?.Duration == null) return "";
+        if (rate is null or 1.0f || video?.Duration == null)
+            return "";
         var span = TimeSpan.FromSeconds((long)(video.Duration / rate));
         return $" ({span.ToString()})";
     }
@@ -336,7 +349,8 @@ public sealed class PlaybackSession : IDisposable
     public async Task<int?> PlaybackPositionToRestore(Video? alt = default)
     {
         var v = alt ?? Video;
-        if (v == null) return null;
+        if (v == null)
+            return null;
 
         await using var db = await DbContextFactory.CreateDbContextAsync();
         await db.Entry(v).ReloadAsync();

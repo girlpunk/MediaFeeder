@@ -12,13 +12,20 @@ namespace MediaFeeder.Components.Dialogs;
 
 public sealed partial class EditSubscription
 {
-    [Inject] public required MediaFeederDataContext Context { get; set; }
-    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
-    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+    [Inject]
+    public required MediaFeederDataContext Context { get; set; }
+
+    [Inject]
+    public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+
+    [Inject]
+    public required UserManager<AuthUser> UserManager { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
     public required Form<SubscriptionForm> Form { get; set; }
     private SubscriptionForm? Subscription { get; set; }
-    [Inject] public required ILogger<EditSubscription> Logger { get; set; }
+
+    [Inject]
+    public required ILogger<EditSubscription> Logger { get; set; }
     private IEnumerable<(string ProviderIdentifier, string Name)> Providers { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
@@ -35,7 +42,9 @@ public sealed partial class EditSubscription
         else
         {
             Logger.LogInformation("Finding existing subscription");
-            var subscription = await Context.Subscriptions.SingleAsync(f => f.Id == Options && f.UserId == user.Id);
+            var subscription = await Context.Subscriptions.SingleAsync(f =>
+                f.Id == Options && f.UserId == user.Id
+            );
 
             Subscription = new SubscriptionForm
             {
@@ -54,8 +63,8 @@ public sealed partial class EditSubscription
             };
         }
 
-        ExistingFolders = await Context.Folders
-            .Where(f => f.User == user)
+        ExistingFolders = await Context
+            .Folders.Where(f => f.User == user)
             .Include(static f => f.Subfolders)
             .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)
@@ -68,7 +77,9 @@ public sealed partial class EditSubscription
     protected override void OnParametersSet()
     {
         if (ServiceProvider != null)
-            Providers = ServiceProvider.GetServices<IProvider>().Select(static provider => (provider.ProviderIdentifier, provider.Name));
+            Providers = ServiceProvider
+                .GetServices<IProvider>()
+                .Select(static provider => (provider.ProviderIdentifier, provider.Name));
     }
 
     /// <summary>
@@ -106,7 +117,9 @@ public sealed partial class EditSubscription
         }
         else
         {
-            var subscription = Context.Subscriptions.Single(f => f.Id == Options && f.UserId == user.Id);
+            var subscription = Context.Subscriptions.Single(f =>
+                f.Id == Options && f.UserId == user.Id
+            );
 
             subscription.AutoDownload = Subscription.AutoDownload;
             subscription.AutomaticallyDeleteWatched = Subscription.AutomaticallyDeleteWatched;

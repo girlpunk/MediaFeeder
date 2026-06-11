@@ -4,42 +4,80 @@ using Microsoft.AspNetCore.StaticFiles;
 
 namespace MediaFeeder.Providers.Youtube;
 
-public sealed class Utils(
-    IConfiguration configuration,
-    IHttpClientFactory httpClientFactory)
+public sealed class Utils(IConfiguration configuration, IHttpClientFactory httpClientFactory)
 {
-    internal async Task<string?> LoadResourceThumbnail(string itemId, string type, ThumbnailDetails resource, ILogger logger, CancellationToken cancellationToken)
+    internal async Task<string?> LoadResourceThumbnail(
+        string itemId,
+        string type,
+        ThumbnailDetails resource,
+        ILogger logger,
+        CancellationToken cancellationToken
+    )
     {
         if (resource.Maxres?.Url == null && resource.High?.Url == null)
-            logger.LogError("Could not find maxres thumbnail: {}", JsonSerializer.Serialize(resource));
+            logger.LogError(
+                "Could not find maxres thumbnail: {}",
+                JsonSerializer.Serialize(resource)
+            );
 
-        return await LoadUrlThumbnail(itemId, type, resource.Maxres?.Url ?? resource.High?.Url ?? resource.Medium?.Url ?? resource.Standard.Url, logger, cancellationToken);
+        return await LoadUrlThumbnail(
+            itemId,
+            type,
+            resource.Maxres?.Url
+                ?? resource.High?.Url
+                ?? resource.Medium?.Url
+                ?? resource.Standard.Url,
+            logger,
+            cancellationToken
+        );
     }
 
-    internal async Task<string?> LoadUrlThumbnail(string itemId, string type, string url, ILogger logger, CancellationToken cancellationToken)
+    internal async Task<string?> LoadUrlThumbnail(
+        string itemId,
+        string type,
+        string url,
+        ILogger logger,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
             using var httpClient = httpClientFactory.CreateClient("retry");
 
-            using var request = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var request = await httpClient.GetAsync(
+                url,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken
+            );
             try
             {
                 request.EnsureSuccessStatusCode();
             }
             catch (HttpRequestException)
             {
-                if (!request.Content.Headers.ContentType?.MediaType?.StartsWith("image", StringComparison.OrdinalIgnoreCase) ?? false)
+                if (
+                    !request.Content.Headers.ContentType?.MediaType?.StartsWith(
+                        "image",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                    ?? false
+                )
                     throw;
             }
 
-            var ext = new FileExtensionContentTypeProvider().Mappings
-                .FirstOrDefault(g => g.Value == request.Content.Headers.ContentType?.MediaType)
-                .Key ?? ".png";
+            var ext =
+                new FileExtensionContentTypeProvider()
+                    .Mappings.FirstOrDefault(g =>
+                        g.Value == request.Content.Headers.ContentType?.MediaType
+                    )
+                    .Key
+                ?? ".png";
             var fileName = $"{itemId}{ext}";
 
             var relativePath = Path.Join("thumbnails", type, fileName);
-            var root = configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException();
+            var root =
+                configuration.GetValue<string>("MediaRoot")
+                ?? throw new InvalidOperationException();
             var path = Path.Join(root, relativePath);
 
             await using var file = File.OpenWrite(path);
@@ -49,7 +87,12 @@ public sealed class Utils(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error while downloading channel thumbnail for {Item} from {Url}", itemId, url);
+            logger.LogError(
+                e,
+                "Error while downloading channel thumbnail for {Item} from {Url}",
+                itemId,
+                url
+            );
             return null;
         }
     }

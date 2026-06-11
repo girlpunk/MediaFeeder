@@ -3,6 +3,7 @@ namespace MediaFeeder.Data.Enums;
 public enum DownloadOrder
 {
     Newest,
+
     // ('newest', 'Newest'),
 
     // ('oldest', 'Oldest')

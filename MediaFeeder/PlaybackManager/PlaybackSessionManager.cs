@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.PlaybackManager;
 
-public sealed class PlaybackSessionManager(IDbContextFactory<MediaFeederDataContext> dbContextFactory)
+public sealed class PlaybackSessionManager(
+    IDbContextFactory<MediaFeederDataContext> dbContextFactory
+)
 {
     internal List<PlaybackSession> PlaybackSessions { get; } = new();
 

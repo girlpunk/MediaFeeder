@@ -18,7 +18,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(128)",
                 oldMaxLength: 128,
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<bool>(
                 name: "automatically_delete_watched",
@@ -28,7 +29,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: false,
                 oldClrType: typeof(bool),
                 oldType: "boolean",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<bool>(
                 name: "auto_download",
@@ -38,7 +40,8 @@ namespace MediaFeeder.Data.Migrations
                 defaultValue: false,
                 oldClrType: typeof(bool),
                 oldType: "boolean",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
 
         /// <inheritdoc />
@@ -52,7 +55,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "text",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<bool>(
                 name: "automatically_delete_watched",
@@ -60,7 +64,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "boolean",
                 nullable: true,
                 oldClrType: typeof(bool),
-                oldType: "boolean");
+                oldType: "boolean"
+            );
 
             migrationBuilder.AlterColumn<bool>(
                 name: "auto_download",
@@ -68,7 +73,8 @@ namespace MediaFeeder.Data.Migrations
                 type: "boolean",
                 nullable: true,
                 oldClrType: typeof(bool),
-                oldType: "boolean");
+                oldType: "boolean"
+            );
         }
     }
 }

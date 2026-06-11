@@ -8,14 +8,23 @@ namespace MediaFeeder.Helpers;
 
 public static class MessageGuidHelper
 {
-    public static async Task PublishWithGuid<T>(this IBus bus, T contract, CancellationToken cancellationToken = default)
+    public static async Task PublishWithGuid<T>(
+        this IBus bus,
+        T contract,
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(contract);
 
-        await bus.Publish(contract, x =>
-        {
-            x.MessageId = ToGuid(contract);
-        }, cancellationToken).ConfigureAwait(false);
+        await bus.Publish(
+                contract,
+                x =>
+                {
+                    x.MessageId = ToGuid(contract);
+                },
+                cancellationToken
+            )
+            .ConfigureAwait(false);
     }
 
     private static Guid ToGuid<T>(T obj)

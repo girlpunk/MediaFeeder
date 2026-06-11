@@ -16,25 +16,23 @@ namespace MediaFeeder.Data.Migrations
                 table: "YtManagerApp_video",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
 
             migrationBuilder.AddColumn<DateTimeOffset>(
                 name: "StarDate",
                 table: "YtManagerApp_video",
                 type: "timestamp with time zone",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Star",
-                table: "YtManagerApp_video");
+            migrationBuilder.DropColumn(name: "Star", table: "YtManagerApp_video");
 
-            migrationBuilder.DropColumn(
-                name: "StarDate",
-                table: "YtManagerApp_video");
+            migrationBuilder.DropColumn(name: "StarDate", table: "YtManagerApp_video");
         }
     }
 }

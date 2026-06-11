@@ -9,8 +9,8 @@ public class SynchroniseAllConsumer(
     ILogger<SynchroniseAllConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IServiceProvider serviceProvider,
-    IBus bus)
-    : IConsumer<SynchroniseAllContract>
+    IBus bus
+) : IConsumer<SynchroniseAllContract>
 {
     public async Task Consume(ConsumeContext<SynchroniseAllContract> context)
     {
@@ -18,13 +18,14 @@ public class SynchroniseAllConsumer(
 
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var subscriptions = await db.Subscriptions
-            .Where(static s => !s.DisableSync)
+        var subscriptions = await db
+            .Subscriptions.Where(static s => !s.DisableSync)
             .OrderBy(static s => s.LastSynchronised)
             .Select(static s => new Tuple<int, string>(s.Id, s.Provider).ToValueTuple())
             .ToListAsync(context.CancellationToken);
 
-        var providers = serviceProvider.GetServices<IProvider>()
+        var providers = serviceProvider
+            .GetServices<IProvider>()
             .ToLookup(static p => p.ProviderIdentifier);
 
         foreach (var subscription in subscriptions)
@@ -37,8 +38,13 @@ public class SynchroniseAllConsumer(
                 continue;
             }
 
-            var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(providerType);
-            var contract = Activator.CreateInstance(contractType, new object[] { subscription.Item1 });
+            var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(
+                providerType
+            );
+            var contract = Activator.CreateInstance(
+                contractType,
+                new object[] { subscription.Item1 }
+            );
             ArgumentNullException.ThrowIfNull(contract);
 
             await bus.PublishWithGuid(contract, context.CancellationToken);

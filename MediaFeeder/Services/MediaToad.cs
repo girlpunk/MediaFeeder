@@ -13,7 +13,8 @@ public sealed class MediaToadService(
     ILogger<MediaToadService> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager<AuthUser> userManager,
-    IServiceProvider serviceProvider) : Media.MediaBase
+    IServiceProvider serviceProvider
+) : Media.MediaBase
 {
     private ILogger<MediaToadService> Logger { get; } = logger;
 
@@ -21,13 +22,13 @@ public sealed class MediaToadService(
     {
         Logger.LogInformation($"Got about request from {context.Peer}");
 
-        return Task.FromResult(new AboutReply
-        {
-            Name = "MediaFeeder"
-        });
+        return Task.FromResult(new AboutReply { Name = "MediaFeeder" });
     }
 
-    public override async Task<HasMediaReply> HasMedia(HasMediaRequest request, ServerCallContext context)
+    public override async Task<HasMediaReply> HasMedia(
+        HasMediaRequest request,
+        ServerCallContext context
+    )
     {
         var principal = context.GetHttpContext().User;
 
@@ -42,10 +43,12 @@ public sealed class MediaToadService(
         if (!int.TryParse(request.Id, out var videoId))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid ID"));
 
-        await using var dbContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var video = await dbContext.Videos
-            .Include(static v => v.Subscription)
-            .ThenInclude(static s => s!.Provider)
+        await using var dbContext = await contextFactory.CreateDbContextAsync(
+            context.CancellationToken
+        );
+        var video = await dbContext
+            .Videos.Include(static v => v.Subscription)
+                .ThenInclude(static s => s!.Provider)
             .SingleOrDefaultAsync(v => v.Id == videoId, context.CancellationToken);
 
         if (video == null)
@@ -58,11 +61,15 @@ public sealed class MediaToadService(
 
         if (video.DownloadedPath != null)
         {
-            new FileExtensionContentTypeProvider().TryGetContentType(video.DownloadedPath, out mimeType);
+            new FileExtensionContentTypeProvider().TryGetContentType(
+                video.DownloadedPath,
+                out mimeType
+            );
         }
         else
         {
-            var videoProvider = serviceProvider.GetServices<IProvider>()
+            var videoProvider = serviceProvider
+                .GetServices<IProvider>()
                 .Single(provider => provider.ProviderIdentifier == video.Subscription.Provider);
 
             mimeType = videoProvider.StreamMimeType;
@@ -71,21 +78,21 @@ public sealed class MediaToadService(
         var mediaItem = new MediaItem()
         {
             Id = video.Id.ToString(),
-            DurationMillis = (long) (video.DurationSpan?.TotalMilliseconds ?? 0),
+            DurationMillis = (long)(video.DurationSpan?.TotalMilliseconds ?? 0),
             Title = video.Name,
         };
 
         if (mimeType != null)
             mediaItem.MimeType = mimeType;
 
-        return new HasMediaReply()
-        {
-            Existence = FileExistance.Exists,
-            Item = mediaItem,
-        };
+        return new HasMediaReply() { Existence = FileExistance.Exists, Item = mediaItem };
     }
 
-    public override async Task ReadMedia(ReadMediaRequest request, IServerStreamWriter<ReadMediaReply> responseStream, ServerCallContext context)
+    public override async Task ReadMedia(
+        ReadMediaRequest request,
+        IServerStreamWriter<ReadMediaReply> responseStream,
+        ServerCallContext context
+    )
     {
         var principal = context.GetHttpContext().User;
 
@@ -100,10 +107,12 @@ public sealed class MediaToadService(
         if (!int.TryParse(request.Id, out var videoId))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid ID"));
 
-        await using var dbContext = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var video = await dbContext.Videos
-            .Include(static v => v.Subscription)
-            .ThenInclude(static s => s!.Provider)
+        await using var dbContext = await contextFactory.CreateDbContextAsync(
+            context.CancellationToken
+        );
+        var video = await dbContext
+            .Videos.Include(static v => v.Subscription)
+                .ThenInclude(static s => s!.Provider)
             .SingleOrDefaultAsync(v => v.Id == videoId, context.CancellationToken);
 
         if (video == null)
@@ -115,7 +124,10 @@ public sealed class MediaToadService(
         if (video.DownloadedPath == null)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Not downloaded"));
 
-        new FileExtensionContentTypeProvider().TryGetContentType(video.DownloadedPath, out var mimeType);
+        new FileExtensionContentTypeProvider().TryGetContentType(
+            video.DownloadedPath,
+            out var mimeType
+        );
 
         await using var videoStream = new FileStream(video.DownloadedPath, FileMode.Open);
 
@@ -127,11 +139,7 @@ public sealed class MediaToadService(
             bytesRead = await videoStream.ReadAsync(buffer, context.CancellationToken);
 
             var b = ByteString.CopyFrom(buffer.Span);
-            var reply = new ReadMediaReply()
-            {
-                TotalFileLength = videoStream.Length,
-                Content = b
-            };
+            var reply = new ReadMediaReply() { TotalFileLength = videoStream.Length, Content = b };
 
             if (mimeType != null)
                 reply.MimeType = mimeType;
@@ -140,7 +148,10 @@ public sealed class MediaToadService(
         }
     }
 
-    public override async Task<ListNodeReply> ListNode(ListNodeRequest request, ServerCallContext context)
+    public override async Task<ListNodeReply> ListNode(
+        ListNodeRequest request,
+        ServerCallContext context
+    )
     {
         var principal = context.GetHttpContext().User;
 
@@ -162,15 +173,19 @@ public sealed class MediaToadService(
         {
             's' => await ListSubscription(nodeId, user, context.CancellationToken),
             'f' => await ListFolder(nodeId, user, context.CancellationToken),
-            _ => throw new RpcException(new Status(StatusCode.NotFound, "Not Found"))
+            _ => throw new RpcException(new Status(StatusCode.NotFound, "Not Found")),
         };
     }
 
-    private async Task<ListNodeReply> ListSubscription(int nodeId, AuthUser user, CancellationToken cancellationToken)
+    private async Task<ListNodeReply> ListSubscription(
+        int nodeId,
+        AuthUser user,
+        CancellationToken cancellationToken
+    )
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var subscription = await context.Subscriptions
-            .Include(static s => s.Videos)
+        var subscription = await context
+            .Subscriptions.Include(static s => s.Videos)
             .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
 
         if (subscription == null)
@@ -183,23 +198,25 @@ public sealed class MediaToadService(
         {
             Item =
             {
-                subscription.Videos.Select(static v =>
-                    new MediaItem()
-                    {
-                        Id = v.Id.ToString(),
-                        DurationMillis = (long) (v.DurationSpan?.TotalMilliseconds ?? 0),
-                        Title = v.Name
-                    }
-                )
-            }
+                subscription.Videos.Select(static v => new MediaItem()
+                {
+                    Id = v.Id.ToString(),
+                    DurationMillis = (long)(v.DurationSpan?.TotalMilliseconds ?? 0),
+                    Title = v.Name,
+                }),
+            },
         };
     }
 
-    private async Task<ListNodeReply> ListFolder(int? nodeId, AuthUser user, CancellationToken cancellationToken)
+    private async Task<ListNodeReply> ListFolder(
+        int? nodeId,
+        AuthUser user,
+        CancellationToken cancellationToken
+    )
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var query = context.Folders
-            .Where(f => f.UserId == user.Id)
+        var query = context
+            .Folders.Where(f => f.UserId == user.Id)
             .Include(static s => s.Subscriptions)
             .Include(static s => s.Subfolders)
             .OrderBy(static f => f.Name);
@@ -209,47 +226,43 @@ public sealed class MediaToadService(
         if (nodeId == null)
         {
             node = MkFolderNode(0, null, "MediaFeeder");
-            subnodes = (await query.Where(static f => f.ParentId == null)
-                    .ToListAsync(cancellationToken))
-                .Select(static f => MkFolderNode(f.Id, 0, f.Name));
+            subnodes = (
+                await query.Where(static f => f.ParentId == null).ToListAsync(cancellationToken)
+            ).Select(static f => MkFolderNode(f.Id, 0, f.Name));
         }
         else
         {
-            var folder = await query
-                .SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
+            var folder = await query.SingleOrDefaultAsync(s => s.Id == nodeId, cancellationToken);
 
             if (folder == null)
                 throw new RpcException(new Status(StatusCode.NotFound, "Not Found"));
 
             if (folder.UserId != user.Id)
-                throw new RpcException(new Status(StatusCode.PermissionDenied, "Authorization failed"));
+                throw new RpcException(
+                    new Status(StatusCode.PermissionDenied, "Authorization failed")
+                );
 
             node = MkFolderNode(folder.Id, folder.ParentId, folder.Name);
-            subnodes = folder.Subfolders.Select(static f => MkFolderNode(f.Id, f.ParentId, f.Name))
-                .Concat(folder.Subscriptions.Select(s =>
-                    new MediaNode
+            subnodes = folder
+                .Subfolders.Select(static f => MkFolderNode(f.Id, f.ParentId, f.Name))
+                .Concat(
+                    folder.Subscriptions.Select(s => new MediaNode
                     {
                         Id = $"s{s.Id}",
                         ParentId = node.Id,
                         Title = s.Name,
-                    }));
+                    })
+                );
         }
 
-        return new ListNodeReply
-        {
-            Node = node,
-            Child = { subnodes },
-        };
+        return new ListNodeReply { Node = node, Child = { subnodes } };
     }
 
     private static MediaNode MkFolderNode(int id, int? parentId, string title)
     {
-        var node = new MediaNode
-        {
-            Id = $"f{id}",
-            Title = title
-        };
-        if (parentId != null) node.ParentId = $"f{parentId}";
+        var node = new MediaNode { Id = $"f{id}", Title = title };
+        if (parentId != null)
+            node.ParentId = $"f{parentId}";
         return node;
     }
 }

@@ -20,12 +20,15 @@ public sealed class YoutubeVideoSynchroniseConsumer(
     public async Task Consume(ConsumeContext<YoutubeVideoSynchroniseContract> context)
     {
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
-        var video = await db.Videos
-            .Include(static v => v.Subscription)
+        var video = await db
+            .Videos.Include(static v => v.Subscription)
             .SingleAsync(v => v.Id == context.Message.VideoId, context.CancellationToken);
 
-        if (string.IsNullOrWhiteSpace(video.DownloadedPath) && video.Duration is not (0 or null) &&
-            !string.IsNullOrWhiteSpace(video.Thumb))
+        if (
+            string.IsNullOrWhiteSpace(video.DownloadedPath)
+            && video.Duration is not (0 or null)
+            && !string.IsNullOrWhiteSpace(video.Thumb)
+        )
         {
             logger.LogInformation("Skipping synchronize video {}", video.Id);
             return;
@@ -45,26 +48,34 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         await db.SaveChangesAsync(context.CancellationToken);
     }
 
-    private async Task GetDetailsFromDeArrow(Video video, MediaFeederDataContext db,
-        CancellationToken cancellationToken)
+    private async Task GetDetailsFromDeArrow(
+        Video video,
+        MediaFeederDataContext db,
+        CancellationToken cancellationToken
+    )
     {
         // Still no duration or thumbnail, see if dearrow has any metadata
         using var httpClient = httpClientFactory.CreateClient("retry");
 
         try
         {
-            var dearrowInfo =
-                await httpClient.GetFromJsonAsync<DearrowBrandingResponse>(
-                    $"https://sponsor.ajay.app/api/branding?videoID={video.VideoId}", cancellationToken);
+            var dearrowInfo = await httpClient.GetFromJsonAsync<DearrowBrandingResponse>(
+                $"https://sponsor.ajay.app/api/branding?videoID={video.VideoId}",
+                cancellationToken
+            );
 
-            if (dearrowInfo == null) return;
+            if (dearrowInfo == null)
+                return;
 
             if (video.Duration is 0 or null && dearrowInfo.VideoDuration != null)
                 video.Duration = Convert.ToInt32(dearrowInfo.VideoDuration);
 
-            if (string.IsNullOrWhiteSpace(video.Thumb) &&
-                dearrowInfo.Thumbnails.Any(static t => t.Locked || t.Votes > 0))
-                video.Thumb = $"https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID={video.VideoId}";
+            if (
+                string.IsNullOrWhiteSpace(video.Thumb)
+                && dearrowInfo.Thumbnails.Any(static t => t.Locked || t.Votes > 0)
+            )
+                video.Thumb =
+                    $"https://dearrow-thumb.ajay.app/api/v1/getThumbnail?videoID={video.VideoId}";
 
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -77,7 +88,11 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         }
     }
 
-    private async Task GetDetailsFromYouTube(Video video, MediaFeederDataContext db, CancellationToken cancellationToken)
+    private async Task GetDetailsFromYouTube(
+        Video video,
+        MediaFeederDataContext db,
+        CancellationToken cancellationToken
+    )
     {
         var videoRequest = youTubeService.Videos.List("id,statistics,contentDetails,snippet");
         videoRequest.Id = video.VideoId;
@@ -87,9 +102,12 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         if (videoStats != null)
         {
             if (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount > 0)
-                video.Rating = (videoStats.Statistics.LikeCount / (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount));
+                video.Rating = (
+                    videoStats.Statistics.LikeCount
+                    / (videoStats.Statistics.LikeCount + videoStats.Statistics.DislikeCount)
+                );
 
-            video.Views = (int?) videoStats.Statistics.ViewCount;
+            video.Views = (int?)videoStats.Statistics.ViewCount;
 
             // This can be null if the video "Premieres" in the future
             if (!string.IsNullOrWhiteSpace(videoStats.ContentDetails.Duration))
@@ -104,7 +122,13 @@ public sealed class YoutubeVideoSynchroniseConsumer(
 
         if (videoStats?.Snippet?.Thumbnails != null)
         {
-            var newThumb = await utils.LoadResourceThumbnail(video.VideoId, "video", videoStats.Snippet.Thumbnails, logger, cancellationToken);
+            var newThumb = await utils.LoadResourceThumbnail(
+                video.VideoId,
+                "video",
+                videoStats.Snippet.Thumbnails,
+                logger,
+                cancellationToken
+            );
             if (!string.IsNullOrWhiteSpace(newThumb))
                 video.Thumb = newThumb;
         }
@@ -116,7 +140,11 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task SynchroniseDownloaded(Video video, MediaFeederDataContext db, CancellationToken cancellationToken)
+    private async Task SynchroniseDownloaded(
+        Video video,
+        MediaFeederDataContext db,
+        CancellationToken cancellationToken
+    )
     {
         if (!File.Exists(video.DownloadedPath))
         {
@@ -135,7 +163,11 @@ public sealed class YoutubeVideoSynchroniseConsumer(
             if (video.Watched && (video.Subscription!.AutomaticallyDeleteWatched))
             {
                 // Video is watched and subscription is set to automatically delete watched videos
-                logger.LogInformation("Deleting file {downloadedPath} for {Id}, as video has been watched", video.DownloadedPath, video.Id);
+                logger.LogInformation(
+                    "Deleting file {downloadedPath} for {Id}, as video has been watched",
+                    video.DownloadedPath,
+                    video.Id
+                );
 
                 File.Delete(video.DownloadedPath);
                 video.DownloadedPath = null;
@@ -147,9 +179,11 @@ public sealed class YoutubeVideoSynchroniseConsumer(
 
     private sealed record DearrowBrandingResponse
     {
-        [JsonProperty("titles")] public List<DearrowBrandingTitle> Titles { get; set; } = [];
+        [JsonProperty("titles")]
+        public List<DearrowBrandingTitle> Titles { get; set; } = [];
 
-        [JsonProperty("titles")] public List<DearrowBrandingThumbnail> Thumbnails { get; set; } = [];
+        [JsonProperty("titles")]
+        public List<DearrowBrandingThumbnail> Thumbnails { get; set; } = [];
 
         [JsonProperty("randomTime")]
         public decimal RandomTime { get; set; }
@@ -185,12 +219,14 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         [JsonProperty("timestamp")]
         public decimal? Timestamp { get; set; }
 
-        [JsonProperty("original")] public bool Original { get; set; }
+        [JsonProperty("original")]
+        public bool Original { get; set; }
 
         [JsonProperty("votes")]
         public int Votes { get; set; }
 
-        [JsonProperty("locked")] public bool Locked { get; set; }
+        [JsonProperty("locked")]
+        public bool Locked { get; set; }
 
         [JsonProperty("UUID")]
         public Guid Uuid { get; set; }

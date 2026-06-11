@@ -13,7 +13,8 @@ public class ShuffleHelper
         int? folderId,
         int? subscriptionId,
         List<Video>? exclude = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
         var excludeOrEmpty = exclude ?? [];
@@ -22,36 +23,47 @@ public class ShuffleHelper
 
         if (folderId != null)
         {
-            var subfolderIds = await Folder.RecursiveFolderIds(dataContext, folderId.Value, user.Id);
-            subscriptions = await dataContext.Subscriptions
-                .Where(s => subfolderIds.Contains(s.ParentFolderId) && s.UserId == user.Id)
+            var subfolderIds = await Folder.RecursiveFolderIds(
+                dataContext,
+                folderId.Value,
+                user.Id
+            );
+            subscriptions = await dataContext
+                .Subscriptions.Where(s =>
+                    subfolderIds.Contains(s.ParentFolderId) && s.UserId == user.Id
+                )
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync(cancellationToken);
         }
         else if (subscriptionId != null)
         {
-            subscriptions = [await dataContext.Subscriptions.SingleAsync(s => s.Id == subscriptionId && s.UserId == user.Id, cancellationToken)];
+            subscriptions =
+            [
+                await dataContext.Subscriptions.SingleAsync(
+                    s => s.Id == subscriptionId && s.UserId == user.Id,
+                    cancellationToken
+                ),
+            ];
         }
         else
         {
-            subscriptions = await dataContext.Subscriptions
-                .Where(s => s.UserId == user.Id)
+            subscriptions = await dataContext
+                .Subscriptions.Where(s => s.UserId == user.Id)
                 .OrderBy(static _ => EF.Functions.Random())
                 .ToListAsync(cancellationToken);
         }
 
-        var query = dataContext.Videos
-            .Where(v => v.Watched == false
-                        && v.Duration != null
-                        && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId)
-                        && !excludeOrEmpty.Contains(v));
+        var query = dataContext.Videos.Where(v =>
+            v.Watched == false
+            && v.Duration != null
+            && subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId)
+            && !excludeOrEmpty.Contains(v)
+        );
 
         if (timeRemaining.TotalMinutes < 60)
             query = query.Where(v => v.Duration <= timeRemaining.TotalSeconds);
 
-        var first = await query
-            .OrderBy(static v => v.PublishDate)
-            .FirstAsync(cancellationToken);
+        var first = await query.OrderBy(static v => v.PublishDate).FirstAsync(cancellationToken);
 
         reply.Add(first);
         timeRemaining -= first.DurationSpan ?? TimeSpan.Zero;
@@ -63,12 +75,14 @@ public class ShuffleHelper
 
             foreach (var subscription in subscriptions)
             {
-                var video = await dataContext.Videos
-                    .Where(v => v.SubscriptionId == subscription.Id
-                                && v.Watched == false
-                                && v.Duration != null
-                                && !reply.Contains(v)
-                                && !excludeOrEmpty.Contains(v))
+                var video = await dataContext
+                    .Videos.Where(v =>
+                        v.SubscriptionId == subscription.Id
+                        && v.Watched == false
+                        && v.Duration != null
+                        && !reply.Contains(v)
+                        && !excludeOrEmpty.Contains(v)
+                    )
                     .Include(static v => v.Subscription)
                     .OrderBy(static v => v.PublishDate)
                     .FirstOrDefaultAsync(cancellationToken);

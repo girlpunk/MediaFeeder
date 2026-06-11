@@ -15,9 +15,14 @@ namespace MediaFeeder.Components.Dialogs;
 
 public partial class AddSubscription
 {
-    [Inject] public required MediaFeederDataContext Context { get; set; }
-    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
-    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+    [Inject]
+    public required MediaFeederDataContext Context { get; set; }
+
+    [Inject]
+    public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+
+    [Inject]
+    public required UserManager<AuthUser> UserManager { get; set; }
     public required Form<AddForm> Form { get; set; }
     private AddForm Add { get; set; } = new AddForm();
     private SubscriptionForm Subscription { get; set; } = new SubscriptionForm();
@@ -68,8 +73,10 @@ public partial class AddSubscription
 
         // Parse page if HTML
         var contentType = UrlRequest.Content.Headers.ContentType;
-        if ((contentType?.MediaType?.Contains("html") ?? false)
-            || (contentType?.MediaType?.Contains("xml") ?? false))
+        if (
+            (contentType?.MediaType?.Contains("html") ?? false)
+            || (contentType?.MediaType?.Contains("xml") ?? false)
+        )
         {
             UrlDocument = new HtmlDocument();
             UrlDocument.LoadHtml(await UrlRequest.Content.ReadAsStringAsync());
@@ -82,7 +89,10 @@ public partial class AddSubscription
                 try
                 {
                     Logger.LogDebug("Offering URL to provider {}", provider.Name);
-                    return (provider, match: await provider.IsUrlValid(new Uri(Add.Url), UrlRequest, UrlDocument));
+                    return (
+                        provider,
+                        match: await provider.IsUrlValid(new Uri(Add.Url), UrlRequest, UrlDocument)
+                    );
                 }
                 catch (Exception e)
                 {
@@ -126,15 +136,20 @@ public partial class AddSubscription
         var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = await UserManager.GetUserAsync(auth.User);
 
-        ExistingFolders = await Context.Folders
-            .Where(f => f.User == user)
+        ExistingFolders = await Context
+            .Folders.Where(f => f.User == user)
             .Include(static f => f.Subfolders)
             .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)
             .OrderBy(static f => f.Name)
             .ToListAsync();
 
-        await FoundProvider.CreateSubscription(new Uri(Add.Url), UrlRequest, UrlDocument, Subscription);
+        await FoundProvider.CreateSubscription(
+            new Uri(Add.Url),
+            UrlRequest,
+            UrlDocument,
+            Subscription
+        );
         ActiveStep = 2;
         StateHasChanged();
     }
@@ -173,7 +188,9 @@ public partial class AddSubscription
 
         await Context.SaveChangesAsync();
 
-        var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(FoundProvider.GetType());
+        var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(
+            FoundProvider.GetType()
+        );
         var contract = Activator.CreateInstance(contractType, subscription.Id);
         ArgumentNullException.ThrowIfNull(contract);
 

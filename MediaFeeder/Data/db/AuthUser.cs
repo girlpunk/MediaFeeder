@@ -7,18 +7,23 @@ public class AuthUser : IdentityUser<int>
 {
     public override int Id { get; set; }
 
-    [MaxLength(128)] public string? Password { get; set; }
+    [MaxLength(128)]
+    public string? Password { get; set; }
 
     public DateTime? LastLogin { get; set; }
     public bool IsSuperuser { get; set; } = false;
 
-    [MaxLength(150)] public required string Username { get; set; }
+    [MaxLength(150)]
+    public required string Username { get; set; }
 
-    [MaxLength(150)] public string? FirstName { get; set; }
+    [MaxLength(150)]
+    public string? FirstName { get; set; }
 
-    [MaxLength(150)] public string? LastName { get; set; }
+    [MaxLength(150)]
+    public string? LastName { get; set; }
 
-    [MaxLength(254)] public override required string Email { get; set; }
+    [MaxLength(254)]
+    public override required string Email { get; set; }
 
     public bool IsStaff { get; set; } = false;
     public bool IsActive { get; set; } = true;
@@ -53,11 +58,7 @@ public class AuthUser : IdentityUser<int>
     public virtual ICollection<AuthUserUserPermission>? AuthUserUserPermissions { get; init; }
     public virtual ICollection<DjangoAdminLog>? DjangoAdminLogs { get; init; }
 
-    public virtual ICollection<DynamicPreferencesUsersUserpreferencemodel>? DynamicPreferencesUsersUserpreferencemodels
-    {
-        get;
-        init;
-    }
+    public virtual ICollection<DynamicPreferencesUsersUserpreferencemodel>? DynamicPreferencesUsersUserpreferencemodels { get; init; }
 
     public virtual ICollection<JobExecution>? JobExecutions { get; init; }
     public virtual ICollection<Folder>? Folders { get; init; }

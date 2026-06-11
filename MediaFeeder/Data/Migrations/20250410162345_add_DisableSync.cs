@@ -15,15 +15,14 @@ namespace MediaFeeder.Data.Migrations
                 table: "YtManagerApp_subscription",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "DisableSync",
-                table: "YtManagerApp_subscription");
+            migrationBuilder.DropColumn(name: "DisableSync", table: "YtManagerApp_subscription");
         }
     }
 }

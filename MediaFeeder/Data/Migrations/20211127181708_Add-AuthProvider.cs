@@ -13,11 +13,15 @@ namespace MediaFeeder.Data.Migrations
                 name: "AuthProviders",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table
+                        .Column<int>(type: "integer", nullable: false)
+                        .Annotation(
+                            "Npgsql:ValueGenerationStrategy",
+                            NpgsqlValueGenerationStrategy.IdentityByDefaultColumn
+                        ),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     LoginProvider = table.Column<string>(type: "text", nullable: false),
-                    ProviderKey = table.Column<string>(type: "text", nullable: false)
+                    ProviderKey = table.Column<string>(type: "text", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -27,25 +31,28 @@ namespace MediaFeeder.Data.Migrations
                         column: x => x.UserId,
                         principalTable: "auth_user",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuthProviders_LoginProvider_ProviderKey",
                 table: "AuthProviders",
                 columns: new[] { "LoginProvider", "ProviderKey" },
-                unique: true);
+                unique: true
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_AuthProviders_UserId",
                 table: "AuthProviders",
-                column: "UserId");
+                column: "UserId"
+            );
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "AuthProviders");
+            migrationBuilder.DropTable(name: "AuthProviders");
         }
     }
 }

@@ -15,7 +15,12 @@ namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager, IConfiguration configuration, ILogger<VideoController> logger) : ControllerBase
+public class VideoController(
+    IDbContextFactory<MediaFeederDataContext> contextFactory,
+    UserManager userManager,
+    IConfiguration configuration,
+    ILogger<VideoController> logger
+) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
     [Authorize(Roles = "Download", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -27,17 +32,28 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == "Video");
         if (scopeClaim == null || scopeClaim.Value != id.ToString())
         {
-            var serialized = JsonSerializer.Serialize(HttpContext.User, new JsonSerializerOptions()
-            {
-                ReferenceHandler = ReferenceHandler.IgnoreCycles
-            });
+            var serialized = JsonSerializer.Serialize(
+                HttpContext.User,
+                new JsonSerializerOptions() { ReferenceHandler = ReferenceHandler.IgnoreCycles }
+            );
 
-            logger.LogInformation("The video claim does not contain '{}' or was not found", scopeClaim);
-            return StatusCode((int)HttpStatusCode.Forbidden, $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {serialized}");
+            logger.LogInformation(
+                "The video claim does not contain '{}' or was not found",
+                scopeClaim
+            );
+            return StatusCode(
+                (int)HttpStatusCode.Forbidden,
+                $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {serialized}"
+            );
         }
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
-        var video = await context.Videos.SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
+        var video = await context.Videos.SingleOrDefaultAsync(
+            v => v.Id == id && v.Subscription!.UserId == user.Id,
+            HttpContext.RequestAborted
+        );
 
         if (video == null)
             return NotFound();
@@ -48,7 +64,10 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         if (video.DownloadedPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return Redirect(video.DownloadedPath);
 
-        new FileExtensionContentTypeProvider().TryGetContentType(video.DownloadedPath, out var mimeType);
+        new FileExtensionContentTypeProvider().TryGetContentType(
+            video.DownloadedPath,
+            out var mimeType
+        );
         return PhysicalFile(video.DownloadedPath, mimeType ?? "application/octet-stream", true);
     }
 
@@ -61,14 +80,22 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
-        var video = await context.Videos.SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
+        var video = await context.Videos.SingleOrDefaultAsync(
+            v => v.Id == id && v.Subscription!.UserId == user.Id,
+            HttpContext.RequestAborted
+        );
 
         if (video == null)
             return NotFound();
 
         if (video.Thumb == null)
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded - no path saved");
+            return StatusCode(
+                (int)HttpStatusCode.PreconditionFailed,
+                "Not Downloaded - no path saved"
+            );
 
         if (video.Thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return Redirect(video.Thumb);
@@ -89,7 +116,10 @@ public class VideoController(IDbContextFactory<MediaFeederDataContext> contextFa
             video.Thumb = null;
             await context.SaveChangesAsync(HttpContext.RequestAborted);
 
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, $"Not Downloaded - {e.Message}");
+            return StatusCode(
+                (int)HttpStatusCode.PreconditionFailed,
+                $"Not Downloaded - {e.Message}"
+            );
         }
     }
 }

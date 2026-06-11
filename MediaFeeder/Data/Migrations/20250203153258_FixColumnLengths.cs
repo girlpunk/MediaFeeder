@@ -18,7 +18,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "character varying(12)",
-                oldMaxLength: 12);
+                oldMaxLength: 12
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumbnail",
@@ -28,7 +29,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "text",
-                oldMaxLength: 1000000000);
+                oldMaxLength: 1000000000
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumbnail",
@@ -38,7 +40,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(1024)",
-                oldMaxLength: 1024);
+                oldMaxLength: 1024
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "name",
@@ -48,7 +51,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(150)",
-                oldMaxLength: 150);
+                oldMaxLength: 150
+            );
         }
 
         /// <inheritdoc />
@@ -62,7 +66,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "character varying(128)",
-                oldMaxLength: 128);
+                oldMaxLength: 128
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumbnail",
@@ -74,7 +79,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "text",
                 oldMaxLength: 1000000000,
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "thumbnail",
@@ -86,7 +92,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(1024)",
                 oldMaxLength: 1024,
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "name",
@@ -98,7 +105,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(150)",
                 oldMaxLength: 150,
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

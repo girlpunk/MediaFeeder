@@ -5,7 +5,8 @@ namespace NetworkPlaybackAgent;
 public class AuthenticationService
 {
     private const string ClientId = "Xcnb0KSiNXvxsMmFwychaFEDEFBeAsmTbn2EE30M";
-    private const string Authority = "https://authentik.home.foxocube.xyz/application/o/mediafeeder-network-playback-agent/";
+    private const string Authority =
+        "https://authentik.home.foxocube.xyz/application/o/mediafeeder-network-playback-agent/";
     private readonly string[] Scopes = new string[] { "user.read" };
 
     internal async Task<AuthenticationResult> GetATokenForGraph()
@@ -22,8 +23,7 @@ public class AuthenticationService
         // All AcquireToken* methods store the tokens in the cache, so check the cache first
         try
         {
-            return await pca.AcquireTokenSilent(Scopes, accounts.FirstOrDefault())
-                .ExecuteAsync();
+            return await pca.AcquireTokenSilent(Scopes, accounts.FirstOrDefault()).ExecuteAsync();
         }
         catch (MsalUiRequiredException ex)
         {
@@ -39,22 +39,24 @@ public class AuthenticationService
         try
         {
             var result = await pca.AcquireTokenWithDeviceCode(
-                Scopes,
-                static deviceCodeResult =>
-                {
-                    // This will print the message on the console which tells the user where to go sign-in using
-                    // a separate browser and the code to enter once they sign in.
-                    // The AcquireTokenWithDeviceCode() method will poll the server after firing this
-                    // device code callback to look for the successful login of the user via that browser.
-                    // This background polling (whose interval and timeout data is also provided as fields in the
-                    // deviceCodeCallback class) will occur until:
-                    // * The user has successfully logged in via browser and entered the proper code
-                    // * The timeout specified by the server for the lifetime of this code (typically ~15 minutes) has been reached
-                    // * The developing application calls the Cancel() method on a CancellationToken sent into the method.
-                    //   If this occurs, an OperationCanceledException will be thrown (see catch below for more details).
-                    Console.WriteLine(deviceCodeResult.Message);
-                    return Task.FromResult(0);
-                }).ExecuteAsync();
+                    Scopes,
+                    static deviceCodeResult =>
+                    {
+                        // This will print the message on the console which tells the user where to go sign-in using
+                        // a separate browser and the code to enter once they sign in.
+                        // The AcquireTokenWithDeviceCode() method will poll the server after firing this
+                        // device code callback to look for the successful login of the user via that browser.
+                        // This background polling (whose interval and timeout data is also provided as fields in the
+                        // deviceCodeCallback class) will occur until:
+                        // * The user has successfully logged in via browser and entered the proper code
+                        // * The timeout specified by the server for the lifetime of this code (typically ~15 minutes) has been reached
+                        // * The developing application calls the Cancel() method on a CancellationToken sent into the method.
+                        //   If this occurs, an OperationCanceledException will be thrown (see catch below for more details).
+                        Console.WriteLine(deviceCodeResult.Message);
+                        return Task.FromResult(0);
+                    }
+                )
+                .ExecuteAsync();
 
             Console.WriteLine(result.Account.Username);
             return result;
