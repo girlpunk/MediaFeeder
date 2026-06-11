@@ -5,7 +5,13 @@
 # linters documentation
 
 # all, none, or list of linter keys
-APPLY_FIXES: none
+APPLY_FIXES: all
+APPLY_FIXES_MODE: pull_request
+PRINT_ALPACA: false
+FLAVOR_SUGGESTIONS: false
+SHOW_ELAPSED_TIME: true
+
+GITHUB_STATUS_REPORTER: true
 
 # TODO put these back once things are under control.
 DISABLE:
@@ -21,11 +27,9 @@ DISABLE_LINTERS:
   - CSHARP_ROSLYNATOR # "Could not load file or assembly 'System.Composition.AttributedModel..."
   - PROTOBUF_PROTOLINT # FIXME very unhappy with field names etc.
 
-EXCLUDED_DIRECTORIES:
+ADDITIONAL_EXCLUDED_DIRECTORIES:
   - "Might be useful"
   - "megalinter-reports"
-
-SHOW_ELAPSED_TIME: true
 
 # GitLeaks: only scan the files in this commit, not the entire history
 # TODO review previous failures and add to .gitleaksignore
