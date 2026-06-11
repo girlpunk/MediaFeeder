@@ -2,13 +2,13 @@
 # vim: tw=0 ts=4 sw=4
 """Get provider ID for videos with stars in a given folder."""
 
-import asyncio
 import argparse
+import asyncio
 import sys
 
 import Api_pb2
-
 import common
+
 
 class GetStars(common.MfClient):
 
@@ -17,10 +17,13 @@ class GetStars(common.MfClient):
 
     async def get_stars(self, folder_id):
         search = await self._stub.Search(
-                Api_pb2.SearchRequest(Provider="Youtube", FolderId=folder_id, Star=True))
+            Api_pb2.SearchRequest(Provider="Youtube", FolderId=folder_id, Star=True)
+        )
         for video in search.Videos:
             if not video.Star:
-                raise Exception(f"invalid search results: {video.ProviderVideoId} is not stared.")
+                raise Exception(
+                    f"invalid search results: {video.ProviderVideoId} is not stared."
+                )
         return search.Videos
 
 

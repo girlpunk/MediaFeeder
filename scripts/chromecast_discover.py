@@ -5,10 +5,9 @@ import logging
 import sys
 import time
 
+import common
 import pychromecast
 import zeroconf
-
-import common
 
 common.set_logging()
 
@@ -23,7 +22,12 @@ if not sys.warnoptions:
 
 
 zconf = zeroconf.Zeroconf()
-browser = pychromecast.CastBrowser(pychromecast.SimpleCastListener(lambda uuid, service: print(browser.devices[uuid].friendly_name)), zconf)
+browser = pychromecast.CastBrowser(
+    pychromecast.SimpleCastListener(
+        lambda uuid, service: print(browser.devices[uuid].friendly_name)
+    ),
+    zconf,
+)
 browser.start_discovery()
 
 time.sleep(30)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Player for generic video files on a chromecast."""
+
 # vim: tw=0 ts=4 sw=4
 
 from __future__ import annotations
@@ -11,13 +12,18 @@ import sys
 import time
 
 import Api_pb2
+import common
 import pychromecast
-from pychromecast.controllers.media import STREAM_TYPE_BUFFERED, BaseMediaPlayer, DefaultMediaReceiverController, MediaStatus, MediaStatusListener
+from pychromecast.controllers.media import (
+    STREAM_TYPE_BUFFERED,
+    BaseMediaPlayer,
+    DefaultMediaReceiverController,
+    MediaStatus,
+    MediaStatusListener,
+)
 from pychromecast.controllers.youtube import YouTubeController
 from pychromecast.response_handler import WaitResponse
 from typing_extensions import Self
-
-import common
 
 
 # https://github.com/home-assistant-libs/pychromecast/blob/master/pychromecast/controllers/media.py
@@ -31,7 +37,9 @@ def pycast_status_to_mf_state(status: MediaStatus) -> int:
         "IDLE": Api_pb2.IDLE,
     }[status.player_state]
 
-    if mf_stat in (Api_pb2.PLAYING, Api_pb2.PAUSED) and (not status.supports_seek or not status.supports_pause):
+    if mf_stat in (Api_pb2.PLAYING, Api_pb2.PAUSED) and (
+        not status.supports_seek or not status.supports_pause
+    ):
         return Api_pb2.ADVERT
 
     return mf_stat
@@ -148,7 +156,12 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     def sync_play_url(self, media_url: str, content_type: str):
         timeout = 30  # TODO constant or do this better?
         response_handler = WaitResponse(timeout, f"play {media_url}")
-        self._file_con.play_media(media_url, content_type, stream_type=STREAM_TYPE_BUFFERED, callback_function=response_handler.callback)
+        self._file_con.play_media(
+            media_url,
+            content_type,
+            stream_type=STREAM_TYPE_BUFFERED,
+            callback_function=response_handler.callback,
+        )
         response_handler.wait_response()
 
     def sync_ready_yt(self):
@@ -172,7 +185,9 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         self._cast.media_controller.set_playback_rate(rate)
 
     # PlayerBase
-    async def play_pause(self, resume_video_id: int | None, resume_from_position: int | None) -> None:
+    async def play_pause(
+        self, resume_video_id: int | None, resume_from_position: int | None
+    ) -> None:
         """Toggle the paused state."""
         if self._cast.media_controller.status.player_is_paused:
             self._logger.info("PlayPause: playing...")
@@ -181,12 +196,21 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             self._logger.info("PlayPause: pausing...")
             await asyncio.to_thread(self.sync_pause)
         elif (
-            self._cast.media_controller.status.player_is_idle or self._cast.media_controller.status.player_state == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN
+            self._cast.media_controller.status.player_is_idle
+            or self._cast.media_controller.status.player_state
+            == pychromecast.controllers.media.MEDIA_PLAYER_STATE_UNKNOWN
         ) and resume_video_id:
-            self._logger.info("Player is idle so requesting replay of %s from %s seconds.", resume_video_id, resume_from_position)
+            self._logger.info(
+                "Player is idle so requesting replay of %s from %s seconds.",
+                resume_video_id,
+                resume_from_position,
+            )
             await self._shuffler.play_video(resume_video_id, resume_from_position)
         else:
-            self._logger.warning("Don't know how to play/pause from state %s", self._cast.media_controller.status.player_state)
+            self._logger.warning(
+                "Don't know how to play/pause from state %s",
+                self._cast.media_controller.status.player_state,
+            )
 
     # PlayerBase
     async def pause_if_playing(self) -> None:
@@ -225,7 +249,9 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             known_hosts=self._cast_host,
         )
         if not chromecasts:
-            self._logger.error('No chromecast with name "%s" discovered', self._cast_name)
+            self._logger.error(
+                'No chromecast with name "%s" discovered', self._cast_name
+            )
             sys.exit(1)
         self._cast = chromecasts[0]
         self._cast.wait()  # Start socket client's worker thread and wait for initial status update
@@ -240,14 +266,22 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
     def new_media_status(self, status: MediaStatus) -> None:
         update = common.StatusUpdate()
 
-        if self._have_control and status.content_id and status.content_id not in self._content_id_to_video_id:
+        if (
+            self._have_control
+            and status.content_id
+            and status.content_id not in self._content_id_to_video_id
+        ):
             self._have_control = False
-            self._logger.warning("Unknown file playing, surrendering control: %s", status.content_id)
+            self._logger.warning(
+                "Unknown file playing, surrendering control: %s", status.content_id
+            )
 
             update.State = Api_pb2.UNKNOWN
             self.sync_send_status(update)
 
-            asyncio.run_coroutine_threadsafe(self._shuffler.playback_abandoned(), self._loop)
+            asyncio.run_coroutine_threadsafe(
+                self._shuffler.playback_abandoned(), self._loop
+            )
             return
 
         update.State = pycast_status_to_mf_state(status)
@@ -275,36 +309,62 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         if status.player_state == "IDLE" and status.idle_reason == "FINISHED":
             self._have_control = False
             self._logger.info("Received playback finished event: %s", status.content_id)
-            if status.content_id is not None and status.content_id in self._content_id_to_video_id:
-                asyncio.run_coroutine_threadsafe(self._shuffler.finished(self._content_id_to_video_id[status.content_id]), self._loop)
+            if (
+                status.content_id is not None
+                and status.content_id in self._content_id_to_video_id
+            ):
+                asyncio.run_coroutine_threadsafe(
+                    self._shuffler.finished(
+                        self._content_id_to_video_id[status.content_id]
+                    ),
+                    self._loop,
+                )
 
                 if self._active_con == self._yt_con:
                     self._yt_con.clear_playlist()
-                    time.sleep(1)  # let chromecast finish before trying to play next video.
+                    time.sleep(
+                        1
+                    )  # let chromecast finish before trying to play next video.
 
             else:
-                self._logger.warning("End of playbacks status content_id missing or unknown: %s", status)
+                self._logger.warning(
+                    "End of playbacks status content_id missing or unknown: %s", status
+                )
 
     # MediaStatusListener
     def load_media_failed(self, queue_item_id: int, error_code: int) -> None:
         """Process a media fail event from the chromecast."""
-        self._logger.warning("load media failed for queue item id: %s with code %s", queue_item_id, error_code)
+        self._logger.warning(
+            "load media failed for queue item id: %s with code %s",
+            queue_item_id,
+            error_code,
+        )
 
 
 async def _main() -> None:
     """Execute the main entrypoint."""
     common.set_logging()
 
-    parser = argparse.ArgumentParser(description="Youtube Chromecast Video File Controller.")
+    parser = argparse.ArgumentParser(
+        description="Youtube Chromecast Video File Controller."
+    )
     parser.add_argument("--cast", required=True, help="Name of cast device")
-    parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Set log level to DEBUG")
+    parser.add_argument(
+        "--known-host",
+        help="Add known host (IP), can be used multiple times",
+        action="append",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Set log level to DEBUG"
+    )
     args = parser.parse_args()
 
     if args.verbose:
         logging.getLogger("pychromecast").setLevel(logging.DEBUG)
 
-    async with VidFilePlayer(cast_name=args.cast, cast_host=args.known_host, verbose=args.verbose) as player:
+    async with VidFilePlayer(
+        cast_name=args.cast, cast_host=args.known_host, verbose=args.verbose
+    ) as player:
         await player.main()
 
 

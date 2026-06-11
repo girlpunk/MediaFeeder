@@ -5,10 +5,11 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import yt_dlp
 import yt_dlp.options
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 create_parser = yt_dlp.options.create_parser
 

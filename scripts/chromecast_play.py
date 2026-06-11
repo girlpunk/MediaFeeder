@@ -7,11 +7,10 @@ import sys
 import time
 from threading import Event
 
+import common
 import pychromecast
 from pychromecast.controllers.media import MediaStatus, MediaStatusListener
 from pychromecast.controllers.youtube import YouTubeController
-
-import common
 
 common.set_logging()
 
@@ -63,13 +62,23 @@ if not sys.warnoptions:
 
     warnings.simplefilter("default")
 
-parser = argparse.ArgumentParser(description="Example on how to use the Youtube Controller.")
+parser = argparse.ArgumentParser(
+    description="Example on how to use the Youtube Controller."
+)
 parser.add_argument("--cast", help="Name of cast device")
-parser.add_argument("--known-host", help="Add known host (IP), can be used multiple times", action="append")
-parser.add_argument("--videos", help="YouTube video IDs to play", nargs="+", default=[], required=True)
+parser.add_argument(
+    "--known-host",
+    help="Add known host (IP), can be used multiple times",
+    action="append",
+)
+parser.add_argument(
+    "--videos", help="YouTube video IDs to play", nargs="+", default=[], required=True
+)
 args = parser.parse_args()
 
-chromecasts, browser = pychromecast.get_listed_chromecasts(friendly_names=[args.cast], known_hosts=args.known_host)
+chromecasts, browser = pychromecast.get_listed_chromecasts(
+    friendly_names=[args.cast], known_hosts=args.known_host
+)
 
 if not chromecasts:
     logger.error("No chromecast with name %s discovered", args.cast)

@@ -26,7 +26,12 @@ class ConfigFile(AbstractContextManager):
         self._lock.acquire_write_lock(timeout=30)
         return self.Config(self)
 
-    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Release configuration instance."""
         self._lock.release_write_lock()
 
