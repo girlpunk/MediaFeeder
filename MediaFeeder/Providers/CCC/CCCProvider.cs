@@ -7,7 +7,8 @@ using MediaFeeder.Helpers;
 
 namespace MediaFeeder.Providers.CCC;
 
-public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvider> logger) : IProvider
+public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvider> logger)
+    : IProvider
 {
     public string Name => "CCC Media";
     public string Icon => IconType.Outline.Laptop;
@@ -23,13 +24,20 @@ public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvid
 
         logger.LogDebug("Host looks ok, checking path: {path}", url.AbsolutePath);
 
-        return Task.FromResult(url.AbsolutePath.StartsWith("/c/", StringComparison.Ordinal) ||
-                               url.AbsolutePath == "/" ||
-                               url.AbsolutePath.StartsWith("/public/conferences/", StringComparison.Ordinal) ||
-                               url.AbsolutePath == "/public/events/");
+        return Task.FromResult(
+            url.AbsolutePath.StartsWith("/c/", StringComparison.Ordinal)
+                || url.AbsolutePath == "/"
+                || url.AbsolutePath.StartsWith("/public/conferences/", StringComparison.Ordinal)
+                || url.AbsolutePath == "/public/events/"
+        );
     }
 
-    public async Task CreateSubscription(Uri url, HttpResponseMessage request, HtmlDocument? doc, SubscriptionForm subscription)
+    public async Task CreateSubscription(
+        Uri url,
+        HttpResponseMessage request,
+        HtmlDocument? doc,
+        SubscriptionForm subscription
+    )
     {
         if (url.AbsolutePath.StartsWith("/public/", StringComparison.Ordinal))
         {
@@ -43,7 +51,9 @@ public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvid
             //Load API version
             if (url.AbsolutePath.StartsWith("/c/", StringComparison.Ordinal))
             {
-                var apiUrl = "https://api.media.ccc.de/public/conferences/" + url.AbsolutePath.Replace("/c/", "");
+                var apiUrl =
+                    "https://api.media.ccc.de/public/conferences/"
+                    + url.AbsolutePath.Replace("/c/", "");
                 using var client = httpClientFactory.CreateClient("retry");
                 using var page = await client.GetAsync(apiUrl);
                 page.EnsureSuccessStatusCode();
@@ -67,17 +77,24 @@ public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvid
         subscription.Provider = ProviderIdentifier;
     }
 
-    private async Task CreateConferenceSubscription(HttpResponseMessage request, SubscriptionForm subscription)
+    private async Task CreateConferenceSubscription(
+        HttpResponseMessage request,
+        SubscriptionForm subscription
+    )
     {
         await HttpHelper.EnsureContentTypeHeader(request, "application/json");
         var conference = await request.Content.ReadFromJsonAsync<Conference>();
         ArgumentNullException.ThrowIfNull(conference);
 
         subscription.Name = conference.Title ?? "";
-        subscription.PlaylistId = request.RequestMessage?.RequestUri?.ToString() ?? throw new InvalidOperationException("No URL found");
+        subscription.PlaylistId =
+            request.RequestMessage?.RequestUri?.ToString()
+            ?? throw new InvalidOperationException("No URL found");
         //subscription.Description = doc.DocumentNode.SelectSingleNode("/rss/channel/description")?.InnerText;
         //subscription.Thumbnail = url + doc.DocumentNode.SelectSingleNode("/rss/channel/image/url")?.InnerText
-        subscription.ChannelId = request.RequestMessage?.RequestUri?.ToString() ?? throw new InvalidOperationException("No URL found");
+        subscription.ChannelId =
+            request.RequestMessage?.RequestUri?.ToString()
+            ?? throw new InvalidOperationException("No URL found");
         subscription.ChannelName = conference.Title ?? "";
         subscription.Provider = ProviderIdentifier;
     }

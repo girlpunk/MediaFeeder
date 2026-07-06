@@ -15,15 +15,14 @@ namespace MediaFeeder.Data.Migrations
                 name: "WatchedDate",
                 table: "YtManagerApp_video",
                 type: "timestamp with time zone",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "WatchedDate",
-                table: "YtManagerApp_video");
+            migrationBuilder.DropColumn(name: "WatchedDate", table: "YtManagerApp_video");
         }
     }
 }

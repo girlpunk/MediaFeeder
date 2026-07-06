@@ -1,53 +1,52 @@
-let helper;
-let ready = false;
+let helper
+let ready = false
 
-export function helperReady(DotNetHelper) {
-    "use strict";
-    helper = DotNetHelper;
-    
-    if (ready === true) {
-        helper.invokeMethodAsync('OnLibraryLoaded');
-    }
+export function helperReady (DotNetHelper) {
+  'use strict'
+  helper = DotNetHelper
+
+  if (ready === true) {
+    helper.invokeMethodAsync('OnLibraryLoaded')
+  }
 }
 
-window.onYouTubeIframeAPIReady = function() {
-    "use strict";
+window.onYouTubeIframeAPIReady = function () {
+  'use strict'
 
-    ready = true;
-    if (helper !== null) {
-        helper.invokeMethodAsync('OnLibraryLoaded');
-    }
-};
+  ready = true
+  if (helper !== null) {
+    helper.invokeMethodAsync('OnLibraryLoaded')
+  }
+}
 
-export function initPlayer(videoId)
-{
-    "use strict";
+export function initPlayer (videoId) {
+  'use strict'
 
-    return new YT.Player(
-        'ytplayer',
-        {
-            height: '100%',
-            width: '100%',
-            videoId: videoId,
-            playerVars: {
-                origin: window.location,
-                autoplay: 1,
-            },
-            events: {
-                'onReady': (event => helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data)),
-                'onStateChange': (event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onError': (event => helper.invokeMethodAsync('OnError', DotNet.createJSObjectReference(event.target), event.data)),
-                'onPlaybackQualityChange': (event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data)),
-                'onPlaybackRateChange': (event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)),
-            }
-        });
+  return new YT.Player(
+    'ytplayer',
+    {
+      height: '100%',
+      width: '100%',
+      videoId,
+      playerVars: {
+        origin: window.location,
+        autoplay: 1
+      },
+      events: {
+        onReady: event => helper.invokeMethodAsync('OnPlayerReady', DotNet.createJSObjectReference(event.target), event.data),
+        onStateChange: event => helper.invokeMethodAsync('OnPlayerStateChange', DotNet.createJSObjectReference(event.target), event.data),
+        onError: event => helper.invokeMethodAsync('OnError', DotNet.createJSObjectReference(event.target), event.data),
+        onPlaybackQualityChange: event => helper.invokeMethodAsync('OnPlaybackQualityChange', DotNet.createJSObjectReference(event.target), event.data),
+        onPlaybackRateChange: event => helper.invokeMethodAsync('OnPlaybackRateChange', DotNet.createJSObjectReference(event.target), event.data)
+      }
+    })
 }
 
 // function isFullScreen() {
 //     return (window.fullScreen) || (window.innerWidth == screen.width && window.innerHeight == screen.height);
 // }
 
-/*$(window).on('resize', function() {
+/* $(window).on('resize', function() {
     var container = $("#ytplayer");
     var parent = container.parent();
 
@@ -71,9 +70,9 @@ export function initPlayer(videoId)
         container.css("height", "80vh");
         parent.css("position", "relative");
     }
-});*/
+}); */
 
 /*
 var evt = document.createEvent("HTMLEvents");
 evt.initEvent("resize", false, true);
-window.dispatchEvent(evt);*/
+window.dispatchEvent(evt); */

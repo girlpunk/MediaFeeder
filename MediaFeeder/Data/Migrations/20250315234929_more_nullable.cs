@@ -18,7 +18,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(150)",
-                oldMaxLength: 150);
+                oldMaxLength: 150
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "first_name",
@@ -28,7 +29,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(150)",
-                oldMaxLength: 150);
+                oldMaxLength: 150
+            );
         }
 
         /// <inheritdoc />
@@ -44,7 +46,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(150)",
                 oldMaxLength: 150,
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "first_name",
@@ -56,7 +59,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(150)",
                 oldMaxLength: 150,
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

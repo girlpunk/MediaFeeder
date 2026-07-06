@@ -10,7 +10,10 @@ namespace MediaFeeder.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize(Policy = "API")]
-public class FoldersController(IDbContextFactory<MediaFeederDataContext> contextFactory, UserManager userManager) : ControllerBase
+public class FoldersController(
+    IDbContextFactory<MediaFeederDataContext> contextFactory,
+    UserManager userManager
+) : ControllerBase
 {
     // GET: api/Folders
     [HttpGet]
@@ -19,10 +22,12 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
 
-        return await context.Folders
-            .Where(folder => folder.UserId == user.Id && folder.ParentId == null)
+        return await context
+            .Folders.Where(folder => folder.UserId == user.Id && folder.ParentId == null)
             .Select(static folder => folder.Id)
             .ToListAsync(HttpContext.RequestAborted);
     }
@@ -34,12 +39,17 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
 
-        var folder = await context.Folders
-            .Include(static folder => folder.Subfolders)
+        var folder = await context
+            .Folders.Include(static folder => folder.Subfolders)
             .Include(static folder => folder.Subscriptions)
-            .SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id, HttpContext.RequestAborted);
+            .SingleOrDefaultAsync(
+                f => f.Id == id && f.UserId == user.Id,
+                HttpContext.RequestAborted
+            );
 
         if (folder == null)
             return NotFound();
@@ -49,29 +59,32 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
             folder.Name,
             folder.Id,
             ChildFolders = folder.Subfolders.Select(static f => f.Id).ToList(),
-            ChildSubscriptions = folder.Subscriptions.Select(static s => s.Id).ToList()
+            ChildSubscriptions = folder.Subscriptions.Select(static s => s.Id).ToList(),
         };
     }
 
     // PUT: api/Folders/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutFolder(int id,
-        Folder folder)
+    public async Task<IActionResult> PutFolder(int id, Folder folder)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
 
-        var dbFolder =
-            await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id,
-                HttpContext.RequestAborted);
+        var dbFolder = await context.Folders.SingleOrDefaultAsync(
+            f => f.Id == id && f.UserId == user.Id,
+            HttpContext.RequestAborted
+        );
 
         if (dbFolder == null)
             return NotFound();
 
-        if (id != folder.Id) return BadRequest();
+        if (id != folder.Id)
+            return BadRequest();
 
         context.Entry(folder).State = EntityState.Modified;
 
@@ -81,7 +94,8 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await FolderExists(id)) return NotFound();
+            if (!await FolderExists(id))
+                return NotFound();
 
             throw;
         }
@@ -92,8 +106,7 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
     // POST: api/Folders
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<Folder>> PostFolder(
-        Folder folder)
+    public async Task<ActionResult<Folder>> PostFolder(Folder folder)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         if (user == null)
@@ -102,13 +115,14 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
         if (folder.UserId != user.Id)
             return Unauthorized();
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
 
         context.Folders.Add(folder);
         await context.SaveChangesAsync(HttpContext.RequestAborted);
 
-        return CreatedAtAction("GetFolder", new { id = folder.Id },
-            folder);
+        return CreatedAtAction("GetFolder", new { id = folder.Id }, folder);
     }
 
     // DELETE: api/Folders/5
@@ -118,13 +132,17 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
         var user = await userManager.GetUserAsync(HttpContext.User);
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
 
-        var folder =
-            await context.Folders.SingleOrDefaultAsync(f => f.Id == id && f.UserId == user.Id,
-                HttpContext.RequestAborted);
+        var folder = await context.Folders.SingleOrDefaultAsync(
+            f => f.Id == id && f.UserId == user.Id,
+            HttpContext.RequestAborted
+        );
 
-        if (folder == null) return NotFound();
+        if (folder == null)
+            return NotFound();
 
         context.Folders.Remove(folder);
         await context.SaveChangesAsync(HttpContext.RequestAborted);
@@ -134,7 +152,9 @@ public class FoldersController(IDbContextFactory<MediaFeederDataContext> context
 
     private async Task<bool> FolderExists(int id)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
 
         return context.Folders.Any(e => e.Id == id);
     }

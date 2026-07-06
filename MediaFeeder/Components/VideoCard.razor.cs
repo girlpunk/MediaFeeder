@@ -18,15 +18,21 @@ public sealed partial class VideoCard : ComponentBase
 
     [Parameter]
     public EventCallback<MouseEventArgs> OnClick { get; set; }
+
     [Parameter]
     public bool OnClickPreventDefault { get; set; }
 
-    [Inject] public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
+    [Inject]
+    public required IDbContextFactory<MediaFeederDataContext> ContextFactory { get; set; }
 
-    [Inject] public required IMessageService MessageService { get; set; }
+    [Inject]
+    public required IMessageService MessageService { get; set; }
 
-    [Inject] public required IBus Bus { get; set; }
-    [Inject] public required IServiceProvider ServiceProvider { get; set; }
+    [Inject]
+    public required IBus Bus { get; set; }
+
+    [Inject]
+    public required IServiceProvider ServiceProvider { get; set; }
 
     private string? Badge
     {
@@ -71,7 +77,8 @@ public sealed partial class VideoCard : ComponentBase
     // TODO(fae) move to Video class?
     private async Task ToggleStar()
     {
-        if (Video == null) return;
+        if (Video == null)
+            return;
 
         await using var context = await ContextFactory.CreateDbContextAsync();
         context.Attach(Video);
@@ -94,7 +101,9 @@ public sealed partial class VideoCard : ComponentBase
         {
             video.Watched = !video.Watched;
             await context.SaveChangesAsync();
-            await MessageService.SuccessAsync($"Marked {(video.Watched ? "Watched" : "Unwatched")}");
+            await MessageService.SuccessAsync(
+                $"Marked {(video.Watched ? "Watched" : "Unwatched")}"
+            );
         }
 
         Video = video;
@@ -108,14 +117,17 @@ public sealed partial class VideoCard : ComponentBase
 
         if (Video.DownloadedPath == null)
         {
-            var providers = ServiceProvider.GetServices<IProvider>()
+            var providers = ServiceProvider
+                .GetServices<IProvider>()
                 .ToLookup(static p => p.ProviderIdentifier);
 
             var providerType = providers[Video.Subscription.Provider].SingleOrDefault()?.GetType();
 
             if (providerType == null)
             {
-                await MessageService.ErrorAsync($"Could not find a provider for {Video.Subscription.Provider}");
+                await MessageService.ErrorAsync(
+                    $"Could not find a provider for {Video.Subscription.Provider}"
+                );
                 return;
             }
 

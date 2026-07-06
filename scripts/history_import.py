@@ -7,14 +7,13 @@ import logging
 import sys
 import urllib.parse
 from datetime import datetime
-
-import grpc
 from pathlib import Path
 
 import Api_pb2
 import Api_pb2_grpc
 import auth
 import common
+import grpc
 
 common.set_logging()
 logger = logging.getLogger("history-import")
@@ -73,11 +72,19 @@ entries_modified = 0
 for entry in history:
     entries_read += 1
     if entries_read % 500 == 0:
-        logger.info("Read %s entries, matched %s, modified %s", entries_read, entries_matched, entries_modified)
+        logger.info(
+            "Read %s entries, matched %s, modified %s",
+            entries_read,
+            entries_matched,
+            entries_modified,
+        )
 
     raw_url = entry.get("titleUrl")
     if not raw_url:
-        if entry.get("title") in ["Viewed Ads On YouTube Homepage", "Answered survey question"]:
+        if entry.get("title") in [
+            "Viewed Ads On YouTube Homepage",
+            "Answered survey question",
+        ]:
             continue
         logger.warning("Unknown entry: %s", entry)
         continue
@@ -102,11 +109,17 @@ for entry in history:
     if len(search.Videos) == 0:
         continue
     elif len(search.Videos) > 1:
-        logger.warning("Multiple matches for %s: %s", video_id, [v.VideoId for v in search.Videos])
+        logger.warning(
+            "Multiple matches for %s: %s", video_id, [v.VideoId for v in search.Videos]
+        )
         continue
     entries_matched += 1
 
     found = search.Videos[0]
     if not found.Watched or found.WatchedWhenSeconds < when_seconds:
-        stub.Watched(Api_pb2.WatchedRequest(Id=found.VideoId, Watched=True, WhenSeconds=when_seconds))
+        stub.Watched(
+            Api_pb2.WatchedRequest(
+                Id=found.VideoId, Watched=True, WhenSeconds=when_seconds
+            )
+        )
         entries_modified += 1

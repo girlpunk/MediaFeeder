@@ -19,22 +19,22 @@ using MediaFeeder.Providers;
 using MediaFeeder.Providers.CCC;
 using MediaFeeder.Providers.RSS;
 using MediaFeeder.Providers.Youtube;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Logging;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using MediaFeeder.Services;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Logging;
+using Npgsql;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
@@ -50,14 +50,22 @@ var certificatePath = builder.Configuration.GetValue<string?>("CERTIFICATE_PATH"
 if (certificatePath != null)
     builder.WebHost.ConfigureKestrel(options =>
     {
-        options.ConfigureEndpointDefaults(lo => lo.UseHttps(new HttpsConnectionAdapterOptions()
-        {
-            ServerCertificate = X509Certificate2.CreateFromPemFile(certificatePath, Path.ChangeExtension(certificatePath, "key")) //X509CertificateLoader.LoadCertificateFromFile(certificatePath)
-        }));
+        options.ConfigureEndpointDefaults(lo =>
+            lo.UseHttps(
+                new HttpsConnectionAdapterOptions()
+                {
+                    ServerCertificate = X509Certificate2.CreateFromPemFile(
+                        certificatePath,
+                        Path.ChangeExtension(certificatePath, "key")
+                    ), //X509CertificateLoader.LoadCertificateFromFile(certificatePath)
+                }
+            )
+        );
     });
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
+builder
+    .Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
     {
         if (builder.Environment.IsDevelopment())
@@ -71,12 +79,14 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
     var headerSettings = builder.Configuration.GetSection("ForwardedHeaders");
 
-    foreach(var proxy in headerSettings?.GetSection("proxies")?.Get<string[]>() ?? []) {
+    foreach (var proxy in headerSettings?.GetSection("proxies")?.Get<string[]>() ?? [])
+    {
         Console.WriteLine($"Adding known proxy: {proxy}");
         options.KnownProxies.Add(IPAddress.Parse(proxy));
     }
 
-    foreach(var network in headerSettings?.GetSection("network")?.Get<string[]>() ?? []) {
+    foreach (var network in headerSettings?.GetSection("network")?.Get<string[]>() ?? [])
+    {
         Console.WriteLine($"Adding known proxy network: {network}");
         var parts = network.Split('/');
         options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
@@ -98,33 +108,41 @@ builder.Services.AddGrpcClient<YTDownloader.YTDownloaderClient>(o =>
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<
+    AuthenticationStateProvider,
+    IdentityRevalidatingAuthenticationStateProvider
+>();
 
-builder.Services.AddAuthentication(static options =>
+builder
+    .Services.AddAuthentication(static options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
     .AddOpenIdConnect(
         OpenIdConnectDefaults.AuthenticationScheme,
-        "Authentik", options =>
+        "Authentik",
+        options =>
         {
             builder.Configuration.GetSection("Auth").Bind(options);
             options.Scope.Add("email");
 
             options.CorrelationCookie.Name = "MediaFeeder-OIDC-Correlation";
             options.NonceCookie.Name = "MediaFeeder-OIDC-Nonce";
-        })
+        }
+    )
     .AddIdentityCookies();
 
-builder.Services.AddAuthentication()
+builder
+    .Services.AddAuthentication()
     .AddJwtBearer(
         JwtBearerDefaults.AuthenticationScheme,
         options =>
         {
             builder.Configuration.GetSection("Auth").Bind(options);
             options.EventsType = typeof(AppJwtBearerEvents);
-        });
+        }
+    );
 
 builder.Services.AddSingleton<AppJwtBearerEvents>();
 
@@ -135,45 +153,75 @@ builder.Services.AddAuthorization(static options =>
         .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme)
         .Build();
 
-    options.AddPolicy("Thumbnails", static policyBuilder =>
-    {
-        policyBuilder
-            .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, JwtBearerDefaults.AuthenticationScheme)
-            // .RequireAssertion(static c =>
-            // {
-            //     Console.WriteLine(JsonSerializer.Serialize(c.User));
-            //     return c.User.Identity?.AuthenticationType == OpenIdConnectDefaults.AuthenticationScheme || c.User.IsInRole("API");
-            // })
-            .Build();
-    });
+    options.AddPolicy(
+        "Thumbnails",
+        static policyBuilder =>
+        {
+            policyBuilder
+                .RequireAuthenticatedUser()
+                .AddAuthenticationSchemes(
+                    IdentityConstants.ApplicationScheme,
+                    JwtBearerDefaults.AuthenticationScheme
+                )
+                // .RequireAssertion(static c =>
+                // {
+                //     Console.WriteLine(JsonSerializer.Serialize(c.User));
+                //     return c.User.Identity?.AuthenticationType == OpenIdConnectDefaults.AuthenticationScheme || c.User.IsInRole("API");
+                // })
+                .Build();
+        }
+    );
 
-    options.AddPolicy("API", static policyBuilder =>
-    {
-        policyBuilder
-            .RequireAuthenticatedUser()
-            .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-            // .RequireRole("API")
-            .Build();
-    });
+    options.AddPolicy(
+        "API",
+        static policyBuilder =>
+        {
+            policyBuilder
+                .RequireAuthenticatedUser()
+                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                // .RequireRole("API")
+                .Build();
+        }
+    );
 });
 
-builder.Services.AddDataProtection()
+builder
+    .Services.AddDataProtection()
     .SetApplicationName("MediaFeeder")
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Join(builder.Configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException(), "dpkeys")));
+    .PersistKeysToFileSystem(
+        new DirectoryInfo(
+            Path.Join(
+                builder.Configuration.GetValue<string>("MediaRoot")
+                    ?? throw new InvalidOperationException(),
+                "dpkeys"
+            )
+        )
+    );
 
-builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>((sp, options) =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseNpgsql(connectionString, static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-    options.AddInterceptors(new SlowQueryDetectionHelper(sp.GetRequiredService<ILogger<SlowQueryDetectionHelper>>()));
-});
+builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>(
+    (sp, options) =>
+    {
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        options.UseNpgsql(
+            connectionString,
+            static o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+        );
+        options.AddInterceptors(
+            new SlowQueryDetectionHelper(sp.GetRequiredService<ILogger<SlowQueryDetectionHelper>>())
+        );
+    }
+);
 
-builder.Services.AddScoped<MediaFeederDataContext>(static p => p.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContext());
+builder.Services.AddScoped<MediaFeederDataContext>(static p =>
+    p.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContext()
+);
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentityCore<AuthUser>(static options => options.SignIn.RequireConfirmedAccount = true)
+builder
+    .Services.AddIdentityCore<AuthUser>(static options =>
+        options.SignIn.RequireConfirmedAccount = true
+    )
     .AddUserManager<UserManager>()
     .AddUserStore<UserStore>()
     .AddRoles<AuthGroup>()
@@ -192,10 +240,14 @@ builder.Services.AddQuartzHostedService();
 
 if (useDatabaseMessageQueue)
 {
-    builder.Services.AddOptions<SqlTransportOptions>().Configure(options =>
-    {
-        options.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    });
+    builder
+        .Services.AddOptions<SqlTransportOptions>()
+        .Configure(options =>
+        {
+            options.ConnectionString = builder.Configuration.GetConnectionString(
+                "DefaultConnection"
+            );
+        });
     builder.Services.AddPostgresMigrationHostedService();
 }
 
@@ -209,11 +261,15 @@ builder.Services.AddMassTransit(config =>
 
     if (useDatabaseMessageQueue)
     {
-        config.UsingPostgres((context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint));
+        config.UsingPostgres(
+            (context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint)
+        );
     }
     else
     {
-        config.UsingInMemory((context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint));
+        config.UsingInMemory(
+            (context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint)
+        );
     }
 
     config.AddConsumer<SynchroniseAllConsumer>();
@@ -239,12 +295,17 @@ builder.Logging.AddOpenTelemetry(static logging =>
 });
 
 builder.Services.AddSingleton<Metrics>();
-builder.Services.AddOpenTelemetry()
+builder
+    .Services.AddOpenTelemetry()
     .ConfigureResource(static r =>
     {
-        r.AddService("MediaFeeder",
-            serviceVersion: FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion,
-            serviceInstanceId: Environment.MachineName);
+        r.AddService(
+            "MediaFeeder",
+            serviceVersion: FileVersionInfo
+                .GetVersionInfo(Assembly.GetExecutingAssembly().Location)
+                .ProductVersion,
+            serviceInstanceId: Environment.MachineName
+        );
         r.AddContainerDetector()
             .AddEnvironmentVariableDetector()
             .AddHostDetector()
@@ -253,24 +314,28 @@ builder.Services.AddOpenTelemetry()
             .AddProcessRuntimeDetector()
             .AddTelemetrySdk();
     })
-    .WithMetrics(static (metrics) =>
-    {
-        metrics.AddRuntimeInstrumentation()
-            .AddProcessInstrumentation()
-            .AddAspNetCoreInstrumentation()
-            // .AddHttpClientInstrumentation()
-            .AddNpgsqlInstrumentation()
-            .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
-            .AddMeter("Microsoft.EntityFrameworkCore")  // https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/metrics
-            .AddMeter(Metrics.MeterName)
-            .AddPrometheusExporter();
-    })
+    .WithMetrics(
+        static (metrics) =>
+        {
+            metrics
+                .AddRuntimeInstrumentation()
+                .AddProcessInstrumentation()
+                .AddAspNetCoreInstrumentation()
+                // .AddHttpClientInstrumentation()
+                .AddNpgsqlInstrumentation()
+                .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
+                .AddMeter("Microsoft.EntityFrameworkCore") // https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/metrics
+                .AddMeter(Metrics.MeterName)
+                .AddPrometheusExporter();
+        }
+    )
     .WithTracing(tracing =>
     {
         if (builder.Environment.IsDevelopment())
             tracing.SetSampler(new AlwaysOnSampler());
 
-        tracing.AddAspNetCoreInstrumentation()
+        tracing
+            .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
             .AddGrpcClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
@@ -278,31 +343,34 @@ builder.Services.AddOpenTelemetry()
             .AddSource(DiagnosticHeaders.DefaultListenerName);
     });
 
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<MediaFeederDataContext>("DB");
+builder.Services.AddHealthChecks().AddDbContextCheck<MediaFeederDataContext>("DB");
 
-builder.Services.AddGrpcHealthChecks()
-    .AddDbContextCheck<MediaFeederDataContext>("DB-GRPC");
+builder.Services.AddGrpcHealthChecks().AddDbContextCheck<MediaFeederDataContext>("DB-GRPC");
 
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddHttpClient("retry")
+builder
+    .Services.AddHttpClient("retry")
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
     .AddPolicyHandler(
         HttpPolicyExtensions
             .HandleTransientHttpError()
-            .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5)));
+            .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5))
+    );
 builder.Services.AddSingleton<SystemNetClientFactory>();
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<Utils>();
-builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp =>
-    new Google.Apis.YouTube.v3.YouTubeService(new BaseClientService.Initializer
-    {
-        ApplicationName = "MediaFeeder",
-        ApiKey = builder.Configuration.GetValue<string>("youtube_api_key"),
-        HttpClientFactory = sp.GetRequiredService<SystemNetClientFactory>(),
-    }));
+builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(
+    sp => new Google.Apis.YouTube.v3.YouTubeService(
+        new BaseClientService.Initializer
+        {
+            ApplicationName = "MediaFeeder",
+            ApiKey = builder.Configuration.GetValue<string>("youtube_api_key"),
+            HttpClientFactory = sp.GetRequiredService<SystemNetClientFactory>(),
+        }
+    )
+);
 
 builder.Services.AddScoped<IProvider, SonarrProvider>();
 builder.Services.AddScoped<IProvider, RSSProvider>();
@@ -343,8 +411,7 @@ app.UseRouting();
 app.UseForwardedHeaders();
 
 app.UseHealthChecks("/healthz");
-app.MapPrometheusScrapingEndpoint()
-    .AllowAnonymous();
+app.MapPrometheusScrapingEndpoint().AllowAnonymous();
 app.MapGrpcHealthChecksService();
 
 app.UseHttpsRedirection();
@@ -355,17 +422,19 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 app.MapControllers();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.UseOutputCache();
 
 if (useDatabaseMessageQueue)
 {
-    app.UseResQueue("resqueue", static options =>
-    {
-        // Highly recommended for production
-        options.RequireAuthorization();
-    });
+    app.UseResQueue(
+        "resqueue",
+        static options =>
+        {
+            // Highly recommended for production
+            options.RequireAuthorization();
+        }
+    );
 }
 
 // Add additional endpoints required by the Identity /Account Razor components.
@@ -377,7 +446,11 @@ app.MapGrpcService<ApiService>().RequireAuthorization("API");
 if (app.Environment.IsDevelopment())
     app.MapGrpcReflectionService();
 
-await using (var context = await app.Services.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>().CreateDbContextAsync())
+await using (
+    var context = await app
+        .Services.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>()
+        .CreateDbContextAsync()
+)
 {
     await context.Database.MigrateAsync();
 }
@@ -385,14 +458,20 @@ await using (var context = await app.Services.GetRequiredService<IDbContextFacto
 app.Run();
 return;
 
-static void ConfigureMessageQueue<TBus>(IBusRegistrationContext context, IBusFactoryConfigurator<TBus> cfg, Uri schedulerEndpoint) where TBus : IReceiveEndpointConfigurator
+static void ConfigureMessageQueue<TBus>(
+    IBusRegistrationContext context,
+    IBusFactoryConfigurator<TBus> cfg,
+    Uri schedulerEndpoint
+)
+    where TBus : IReceiveEndpointConfigurator
 {
     cfg.UseMessageScheduler(schedulerEndpoint);
     cfg.ConfigureEndpoints(context);
     cfg.UseConcurrencyLimit(1);
     cfg.UseInMemoryScheduler();
     cfg.UseMessageRetry(static r =>
-        r.Exponential(15, TimeSpan.FromMinutes(1), TimeSpan.FromDays(2), TimeSpan.FromHours(1)));
+        r.Exponential(15, TimeSpan.FromMinutes(1), TimeSpan.FromDays(2), TimeSpan.FromHours(1))
+    );
     cfg.UseCircuitBreaker(static cb =>
     {
         cb.TrackingPeriod = TimeSpan.FromMinutes(5);

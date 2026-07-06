@@ -8,7 +8,8 @@ public class JobExecution
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
 
-    [MaxLength(250)] public required string Description { get; set; }
+    [MaxLength(250)]
+    public required string Description { get; set; }
 
     public int Status { get; set; }
     public int? UserId { get; set; }

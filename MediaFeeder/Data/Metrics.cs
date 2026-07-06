@@ -24,7 +24,10 @@ public sealed class Metrics : IDisposable
 
     private Counter<int> ProviderVideoChanges { get; }
 
-    public Metrics(IMeterFactory meterFactory, IDbContextFactory<MediaFeederDataContext> contextFactory)
+    public Metrics(
+        IMeterFactory meterFactory,
+        IDbContextFactory<MediaFeederDataContext> contextFactory
+    )
     {
         _meter = meterFactory.Create(MeterName);
 
@@ -34,9 +37,12 @@ public sealed class Metrics : IDisposable
             {
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
-                return new Measurement<int>(context.Videos.Count(video => video.PublishDate >= lastHour));
+                return new Measurement<int>(
+                    context.Videos.Count(video => video.PublishDate >= lastHour)
+                );
             },
-            "Video");
+            "Video"
+        );
 
         PublishedDurationGauge = _meter.CreateObservableGauge(
             "videos-published-duration",
@@ -44,9 +50,15 @@ public sealed class Metrics : IDisposable
             {
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
-                return new Measurement<int>(context.Videos.Where(video => video.PublishDate >= lastHour).Sum(video => video.Duration) ?? 0);
+                return new Measurement<int>(
+                    context
+                        .Videos.Where(video => video.PublishDate >= lastHour)
+                        .Sum(video => video.Duration)
+                        ?? 0
+                );
             },
-            "Seconds");
+            "Seconds"
+        );
 
         WatchedRecentlyGauge = _meter.CreateObservableGauge(
             "watched-recently",
@@ -54,9 +66,12 @@ public sealed class Metrics : IDisposable
             {
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
-                return new Measurement<int>(context.Videos.Count(video => video.Watched && video.WatchedDate >= lastHour));
+                return new Measurement<int>(
+                    context.Videos.Count(video => video.Watched && video.WatchedDate >= lastHour)
+                );
             },
-            "Video");
+            "Video"
+        );
 
         WatchedRecentlyDurationGauge = _meter.CreateObservableGauge(
             "watched-recently-duration",
@@ -64,9 +79,15 @@ public sealed class Metrics : IDisposable
             {
                 var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
                 using var context = contextFactory.CreateDbContext();
-                return new Measurement<int>(context.Videos.Where(video => video.Watched && video.WatchedDate >= lastHour).Sum(video => video.Duration) ?? 0);
+                return new Measurement<int>(
+                    context
+                        .Videos.Where(video => video.Watched && video.WatchedDate >= lastHour)
+                        .Sum(video => video.Duration)
+                        ?? 0
+                );
             },
-            "Seconds");
+            "Seconds"
+        );
 
         SubscriptionsGauge = _meter.CreateObservableGauge(
             "total-subscriptions",
@@ -75,7 +96,8 @@ public sealed class Metrics : IDisposable
                 using var context = contextFactory.CreateDbContext();
                 return new Measurement<int>(context.Subscriptions.Count());
             },
-            "Subscription");
+            "Subscription"
+        );
         VideosGauge = _meter.CreateObservableGauge(
             "total-videos",
             () =>
@@ -83,7 +105,8 @@ public sealed class Metrics : IDisposable
                 using var context = contextFactory.CreateDbContext();
                 return new Measurement<int>(context.Videos.Count());
             },
-            "Video");
+            "Video"
+        );
         WatchedGauge = _meter.CreateObservableGauge(
             "watched-videos",
             () =>
@@ -91,7 +114,8 @@ public sealed class Metrics : IDisposable
                 using var context = contextFactory.CreateDbContext();
                 return new Measurement<int>(context.Videos.Count(static video => video.Watched));
             },
-            "Video");
+            "Video"
+        );
         FoldersGauge = _meter.CreateObservableGauge(
             "unwatched-videos",
             () =>
@@ -99,90 +123,103 @@ public sealed class Metrics : IDisposable
                 using var context = contextFactory.CreateDbContext();
                 return new Measurement<int>(context.Videos.Count(static video => !video.Watched));
             },
-            "Video");
+            "Video"
+        );
 
         FolderTrackedGauge = _meter.CreateObservableGauge(
             "folders-tracked",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
-                return context.Videos
-                    .GroupBy(static video => video.Subscription!.ParentFolderId)
+                return context
+                    .Videos.GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Count(),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription!.ParentFolder!.Name }
-                        }))
+                            { "Name", group.First().Subscription!.ParentFolder!.Name },
+                        }
+                    ))
                     .ToList();
             },
-            "Videos");
+            "Videos"
+        );
 
         FolderUnwatchedGauge = _meter.CreateObservableGauge(
             "folders-unwatched",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
-                return context.Videos
-                    .GroupBy(static video => video.Subscription!.ParentFolderId)
+                return context
+                    .Videos.GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
                         group.Count(static video => !video.Watched),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription!.ParentFolder!.Name }
-                        }))
+                            { "Name", group.First().Subscription!.ParentFolder!.Name },
+                        }
+                    ))
                     .ToList();
             },
-            "Videos");
+            "Videos"
+        );
 
         FolderUnwatchedDurationGauge = _meter.CreateObservableGauge(
             "folders-unwatched-duration",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
-                return context.Videos
-                    .GroupBy(static video => video.Subscription!.ParentFolderId)
+                return context
+                    .Videos.GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
-                        group.Where(static video => !video.Watched)
+                        group
+                            .Where(static video => !video.Watched)
                             .Sum(static video => video.Duration ?? 0),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription!.ParentFolder!.Name }
-                        }))
+                            { "Name", group.First().Subscription!.ParentFolder!.Name },
+                        }
+                    ))
                     .ToList();
             },
-            "Seconds");
+            "Seconds"
+        );
 
         FolderWatchedDurationGauge = _meter.CreateObservableGauge(
             "folders-watched-duration",
             () =>
             {
                 using var context = contextFactory.CreateDbContext();
-                return context.Videos
-                    .GroupBy(static video => video.Subscription!.ParentFolderId)
+                return context
+                    .Videos.GroupBy(static video => video.Subscription!.ParentFolderId)
                     .Select(static group => new Measurement<int>(
-                        group.Where(static video => video.Watched && video.WatchedDate != null)
+                        group
+                            .Where(static video => video.Watched && video.WatchedDate != null)
                             .Sum(static video => video.Duration ?? 0),
                         new Dictionary<string, object?>
                         {
                             { "Key", group.Key },
-                            { "Name", group.First().Subscription!.ParentFolder!.Name }
-                        }))
+                            { "Name", group.First().Subscription!.ParentFolder!.Name },
+                        }
+                    ))
                     .ToList();
             },
-            "Seconds");
+            "Seconds"
+        );
 
         ProviderVideoChanges = _meter.CreateCounter<int>("provider-video-changes", "Video");
     }
 
     public void incProviderVideoChanged(Provider provider, bool newVideo)
     {
-        ProviderVideoChanges.Add(1,
+        ProviderVideoChanges.Add(
+            1,
             new KeyValuePair<string, object?>("provider", provider.ToString()),
-            new KeyValuePair<string, object?>("change", newVideo ? "new" : "update"));
+            new KeyValuePair<string, object?>("change", newVideo ? "new" : "update")
+        );
     }
 
     public void Dispose()

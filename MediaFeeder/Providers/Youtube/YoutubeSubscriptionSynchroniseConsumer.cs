@@ -25,41 +25,63 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     Metrics metrics
 ) : IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>
 {
-    public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<YoutubeProvider>> context)
+    public async Task Consume(
+        ConsumeContext<SynchroniseSubscriptionContract<YoutubeProvider>> context
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var subscription =
-            await db.Subscriptions.SingleAsync(s => s.Id == context.Message.SubscriptionId, context.CancellationToken);
+        var subscription = await db.Subscriptions.SingleAsync(
+            s => s.Id == context.Message.SubscriptionId,
+            context.CancellationToken
+        );
 
         if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
         {
-            logger.LogInformation("Subscription {} was already synchronised {} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
+            logger.LogInformation(
+                "Subscription {Name} was already synchronised {Time} ago, skipping",
+                subscription.Name,
+                DateTimeOffset.Now - subscription.LastSynchronised
+            );
             return;
         }
 
         logger.LogInformation("Starting synchronize {}", subscription.Name);
 
-        foreach (var video in await db.Videos
-                     .Where(v => v.SubscriptionId == subscription.Id && v.New && DateTimeOffset.UtcNow - v.PublishDate >= TimeSpan.FromDays(1))
-                     .ToListAsync(context.CancellationToken)
+        foreach (
+            var video in await db
+                .Videos.Where(v =>
+                    v.SubscriptionId == subscription.Id
+                    && v.New
+                    && DateTimeOffset.UtcNow - v.PublishDate >= TimeSpan.FromDays(1)
                 )
+                .ToListAsync(context.CancellationToken)
+        )
             video.New = false;
 
         await db.SaveChangesAsync(context.CancellationToken);
 
-        foreach (var video in db.Videos.Where(v =>
-                     v.SubscriptionId == subscription.Id && (
-                         (!string.IsNullOrWhiteSpace(v.DownloadedPath)) ||
-                         (v.Duration == 0 || v.Duration == null) ||
-                         string.IsNullOrWhiteSpace(v.Thumb)
-                     )
-                 ))
-            await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), context.CancellationToken);
+        foreach (
+            var video in db.Videos.Where(v =>
+                v.SubscriptionId == subscription.Id
+                && (
+                    (!string.IsNullOrWhiteSpace(v.DownloadedPath))
+                    || (v.Duration == 0 || v.Duration == null)
+                    || string.IsNullOrWhiteSpace(v.Thumb)
+                )
+            )
+        )
+            await bus.PublishWithGuid(
+                new YoutubeVideoSynchroniseContract(video.Id),
+                context.CancellationToken
+            );
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
-        if (subscription.LastSynchronised == null || subscription.LastSynchronised.Value.DayOfYear != DateTimeOffset.Now.DayOfYear)
+        if (
+            subscription.LastSynchronised == null
+            || subscription.LastSynchronised.Value.DayOfYear != DateTimeOffset.Now.DayOfYear
+        )
         {
             var channelRequest = youTubeService.Channels.List("snippet");
             channelRequest.Id = subscription.ChannelId;
@@ -67,8 +89,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             var channelResult = channelResponse?.Items?.SingleOrDefault();
 
             if (channelResult == null)
-                logger.LogError("Could not load channel details for {} (channel {})", subscription.Id,
-                    subscription.ChannelId);
+                logger.LogError(
+                    "Could not load channel details for {Subscription} (channel {Channel})",
+                    subscription.Id,
+                    subscription.ChannelId
+                );
 
             if (channelResult?.Snippet?.Title != null)
             {
@@ -84,7 +109,8 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                     "sub",
                     channelResult.Snippet.Thumbnails,
                     logger,
-                    context.CancellationToken);
+                    context.CancellationToken
+                );
 
             if (channelResult?.Snippet?.Description != null)
                 subscription.Description = channelResult.Snippet.Description;
@@ -103,7 +129,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Error while running RSS Sync, running full sync ({})", subscription.Id);
+                logger.LogError(
+                    e,
+                    "Error while running RSS Sync, running full sync ({})",
+                    subscription.Id
+                );
                 await CheckAllVideos(subscription, db, context.CancellationToken);
             }
         }
@@ -114,7 +144,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         if (!subscription.AutoDownload)
             return;
 
-        var alreadyDownloaded = await db.Videos.CountAsync(v => v.SubscriptionId == subscription.Id && v.IsDownloaded, context.CancellationToken);
+        var alreadyDownloaded = await db.Videos.CountAsync(
+            v => v.SubscriptionId == subscription.Id && v.IsDownloaded,
+            context.CancellationToken
+        );
 
         if (alreadyDownloaded >= subscription.DownloadLimit)
         {
@@ -122,8 +155,8 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             return;
         }
 
-        var videoToDownload = await db.Videos
-            .Where(v => v.SubscriptionId == subscription.Id && !v.IsDownloaded && !v.Watched)
+        var videoToDownload = await db
+            .Videos.Where(v => v.SubscriptionId == subscription.Id && !v.IsDownloaded && !v.Watched)
             .SortVideos(subscription.DownloadOrder)
             .FirstOrDefaultAsync(context.CancellationToken);
 
@@ -210,27 +243,45 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     //                video.video_id,
     //                video.name)
 
-    private static readonly XNamespace AtomNamespace = XNamespace.Get("http://www.w3.org/2005/Atom");
-    private static readonly XNamespace YouTubeNamespace = XNamespace.Get("http://www.youtube.com/xml/schemas/2015");
-    private static readonly XNamespace YahooNamespace = XNamespace.Get("http://search.yahoo.com/mrss/");
+    private static readonly XNamespace AtomNamespace = XNamespace.Get(
+        "http://www.w3.org/2005/Atom"
+    );
+    private static readonly XNamespace YouTubeNamespace = XNamespace.Get(
+        "http://www.youtube.com/xml/schemas/2015"
+    );
+    private static readonly XNamespace YahooNamespace = XNamespace.Get(
+        "http://search.yahoo.com/mrss/"
+    );
 
-    private async Task CheckRssVideos(Subscription subscription, MediaFeederDataContext db, CancellationToken cancellationToken)
+    private async Task CheckRssVideos(
+        Subscription subscription,
+        MediaFeederDataContext db,
+        CancellationToken cancellationToken
+    )
     {
         var foundExistingVideo = false;
 
         using var httpClient = httpClientFactory.CreateClient("retry");
 
-        using var rssRequest =
-            await httpClient.GetAsync("https://www.youtube.com/feeds/videos.xml?channel_id=" + subscription.ChannelId, cancellationToken);
+        using var rssRequest = await httpClient.GetAsync(
+            "https://www.youtube.com/feeds/videos.xml?playlist_id=" + subscription.PlaylistId,
+            cancellationToken
+        );
         rssRequest.EnsureSuccessStatusCode();
 
-        var rss = await XDocument.LoadAsync(await rssRequest.Content.ReadAsStreamAsync(cancellationToken), LoadOptions.None, cancellationToken);
+        var rss = await XDocument.LoadAsync(
+            await rssRequest.Content.ReadAsStreamAsync(cancellationToken),
+            LoadOptions.None,
+            cancellationToken
+        );
 
         foreach (var entry in rss.Root?.Elements(AtomNamespace + "entry") ?? [])
         {
             var videoId = entry.Element(YouTubeNamespace + "videoId")?.Value;
-            var existing =
-                await db.Videos.SingleOrDefaultAsync(v => v.VideoId == videoId && v.SubscriptionId == subscription.Id, cancellationToken);
+            var existing = await db.Videos.SingleOrDefaultAsync(
+                v => v.VideoId == videoId && v.SubscriptionId == subscription.Id,
+                cancellationToken
+            );
 
             if (existing != null || videoId == null)
             {
@@ -238,48 +289,76 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             }
             else
             {
-                var thumbnailUrl = entry.Element(YahooNamespace + "group")?
-                    .Element(YahooNamespace + "thumbnail")?
-                    .Attribute("url")?.Value;
+                var thumbnailUrl = entry
+                    .Element(YahooNamespace + "group")
+                    ?.Element(YahooNamespace + "thumbnail")
+                    ?.Attribute("url")
+                    ?.Value;
 
                 var thumbnailPath = "";
 
                 if (thumbnailUrl != null)
-                    thumbnailPath = await utils.LoadUrlThumbnail(videoId, "video", thumbnailUrl, logger, cancellationToken);
+                    thumbnailPath = await utils.LoadUrlThumbnail(
+                        videoId,
+                        "video",
+                        thumbnailUrl,
+                        logger,
+                        cancellationToken
+                    );
 
                 var video = new Video
                 {
                     VideoId = videoId,
                     Name = entry.Element(AtomNamespace + "title")?.Value ?? "",
                     Description =
-                        entry.Element(YahooNamespace + "group")?.Element(YahooNamespace + "description")?.Value ?? "",
+                        entry
+                            .Element(YahooNamespace + "group")
+                            ?.Element(YahooNamespace + "description")
+                            ?.Value
+                        ?? "",
                     Watched = false,
                     New = true,
                     DownloadedPath = null,
                     SubscriptionId = subscription.Id,
                     PlaylistIndex = 0,
-                    PublishDate = entry.Element(AtomNamespace + "published")?.Value != null ? DateTime.Parse(entry.Element(AtomNamespace + "published")!.Value) : null,
-                    Views = entry
-                        .Element(YahooNamespace + "group")?
-                        .Element(YahooNamespace + "community")?
-                        .Element(YahooNamespace + "statistics")?
-                        .Attribute("views")?.Value != null
-                        ? int.Parse(entry
-                            .Element(YahooNamespace + "group")!
-                            .Element(YahooNamespace + "community")!
-                            .Element(YahooNamespace + "statistics")!
-                            .Attribute("views")!.Value)
-                        : null,
+                    PublishDate =
+                        entry.Element(AtomNamespace + "published")?.Value != null
+                            ? DateTime.Parse(entry.Element(AtomNamespace + "published")!.Value)
+                            : null,
+                    Views =
+                        entry
+                            .Element(YahooNamespace + "group")
+                            ?.Element(YahooNamespace + "community")
+                            ?.Element(YahooNamespace + "statistics")
+                            ?.Attribute("views")
+                            ?.Value != null
+                            ? int.Parse(
+                                entry
+                                    .Element(YahooNamespace + "group")!
+                                    .Element(YahooNamespace + "community")!
+                                    .Element(YahooNamespace + "statistics")!
+                                    .Attribute("views")!
+                                    .Value
+                            )
+                            : null,
                     Thumb = thumbnailPath,
                     Thumbnail = thumbnailPath,
-                    UploaderName = entry.Element(AtomNamespace + "author")?.Element(AtomNamespace + "name")?.Value ?? subscription.Name
+                    UploaderName =
+                        entry
+                            .Element(AtomNamespace + "author")
+                            ?.Element(AtomNamespace + "name")
+                            ?.Value
+                        ?? subscription.Name,
                 };
 
                 db.Videos.Add(video);
                 await db.SaveChangesAsync(cancellationToken);
                 metrics.incProviderVideoChanged(Provider.YouTube, true);
 
-                await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
+                await bus.PublishWithGuid(
+                    new YoutubeVideoSynchroniseContract(video.Id),
+                    cancellationToken
+                );
             }
         }
 
@@ -287,7 +366,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             await CheckAllVideos(subscription, db, cancellationToken);
     }
 
-    private async Task CheckAllVideos(Subscription subscription, MediaFeederDataContext db, CancellationToken cancellationToken)
+    private async Task CheckAllVideos(
+        Subscription subscription,
+        MediaFeederDataContext db,
+        CancellationToken cancellationToken
+    )
     {
         var nextPageToken = "";
         while (nextPageToken != null)
@@ -305,7 +388,14 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 ? playlistItems.OrderBy(static i => i.Snippet.PublishedAtDateTimeOffset).ToList()
                 : playlistItems.OrderBy(static i => i.Snippet.Position).ToList();
 
-            logger.LogInformation("Got page of {} videos for {}, next page will be {}", playlistItems.Count, subscription.Name, playlistResponse.NextPageToken);
+            logger.LogInformation(
+                "Got page of {Count} videos for {Subscription}, next page will be {Page}",
+                playlistItems.Count,
+                subscription.Name,
+                playlistResponse.NextPageToken
+            );
+
+            //TODO: Break if every vido in the page was already known (I think this is safe)
 
             foreach (var item in playlistItems)
                 await AddVideoFromApi(subscription, db, cancellationToken, item);
@@ -314,28 +404,48 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         }
     }
 
-    private async Task AddVideoFromApi(Subscription subscription, MediaFeederDataContext db,
-        CancellationToken cancellationToken, PlaylistItem item)
+    private async Task AddVideoFromApi(
+        Subscription subscription,
+        MediaFeederDataContext db,
+        CancellationToken cancellationToken,
+        PlaylistItem item
+    )
     {
-        var results = await db.Videos.SingleOrDefaultAsync(v =>
-            v.VideoId == item.Snippet.ResourceId.VideoId && v.SubscriptionId == subscription.Id, cancellationToken);
+        var results = await db.Videos.SingleOrDefaultAsync(
+            v =>
+                v.VideoId == item.Snippet.ResourceId.VideoId && v.SubscriptionId == subscription.Id,
+            cancellationToken
+        );
 
         if (results != null)
             return;
 
         // fix playlist index if necessary
-        if (subscription.RewritePlaylistIndices || await db.Videos.AnyAsync(v => v.SubscriptionId == subscription.Id && v.PlaylistIndex == item.Snippet.Position, cancellationToken))
+        if (
+            subscription.RewritePlaylistIndices
+            || await db.Videos.AnyAsync(
+                v =>
+                    v.SubscriptionId == subscription.Id && v.PlaylistIndex == item.Snippet.Position,
+                cancellationToken
+            )
+        )
         {
-            var highest = (await db.Videos
-                    .Where(v => v.SubscriptionId == subscription.Id)
+            var highest = (
+                await db
+                    .Videos.Where(v => v.SubscriptionId == subscription.Id)
                     .OrderByDescending(static v => v.PlaylistIndex)
-                    .FirstOrDefaultAsync(cancellationToken))
-                ?.PlaylistIndex;
+                    .FirstOrDefaultAsync(cancellationToken)
+            )?.PlaylistIndex;
             item.Snippet.Position = 1 + (highest ?? -1);
         }
 
-        var thumbnailPath = await utils.LoadResourceThumbnail(item.Snippet.ResourceId.VideoId, "video",
-            item.Snippet.Thumbnails, logger, cancellationToken);
+        var thumbnailPath = await utils.LoadResourceThumbnail(
+            item.Snippet.ResourceId.VideoId,
+            "video",
+            item.Snippet.Thumbnails,
+            logger,
+            cancellationToken
+        );
 
         var video = new Video
         {
@@ -350,7 +460,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
             PublishDate = item.Snippet.PublishedAtDateTimeOffset,
             Thumb = thumbnailPath,
             Thumbnail = thumbnailPath,
-            UploaderName = item.Snippet.VideoOwnerChannelTitle
+            UploaderName = item.Snippet.VideoOwnerChannelTitle,
         };
 
         db.Videos.Add(video);

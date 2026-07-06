@@ -8,5 +8,5 @@ public class ApplicationRoleManager(
     IEnumerable<IRoleValidator<AuthGroup>> roleValidators,
     ILookupNormalizer keyNormalizer,
     IdentityErrorDescriber errors,
-    ILogger<RoleManager<AuthGroup>> logger)
-    : RoleManager<AuthGroup>(store, roleValidators, keyNormalizer, errors, logger);
+    ILogger<RoleManager<AuthGroup>> logger
+) : RoleManager<AuthGroup>(store, roleValidators, keyNormalizer, errors, logger);

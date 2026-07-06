@@ -13,9 +13,11 @@ public sealed partial class TreeFolder
     [EditorRequired]
     public Folder? Folder { get; set; }
 
-    [Parameter] public TreeFolder? Parent { get; set; }
+    [Parameter]
+    public TreeFolder? Parent { get; set; }
 
-    [Inject] private NavigationManager? NavigationManager { get; set; }
+    [Inject]
+    private NavigationManager? NavigationManager { get; set; }
 
     [CascadingParameter(Name = nameof(TreeView.SelectedFolder))]
     public int? SelectedFolder { get; set; }
@@ -32,7 +34,8 @@ public sealed partial class TreeFolder
 
     private bool Selected => SelectedFolder == Folder?.Id;
 
-    private string ContainerClasses => new CssBuilder("ant-tree-node-content-wrapper")
-        .AddClass("ant-tree-node-selected", Selected)
-        .Build();
+    private string ContainerClasses =>
+        new CssBuilder("ant-tree-node-content-wrapper")
+            .AddClass("ant-tree-node-selected", Selected)
+            .Build();
 }

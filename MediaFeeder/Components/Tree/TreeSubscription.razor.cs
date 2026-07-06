@@ -30,12 +30,12 @@ public sealed partial class TreeSubscription
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if ((firstRender ||
-             Unwatched == 0) &&
-            Subscription != null &&
-            UnwatchedCache != null &&
-            Parent != null
-           )
+        if (
+            (firstRender || Unwatched == 0)
+            && Subscription != null
+            && UnwatchedCache != null
+            && Parent != null
+        )
         {
             if (UnwatchedCache.TryGetValue(Subscription.Id, out var value))
             {
@@ -52,7 +52,8 @@ public sealed partial class TreeSubscription
 
     private bool Selected => SelectedSubscription == Subscription?.Id;
 
-    private string ContainerClasses => new CssBuilder("ant-tree-node-content-wrapper")
-        .AddClass("ant-tree-node-selected", Selected)
-        .Build();
+    private string ContainerClasses =>
+        new CssBuilder("ant-tree-node-content-wrapper")
+            .AddClass("ant-tree-node-selected", Selected)
+            .Build();
 }

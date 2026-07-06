@@ -5,10 +5,9 @@ import asyncio
 import logging
 from typing import Any
 
+import common
 import pyatv
 import pyatv.storage.file_storage
-
-import common
 
 common.set_logging()
 logger = logging.getLogger("ATVShuffle")
@@ -50,11 +49,17 @@ class MyPushListener(pyatv.interface.PushListener):
             logger.exception("Error while recieving data from Apple TV")
             raise
 
-    def playstatus_update(self, _updater: pyatv.interface.PushUpdater, playstatus: pyatv.interface.Playing) -> None:
+    def playstatus_update(
+        self, _updater: pyatv.interface.PushUpdater, playstatus: pyatv.interface.Playing
+    ) -> None:
         """Update playback status."""
-        asyncio.run_coroutine_threadsafe(self._update_playing(playstatus), asyncio.get_event_loop())
+        asyncio.run_coroutine_threadsafe(
+            self._update_playing(playstatus), asyncio.get_event_loop()
+        )
 
-    def playstatus_error(self, _updater: pyatv.interface.PushUpdater, exception: Exception) -> None:
+    def playstatus_error(
+        self, _updater: pyatv.interface.PushUpdater, exception: Exception
+    ) -> None:
         """Report an error in exception."""
         logger.exception("an error happened! %o", exception)
 

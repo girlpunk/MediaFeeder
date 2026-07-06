@@ -18,7 +18,8 @@ namespace MediaFeeder.Data.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "character varying(128)",
-                oldMaxLength: 128);
+                oldMaxLength: 128
+            );
         }
 
         /// <inheritdoc />
@@ -34,7 +35,8 @@ namespace MediaFeeder.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "character varying(128)",
                 oldMaxLength: 128,
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

@@ -14,15 +14,14 @@ namespace MediaFeeder.Data.Migrations
                 name: "PlaybackPosition",
                 table: "YtManagerApp_video",
                 type: "integer",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "PlaybackPosition",
-                table: "YtManagerApp_video");
+            migrationBuilder.DropColumn(name: "PlaybackPosition", table: "YtManagerApp_video");
         }
     }
 }

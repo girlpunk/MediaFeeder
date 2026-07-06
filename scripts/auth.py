@@ -10,7 +10,6 @@ from typing import Any
 from urllib.parse import urljoin
 
 import requests
-
 from config_file import ConfigFile
 
 # @yaml_info(yaml_tag_ns='MediaFeederPlayerConfig')
@@ -130,7 +129,8 @@ class MediaFeederConfig:
             "Token" in cfg["Auth"]["Server"]
             and cfg["Auth"]["Server"]["Token"] is not None
             and cfg["Auth"]["Server"]["Expiry"] is not None
-            and cfg["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
+            and cfg["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc)
+            > timedelta(0)
         ):
             return cfg["Auth"]["Server"]["Token"]
 
@@ -151,12 +151,16 @@ class MediaFeederConfig:
             token = token_response.json()
 
             cfg["Auth"]["Server"]["Token"] = token["access_token"]
-            cfg["Auth"]["Server"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
+            cfg["Auth"]["Server"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(
+                seconds=token["expires_in"]
+            )
 
             cfg.write()
             return token["access_token"]
 
-        self._logger.error("Error getting server token: %s", token_response.json()["error_description"])
+        self._logger.error(
+            "Error getting server token: %s", token_response.json()["error_description"]
+        )
         token_response.raise_for_status()
         raise requests.exceptions.RequestException
 
@@ -173,7 +177,8 @@ class MediaFeederConfig:
             "Token" in cfg["Auth"]["Server"]
             and cfg["Auth"]["Device"]["Token"] is not None
             and cfg["Auth"]["Device"]["Expiry"] is not None
-            and cfg["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc) > timedelta(0)
+            and cfg["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc)
+            > timedelta(0)
         ):
             return cfg["Auth"]["Device"]["Token"]
 
@@ -186,7 +191,9 @@ class MediaFeederConfig:
             with self._config as cfg:
                 authentik_url = cfg["Auth"]["Url"]
 
-            oidc_configuration_request = requests.get(urljoin(authentik_url, ".well-known/openid-configuration"), timeout=30)
+            oidc_configuration_request = requests.get(
+                urljoin(authentik_url, ".well-known/openid-configuration"), timeout=30
+            )
             oidc_configuration_request.raise_for_status()
             oidc_configuration = oidc_configuration_request.json()
 
@@ -203,7 +210,10 @@ class MediaFeederConfig:
 
         """
         self._logger.debug("Use Refresh")
-        if "Refresh" not in cfg["Auth"]["Device"] or cfg["Auth"]["Device"]["Refresh"] is None:
+        if (
+            "Refresh" not in cfg["Auth"]["Device"]
+            or cfg["Auth"]["Device"]["Refresh"] is None
+        ):
             return self._get_new_token(cfg)
 
         token_endpoint = str(self._metadata["token_endpoint"])
@@ -224,17 +234,28 @@ class MediaFeederConfig:
             token = refresh_response.json()
 
             cfg["Auth"]["Device"]["Token"] = token["access_token"]
-            cfg["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
+            cfg["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(
+                seconds=token["expires_in"]
+            )
             cfg["Auth"]["Device"]["Refresh"] = token["refresh_token"]
 
             cfg.write()
             return token["access_token"]
 
-        if refresh_response.status_code == HTTPStatus.BAD_REQUEST and refresh_response.json()["error"] == "invalid_grant":
-            self._logger.error("Error refreshing auth: %s", refresh_response.json()["error_description"])
+        if (
+            refresh_response.status_code == HTTPStatus.BAD_REQUEST
+            and refresh_response.json()["error"] == "invalid_grant"
+        ):
+            self._logger.error(
+                "Error refreshing auth: %s",
+                refresh_response.json()["error_description"],
+            )
             return self._get_new_token(cfg)
 
-        self._logger.error("Error using refresh token: %s", refresh_response.json()["error_description"])
+        self._logger.error(
+            "Error using refresh token: %s",
+            refresh_response.json()["error_description"],
+        )
         refresh_response.raise_for_status()
         raise requests.exceptions.RequestException
 
@@ -267,9 +288,15 @@ class MediaFeederConfig:
         device_code = darj["device_code"]
 
         if "verification_uri_complete" in darj:
-            self._logger.info("Please visit %s to authenticate", darj["verification_uri_complete"])
+            self._logger.info(
+                "Please visit %s to authenticate", darj["verification_uri_complete"]
+            )
         else:
-            self._logger.info("Please visit %s and paste the code %s to authenticate.", darj["user_code"], darj["verification_uri"])
+            self._logger.info(
+                "Please visit %s and paste the code %s to authenticate.",
+                darj["user_code"],
+                darj["verification_uri"],
+            )
 
         retries = 60
 
@@ -291,13 +318,18 @@ class MediaFeederConfig:
                 token = token_response.json()
 
                 cfg["Auth"]["Device"]["Token"] = token["access_token"]
-                cfg["Auth"]["Device"]["Expiry"] = datetime.now(tz=timezone.utc) + timedelta(seconds=token["expires_in"])
+                cfg["Auth"]["Device"]["Expiry"] = datetime.now(
+                    tz=timezone.utc
+                ) + timedelta(seconds=token["expires_in"])
                 cfg["Auth"]["Device"]["Refresh"] = token["refresh_token"]
 
                 cfg.write()
 
                 return token["access_token"]
-            if token_response.status_code == HTTPStatus.BAD_REQUEST and token_response.json()["error"] == "authorization_pending":
+            if (
+                token_response.status_code == HTTPStatus.BAD_REQUEST
+                and token_response.json()["error"] == "authorization_pending"
+            ):
                 continue
 
             self._logger.error("Error retrieving token: %s", token_response.json())

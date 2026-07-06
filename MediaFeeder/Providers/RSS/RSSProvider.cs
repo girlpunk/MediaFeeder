@@ -16,7 +16,12 @@ public sealed class RSSProvider : IProvider
     public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc) =>
         Task.FromResult(request.Content.Headers.ContentType?.MediaType == "application/rss+xml");
 
-    public Task CreateSubscription(Uri url, HttpResponseMessage request, HtmlDocument? doc, SubscriptionForm subscription)
+    public Task CreateSubscription(
+        Uri url,
+        HttpResponseMessage request,
+        HtmlDocument? doc,
+        SubscriptionForm subscription
+    )
     {
         ArgumentNullException.ThrowIfNull(doc);
 
@@ -25,7 +30,9 @@ public sealed class RSSProvider : IProvider
         //subscription.Description = doc.DocumentNode.SelectSingleNode("/rss/channel/description")?.InnerText;
         //subscription.Thumbnail = url + doc.DocumentNode.SelectSingleNode("/rss/channel/image/url")?.InnerText
         subscription.ChannelId = url.ToString();
-        subscription.ChannelName = doc.DocumentNode.SelectSingleNode("/rss/channel/title").InnerText;
+        subscription.ChannelName = doc
+            .DocumentNode.SelectSingleNode("/rss/channel/title")
+            .InnerText;
         subscription.Provider = ProviderIdentifier;
 
         return Task.CompletedTask;

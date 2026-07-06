@@ -12,9 +12,14 @@ namespace MediaFeeder.Components.Dialogs;
 
 public partial class EditFolder
 {
-    [Inject] public required MediaFeederDataContext Context { get; set; }
-    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
-    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+    [Inject]
+    public required MediaFeederDataContext Context { get; set; }
+
+    [Inject]
+    public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+
+    [Inject]
+    public required UserManager<AuthUser> UserManager { get; set; }
     private List<Folder> ExistingFolders { get; set; } = [];
     public required Form<Folder> Form { get; set; }
     private Folder? Folder { get; set; }
@@ -28,11 +33,7 @@ public partial class EditFolder
 
         if (Options == null)
         {
-            Folder = new Folder
-            {
-                Name = "",
-                UserId = user.Id
-            };
+            Folder = new Folder { Name = "", UserId = user.Id };
             Context.Folders.Add(Folder);
         }
         else
@@ -40,8 +41,8 @@ public partial class EditFolder
             Folder = Context.Folders.Single(f => f.Id == Options && f.UserId == user.Id);
         }
 
-        ExistingFolders = await Context.Folders
-            .Where(f => f != Folder)
+        ExistingFolders = await Context
+            .Folders.Where(f => f != Folder)
             .Include(static f => f.Subfolders)
             .Select(Folder.GetProjection(5))
             .Where(static f => f.ParentId == null)

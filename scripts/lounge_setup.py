@@ -5,9 +5,8 @@
 import asyncio
 import logging
 
-import pyytlounge
-
 import common
+import pyytlounge
 from auth import MediaFeederConfig
 
 common.set_logging()

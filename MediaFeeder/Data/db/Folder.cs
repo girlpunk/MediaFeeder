@@ -8,7 +8,8 @@ public class Folder : ITreeSelectable
 {
     public int Id { get; set; }
 
-    [MaxLength(250)] public required string Name { get; set; }
+    [MaxLength(250)]
+    public required string Name { get; set; }
 
     public int? ParentId { get; set; }
     public required int UserId { get; set; }
@@ -20,12 +21,18 @@ public class Folder : ITreeSelectable
 
     public string OnSelectedNavigate => "folder/" + Id;
 
-    public static async Task<ICollection<int>> RecursiveFolderIds(MediaFeederDataContext context, int folderId, int userId, int maxDepth = 5, int currentDepth = 0)
+    public static async Task<ICollection<int>> RecursiveFolderIds(
+        MediaFeederDataContext context,
+        int folderId,
+        int userId,
+        int maxDepth = 5,
+        int currentDepth = 0
+    )
     {
-        var folder = await context.Folders
-                .Where(f => f.Id == folderId && f.UserId == userId)
-                .Select(GetProjection(5))
-                .SingleAsync();
+        var folder = await context
+            .Folders.Where(f => f.Id == folderId && f.UserId == userId)
+            .Select(GetProjection(5))
+            .SingleAsync();
         return folder.RecursiveFolderIds(5).ToList();
     }
 
@@ -51,9 +58,13 @@ public class Folder : ITreeSelectable
             UserId = folder.UserId,
             Parent = folder.Parent,
             User = folder.User,
-            Subfolders = maxDepth == currentDepth
-                ? new List<Folder>()
-                : folder.Subfolders.AsQueryable().Select(GetProjection(maxDepth, currentDepth + 1)).ToList(),
+            Subfolders =
+                maxDepth == currentDepth
+                    ? new List<Folder>()
+                    : folder
+                        .Subfolders.AsQueryable()
+                        .Select(GetProjection(maxDepth, currentDepth + 1))
+                        .ToList(),
             Subscriptions = folder.Subscriptions.AsQueryable().ToList(),
         };
     }

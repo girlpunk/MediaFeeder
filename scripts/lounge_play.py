@@ -9,10 +9,10 @@ import logging
 import sys
 import urllib
 
-import pyytlounge
-
 import auth
 import common
+import pyytlounge
+from typing_extensions import Self
 
 
 class LoungePlayer(pyytlounge.EventListener):
@@ -31,7 +31,7 @@ class LoungePlayer(pyytlounge.EventListener):
         config = auth.MediaFeederConfig()
         self._api.load_auth_state(config.get_player(name))
 
-    async def __aenter__(self) -> LoungePlayer:
+    async def __aenter__(self) -> Self:
         """Connect to Lounge.
 
         Returns:
@@ -64,7 +64,9 @@ class LoungePlayer(pyytlounge.EventListener):
         elif self._last_status.state == pyytlounge.State.Playing:
             await self._api.pause()
         else:
-            self._logger.warning("Don't know how to play/pause from state %s", self._last_status.state)
+            self._logger.warning(
+                "Don't know how to play/pause from state %s", self._last_status.state
+            )
 
     async def main(self) -> None:
         """Connect to the Lounge API."""
@@ -79,7 +81,9 @@ class LoungePlayer(pyytlounge.EventListener):
         self._logger.debug("Request Updates")
         while True:
             await asyncio.sleep(60)
-            self._logger.info("Requesting update: %s", await self._api.get_now_playing())
+            self._logger.info(
+                "Requesting update: %s", await self._api.get_now_playing()
+            )
 
     async def _subscribe_events(self) -> None:
         self._logger.debug("Subscribe Events")
@@ -93,7 +97,13 @@ class LoungePlayer(pyytlounge.EventListener):
     async def now_playing_changed(self, event: pyytlounge.NowPlayingEvent) -> None:
         """Process when active video changes."""
         self._logger.debug("Now Playing Changed")
-        self._logger.info(("Now Playing:\n    %s\n    ID: %s\n    pos: %s\n    duration: %s"), event.state, event.video_id, event.current_time, event.duration)
+        self._logger.info(
+            ("Now Playing:\n    %s\n    ID: %s\n    pos: %s\n    duration: %s"),
+            event.state,
+            event.video_id,
+            event.current_time,
+            event.duration,
+        )
 
     async def ad_playing_changed(self, event: pyytlounge.AdPlayingEvent) -> None:
         """Process when ad starts playing."""
@@ -135,34 +145,66 @@ class LoungePlayer(pyytlounge.EventListener):
     async def ad_state_changed(self, event: pyytlounge.AdStateEvent) -> None:
         """Process when ad state changes (position, play/pause, skippable)."""
         self._logger.debug("Ad State Changed")
-        self._logger.info(("Ad State:\n    AD State: %s\n    Current Time: %s\n    Is Skip Enabled: %s"), event.ad_state, event.current_time, event.is_skip_enabled)
+        self._logger.info(
+            (
+                "Ad State:\n    AD State: %s\n    Current Time: %s\n    Is Skip Enabled: %s"
+            ),
+            event.ad_state,
+            event.current_time,
+            event.is_skip_enabled,
+        )
 
-    async def autoplay_changed(self, event: pyytlounge.AutoplayModeChangedEvent) -> None:
+    async def autoplay_changed(
+        self, event: pyytlounge.AutoplayModeChangedEvent
+    ) -> None:
         """Process when auto play mode changes."""
         self._logger.debug("Autoplay Changed")
-        self._logger.info(("Autoplay Changed:\n    Enabled: %s\n    Supported: %s"), event.enabled, event.supported)
+        self._logger.info(
+            ("Autoplay Changed:\n    Enabled: %s\n    Supported: %s"),
+            event.enabled,
+            event.supported,
+        )
 
-    async def autoplay_up_next_changed(self, event: pyytlounge.AutoplayUpNextEvent) -> None:
+    async def autoplay_up_next_changed(
+        self, event: pyytlounge.AutoplayUpNextEvent
+    ) -> None:
         """Process when up next video changes."""
         self._logger.debug("Autoplay Up Next Changed")
-        self._logger.info(("Autoplay Up Next Changed:\n    Video ID: %s"), event.video_id)
+        self._logger.info(
+            ("Autoplay Up Next Changed:\n    Video ID: %s"), event.video_id
+        )
 
     async def disconnected(self, event: pyytlounge.DisconnectedEvent) -> None:
         """Process when the screen is no longer connected."""
         self._logger.debug("Disconnected")
         self._logger.info(("Disconnected:\n    Reason: %s"), event.reason)
 
-    async def playback_speed_changed(self, event: pyytlounge.PlaybackSpeedEvent) -> None:
+    async def playback_speed_changed(
+        self, event: pyytlounge.PlaybackSpeedEvent
+    ) -> None:
         """Process when playback speed changes."""
         self._logger.debug("Playback Speed Changed")
-        self._logger.info(("Playback Speed Changed:\n    Playback Speed: %s"), event.playback_speed)
+        self._logger.info(
+            ("Playback Speed Changed:\n    Playback Speed: %s"), event.playback_speed
+        )
 
-    async def playback_state_changed(self, event: pyytlounge.PlaybackStateEvent) -> None:
+    async def playback_state_changed(
+        self, event: pyytlounge.PlaybackStateEvent
+    ) -> None:
         """Process when playback state changes (position, play/pause)."""
         self._logger.debug("Playback State Changed")
-        self._logger.info(("Playback State Changed:    Current Time: %s\n    Duration: %s\n    State: %s"), event.current_time, event.duration, event.state)
+        self._logger.info(
+            (
+                "Playback State Changed:    Current Time: %s\n    Duration: %s\n    State: %s"
+            ),
+            event.current_time,
+            event.duration,
+            event.state,
+        )
 
-    async def subtitles_track_changed(self, event: pyytlounge.SubtitlesTrackEvent) -> None:
+    async def subtitles_track_changed(
+        self, event: pyytlounge.SubtitlesTrackEvent
+    ) -> None:
         """Process when subtitles track changes."""
         self._logger.debug("Subtitles Track Changed")
         self._logger.info(
@@ -192,7 +234,11 @@ class LoungePlayer(pyytlounge.EventListener):
     async def volume_changed(self, event: pyytlounge.VolumeChangedEvent) -> None:
         """Process when volume or muted state changes."""
         self._logger.debug("Volume Changed")
-        self._logger.info(("Volume Changed:\n    Volume: %s\n    Muted: %s"), event.volume, event.muted)
+        self._logger.info(
+            ("Volume Changed:\n    Volume: %s\n    Muted: %s"),
+            event.volume,
+            event.muted,
+        )
 
 
 async def _main() -> None:
@@ -204,9 +250,10 @@ async def _main() -> None:
         ids: list[str] = []
 
         for video_id in sys.argv[2].split(","):
-            try:
-                ids.append(urllib.parse.parse_qs(urllib.parse.urlparse(video_id).query)["v"])
-            except KeyError:
+            url = urllib.parse.parse_qs(urllib.parse.urlparse(video_id).query)
+            if "v" in url:
+                ids.append(url["v"])
+            else:
                 ids.append(video_id)
 
         await player.play_video(ids.pop(0))

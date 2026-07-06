@@ -32,8 +32,14 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         {
             ArgumentNullException.ThrowIfNull(Video);
 
-            _youtubeCustomModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./Providers/Youtube/YouTubeVideoFrame.razor.js");
-            _youtubeLibraryModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", Assets["./iframe_api.js"]);
+            _youtubeCustomModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./Providers/Youtube/YouTubeVideoFrame.razor.js"
+            );
+            _youtubeLibraryModule ??= await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                Assets["./iframe_api.js"]
+            );
 
             _videoFrameRef ??= DotNetObjectReference.Create(this);
             await _youtubeCustomModule.InvokeVoidAsync("helperReady", _videoFrameRef);
@@ -104,7 +110,9 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             return;
 
         // Get available rates
-        var availableRates = (await _player.InvokeAsync<float[]>("getAvailablePlaybackRates")).ToList();
+        var availableRates = (
+            await _player.InvokeAsync<float[]>("getAvailablePlaybackRates")
+        ).ToList();
 
         // Get current rate
         var currentRate = await _player.InvokeAsync<float>("getPlaybackRate");
@@ -137,7 +145,10 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         ArgumentNullException.ThrowIfNull(_youtubeCustomModule);
         ArgumentNullException.ThrowIfNull(Video);
 
-        _player = await _youtubeCustomModule.InvokeAsync<IJSObjectReference>("initPlayer", Video.VideoId);
+        _player = await _youtubeCustomModule.InvokeAsync<IJSObjectReference>(
+            "initPlayer",
+            Video.VideoId
+        );
     }
 
     // runs before OnParametersSetAsync()
@@ -191,7 +202,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
     {
         Console.WriteLine($"State change: {JsonSerializer.Serialize(data)}");
 
-        _state = (YtEmbeddedPlayerState) data.GetInt32();
+        _state = (YtEmbeddedPlayerState)data.GetInt32();
 
         if (PlaybackSession != null)
         {
@@ -229,7 +240,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         if (PlaybackSession == null)
             return;
 
-        PlaybackSession.Rate = (float?) data.GetDouble();
+        PlaybackSession.Rate = (float?)data.GetDouble();
         ProgressUpdate(this);
     }
 
@@ -254,22 +265,33 @@ public sealed partial class YouTubeVideoFrame : IDisposable
 
             try
             {
-                PlaybackSession.Volume = await callJsOrNull<int?>(_player, "getVolume");
-                PlaybackSession.Loaded = await callJsOrNull<float?>(_player, "getVideoLoadedFraction");
+                PlaybackSession.Volume = await CallJsOrNull<int?>(_player, "getVolume");
+                PlaybackSession.Loaded = await CallJsOrNull<float?>(
+                    _player,
+                    "getVideoLoadedFraction"
+                );
 
                 // TODO error: Could not find 'getSubtitles' ('getSubtitles' was undefined).
                 //PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
 
-                var progress = await callJsOrNull<float?>(_player, "getCurrentTime");
-                PlaybackSession.CurrentPosition = progress != null ? TimeSpan.FromSeconds(progress.Value) : null;
+                var progress = await CallJsOrNull<float?>(_player, "getCurrentTime");
+                PlaybackSession.CurrentPosition =
+                    progress != null ? TimeSpan.FromSeconds(progress.Value) : null;
 
                 // trying to seek before playback has actually started seems to do nothing.
-                if (progress != null && progress > 0 && _lastRestoredPositionVideoId != Video.Id)
+                if (
+                    progress != null
+                    && progress > 0
+                    && Video != null
+                    && _lastRestoredPositionVideoId != Video.Id
+                )
                 {
                     _lastRestoredPositionVideoId = Video.Id;
 
                     var positionToRestore = await PlaybackSession.PlaybackPositionToRestore();
-                    Console.WriteLine($"(session: {PlaybackSession.SessionId}) Restoring position: {positionToRestore}");
+                    Console.WriteLine(
+                        $"(session: {PlaybackSession.SessionId}) Restoring position: {positionToRestore}"
+                    );
 
                     if (positionToRestore != null)
                         await _player.InvokeVoidAsync("seekTo", positionToRestore, true);
@@ -289,15 +311,19 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             }
             catch (Exception e)
             {
-                Console.WriteLine($"(session: {PlaybackSession.SessionId}) Exception reading data from YT player: " + e);
+                Console.WriteLine(
+                    $"(session: {PlaybackSession.SessionId}) Exception reading data from YT player: "
+                        + e
+                );
             }
         });
     }
 
     // for some reason changes to this method do not actually get picked up by hot-reload.
-    private static async Task<T?> callJsOrNull<T>(IJSObjectReference? thing, string method)
+    private static async Task<T?> CallJsOrNull<T>(IJSObjectReference? thing, string method)
     {
-        if (thing == null) return default;
+        if (thing == null)
+            return default;
 
         try
         {
@@ -312,7 +338,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             if (e.Message.Contains("The JSON value could not be converted"))
                 return default;
 
-            throw e;
+            throw;
         }
     }
 
@@ -321,9 +347,12 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         ProgressUpdate(this);
 
         _videoFrameRef?.Dispose();
-        if (_player != null) await _player.DisposeAsync();
-        if (_youtubeLibraryModule != null) await _youtubeLibraryModule.DisposeAsync();
-        if (_youtubeCustomModule != null) await _youtubeCustomModule.DisposeAsync();
+        if (_player != null)
+            await _player.DisposeAsync();
+        if (_youtubeLibraryModule != null)
+            await _youtubeLibraryModule.DisposeAsync();
+        if (_youtubeCustomModule != null)
+            await _youtubeCustomModule.DisposeAsync();
 
         if (Timer != null)
         {

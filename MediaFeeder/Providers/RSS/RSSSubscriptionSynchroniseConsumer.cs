@@ -1,11 +1,11 @@
-using MassTransit;
-using MediaFeeder.Data;
-using MediaFeeder.Tasks;
-using Microsoft.EntityFrameworkCore;
 using System.ServiceModel.Syndication;
 using System.Xml;
+using MassTransit;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
+using MediaFeeder.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaFeeder.Providers.RSS;
 
@@ -20,21 +20,32 @@ public class RSSSubscriptionSynchroniseConsumer(
     {
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
 
-        var subscription =
-            await db.Subscriptions.SingleAsync(s => s.Id == context.Message.SubscriptionId, context.CancellationToken);
+        var subscription = await db.Subscriptions.SingleAsync(
+            s => s.Id == context.Message.SubscriptionId,
+            context.CancellationToken
+        );
 
         if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
         {
-            logger.LogInformation("Subscription {Subscription} was already synchronised {Time} ago, skipping", subscription.Name, DateTimeOffset.Now - subscription.LastSynchronised);
+            logger.LogInformation(
+                "Subscription {Subscription} was already synchronised {Time} ago, skipping",
+                subscription.Name,
+                DateTimeOffset.Now - subscription.LastSynchronised
+            );
             return;
         }
 
         logger.LogInformation("Starting synchronize {}", subscription.Name);
 
-        foreach (var video in await db.Videos
-                     .Where(v => v.SubscriptionId == subscription.Id && v.New && DateTimeOffset.UtcNow - v.PublishDate <= TimeSpan.FromDays(1))
-                     .ToListAsync(context.CancellationToken)
+        foreach (
+            var video in await db
+                .Videos.Where(v =>
+                    v.SubscriptionId == subscription.Id
+                    && v.New
+                    && DateTimeOffset.UtcNow - v.PublishDate <= TimeSpan.FromDays(1)
                 )
+                .ToListAsync(context.CancellationToken)
+        )
             video.New = false;
 
         await db.SaveChangesAsync(context.CancellationToken);
@@ -42,10 +53,15 @@ public class RSSSubscriptionSynchroniseConsumer(
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
         using var client = httpClientFactory.CreateClient("retry");
-        using var feedResponse = await client.GetAsync(subscription.ChannelId, context.CancellationToken);
+        using var feedResponse = await client.GetAsync(
+            subscription.ChannelId,
+            context.CancellationToken
+        );
         feedResponse.EnsureSuccessStatusCode();
 
-        using var feedReader = XmlReader.Create(await feedResponse.Content.ReadAsStreamAsync(context.CancellationToken));
+        using var feedReader = XmlReader.Create(
+            await feedResponse.Content.ReadAsStreamAsync(context.CancellationToken)
+        );
         var feed = SyndicationFeed.Load(feedReader);
 
         if (subscription.Name == subscription.ChannelName)
@@ -55,8 +71,14 @@ public class RSSSubscriptionSynchroniseConsumer(
         if (feed.ImageUrl != null)
         {
             // Need to make absolute
-            subscription.Thumb = new Uri(new Uri(subscription.ChannelId), feed.ImageUrl).AbsoluteUri;
-            subscription.Thumbnail = new Uri(new Uri(subscription.ChannelId), feed.ImageUrl).AbsoluteUri;
+            subscription.Thumb = new Uri(
+                new Uri(subscription.ChannelId),
+                feed.ImageUrl
+            ).AbsoluteUri;
+            subscription.Thumbnail = new Uri(
+                new Uri(subscription.ChannelId),
+                feed.ImageUrl
+            ).AbsoluteUri;
         }
 
         subscription.LastSynchronised = DateTimeOffset.UtcNow;
@@ -67,16 +89,28 @@ public class RSSSubscriptionSynchroniseConsumer(
             await SyncVideo(item, subscription, context.CancellationToken);
     }
 
-    private async Task SyncVideo(SyndicationItem item, Subscription subscription, CancellationToken cancellationToken)
+    private async Task SyncVideo(
+        SyndicationItem item,
+        Subscription subscription,
+        CancellationToken cancellationToken
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        item.Id = item.ElementExtensions.ReadElementExtensions<string>("identifier", "http://purl.org/dc/elements/1.1/")
-            .FirstOrDefault() ?? item.Id;
+        item.Id =
+            item.ElementExtensions.ReadElementExtensions<string>(
+                    "identifier",
+                    "http://purl.org/dc/elements/1.1/"
+                )
+                .FirstOrDefault()
+            ?? item.Id;
 
-        var video = await db.Videos
-            .Include(static v => v.Tags)
-            .SingleOrDefaultAsync(v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id, cancellationToken);
+        var video = await db
+            .Videos.Include(static v => v.Tags)
+            .SingleOrDefaultAsync(
+                v => v.VideoId == item.Id && v.SubscriptionId == subscription.Id,
+                cancellationToken
+            );
 
         metrics.incProviderVideoChanged(Provider.RSS, video == null);
         if (video == null)
@@ -99,25 +133,36 @@ public class RSSSubscriptionSynchroniseConsumer(
         video.PublishDate = item.PublishDate.UtcDateTime;
         //video.Thumb = "";
         video.Description = item.Summary?.Text ?? "";
-        var rawDuration = item.ElementExtensions
-            .ReadElementExtensions<string>("duration", "http://www.itunes.com/dtds/podcast-1.0.dtd")
+        var rawDuration = item
+            .ElementExtensions.ReadElementExtensions<string>(
+                "duration",
+                "http://www.itunes.com/dtds/podcast-1.0.dtd"
+            )
             .FirstOrDefault();
         if (rawDuration != null)
             video.DurationSpan = TimeSpan.Parse(rawDuration);
-        video.UploaderName = string.Join(", ", item.ElementExtensions.ReadElementExtensions<string>("author", "http://www.itunes.com/dtds/podcast-1.0.dtd")
-                                               ?? item.Authors.Select(static a => a.Name));
-        video.DownloadedPath = item.Links.SingleOrDefault(static l => l.RelationshipType == "enclosure")?.Uri.ToString();
+        video.UploaderName = string.Join(
+            ", ",
+            item.ElementExtensions.ReadElementExtensions<string>(
+                "author",
+                "http://www.itunes.com/dtds/podcast-1.0.dtd"
+            ) ?? item.Authors.Select(static a => a.Name)
+        );
+        video.DownloadedPath = item
+            .Links.SingleOrDefault(static l => l.RelationshipType == "enclosure")
+            ?.Uri.ToString();
 
         var existingTags = video.Tags.Select(static t => t.Tag);
-        var keywords = (item.ElementExtensions.ReadElementExtensions<string>("keywords", "http://www.itunes.com/dtds/podcast-1.0.dtd") ?? [])
+        var keywords = (
+            item.ElementExtensions.ReadElementExtensions<string>(
+                "keywords",
+                "http://www.itunes.com/dtds/podcast-1.0.dtd"
+            ) ?? []
+        )
             .SelectMany(static k => k.Split(','))
             .Select(static k => k.Trim())
             .Where(k => !existingTags.Contains(k))
-            .Select(k => new VideoTag()
-            {
-                Video = video,
-                Tag = k,
-            });
+            .Select(k => new VideoTag() { Video = video, Tag = k });
         foreach (var videoTag in keywords)
             video.Tags.Add(videoTag);
 

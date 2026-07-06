@@ -17,7 +17,7 @@ public class UserController : ControllerBase
         {
             User.Identity,
             OtherIdentities = User.Identities,
-            User.Claims
+            User.Claims,
         };
 
         return Ok(b);

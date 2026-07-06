@@ -7,15 +7,21 @@ public class Video
 {
     public int Id { get; set; }
 
-    [MaxLength(128)] public required string VideoId { get; set; }
+    [MaxLength(128)]
+    public required string VideoId { get; set; }
 
-    [MaxLength(1000000000)] public required string Name { get; set; }
-    [MaxLength(1000000000)] public required string Description { get; set; }
+    [MaxLength(1000000000)]
+    public required string Name { get; set; }
+
+    [MaxLength(1000000000)]
+    public required string Description { get; set; }
     public virtual ICollection<VideoTag> Tags { get; init; } = [];
 
     public bool Watched { get; set; }
     public DateTimeOffset? WatchedDate { get; set; }
-    [MaxLength(1000000000)] public string? DownloadedPath { get; set; }
+
+    [MaxLength(1000000000)]
+    public string? DownloadedPath { get; set; }
     public int? PlaylistIndex { get; set; }
     public DateTimeOffset? PublishDate { get; set; }
 
@@ -29,7 +35,8 @@ public class Video
     public required int SubscriptionId { get; set; }
     public double? Rating { get; set; }
 
-    [MaxLength(255)] public required string UploaderName { get; set; }
+    [MaxLength(255)]
+    public required string UploaderName { get; set; }
 
     public int? Views { get; set; }
     public bool New { get; set; }
@@ -38,7 +45,8 @@ public class Video
 
     public string? DownloadError { get; set; }
 
-    [MaxLength(255)] public string? Thumb { get; set; }
+    [MaxLength(255)]
+    public string? Thumb { get; set; }
 
     [NotMapped]
     public TimeSpan? DurationSpan
@@ -53,7 +61,8 @@ public class Video
     public void MarkWatched(bool actuallyWatched, DateTimeOffset? date = null)
     {
         Watched = true;
-        if (actuallyWatched) PlaybackPosition = null;
+        if (actuallyWatched)
+            PlaybackPosition = null;
 
         if (date != null)
             WatchedDate = date;

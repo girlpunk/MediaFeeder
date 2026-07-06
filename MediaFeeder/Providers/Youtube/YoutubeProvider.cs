@@ -16,22 +16,34 @@ public class YoutubeProvider : IProvider
     public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc)
     {
         //1. Does it _look_ like a YouTube URL
-        if ((url.Host != "kids.youtube.com" &&
-             url.Host != "m.youtube.com" &&
-             url.Host != "youtu.be" &&
-             url.Host != "youtube-nocookie.com" &&
-             url.Host != "youtube.com" &&
-             url.Host != "www.youtube.com") || doc == null)
+        if (
+            (
+                url.Host != "kids.youtube.com"
+                && url.Host != "m.youtube.com"
+                && url.Host != "youtu.be"
+                && url.Host != "youtube-nocookie.com"
+                && url.Host != "youtube.com"
+                && url.Host != "www.youtube.com"
+            )
+            || doc == null
+        )
             return Task.FromResult(false);
 
         //2. Does it have the attributes we need
         var metaTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='identifier']");
-        if (metaTag.SingleOrDefault() == null || string.IsNullOrWhiteSpace(metaTag.SingleOrDefault()?.GetAttributeValue("content", "")))
+        if (
+            metaTag.SingleOrDefault() == null
+            || string.IsNullOrWhiteSpace(
+                metaTag.SingleOrDefault()?.GetAttributeValue("content", "")
+            )
+        )
             return Task.FromResult(false);
 
         var nameTag = doc.DocumentNode.SelectNodes("//meta[@itemprop='name']");
-        if (nameTag.FirstOrDefault() == null ||
-            string.IsNullOrWhiteSpace(nameTag.FirstOrDefault()?.GetAttributeValue("content", "")))
+        if (
+            nameTag.FirstOrDefault() == null
+            || string.IsNullOrWhiteSpace(nameTag.FirstOrDefault()?.GetAttributeValue("content", ""))
+        )
             return Task.FromResult(false);
 
         var channelId = metaTag.SingleOrDefault()?.GetAttributeValue("content", "") ?? "";
@@ -42,7 +54,12 @@ public class YoutubeProvider : IProvider
         return Task.FromResult(false);
     }
 
-    public Task CreateSubscription(Uri url, HttpResponseMessage request, HtmlDocument? doc, SubscriptionForm subscription)
+    public Task CreateSubscription(
+        Uri url,
+        HttpResponseMessage request,
+        HtmlDocument? doc,
+        SubscriptionForm subscription
+    )
     {
         ArgumentNullException.ThrowIfNull(doc);
 
@@ -52,7 +69,9 @@ public class YoutubeProvider : IProvider
 
         var channelId = metaTag.FirstOrDefault()?.GetAttributeValue("content", "") ?? "";
         var name = nameTag.FirstOrDefault()?.GetAttributeValue("content", "") ?? "";
-        var playlistId = "UU" + channelId[2..];
+
+        //TODO: What happens if we give this a playlist URL?
+        var playlistId = "UULF" + channelId[2..];
 
         subscription.Name = name;
         subscription.ChannelName = name;

@@ -14,7 +14,8 @@ namespace MediaFeeder.Data.Migrations
                 name: "DownloadError",
                 table: "YtManagerApp_video",
                 type: "text",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsDownloaded",
@@ -22,12 +23,14 @@ namespace MediaFeeder.Data.Migrations
                 type: "boolean",
                 nullable: false,
                 computedColumnSql: "downloaded_path IS NOT NULL",
-                stored: true);
+                stored: true
+            );
 
             migrationBuilder.CreateIndex(
                 name: "ytmanagerapp_video_subscription_id_downloaded",
                 table: "YtManagerApp_video",
-                columns: new[] { "subscription_id", "IsDownloaded" });
+                columns: new[] { "subscription_id", "IsDownloaded" }
+            );
         }
 
         /// <inheritdoc />
@@ -35,15 +38,12 @@ namespace MediaFeeder.Data.Migrations
         {
             migrationBuilder.DropIndex(
                 name: "ytmanagerapp_video_subscription_id_downloaded",
-                table: "YtManagerApp_video");
+                table: "YtManagerApp_video"
+            );
 
-            migrationBuilder.DropColumn(
-                name: "IsDownloaded",
-                table: "YtManagerApp_video");
+            migrationBuilder.DropColumn(name: "IsDownloaded", table: "YtManagerApp_video");
 
-            migrationBuilder.DropColumn(
-                name: "DownloadError",
-                table: "YtManagerApp_video");
+            migrationBuilder.DropColumn(name: "DownloadError", table: "YtManagerApp_video");
         }
     }
 }

@@ -1,9 +1,9 @@
-using MediaFeeder.Data.db;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
 using System;
 using System.Security.Claims;
+using MediaFeeder.Data.db;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace MediaFeeder.Data.Identity;
 
@@ -16,10 +16,19 @@ public class UserManager(
     ILookupNormalizer keyNormalizer,
     IdentityErrorDescriber errors,
     IServiceProvider services,
-    ILogger<UserManager> logger)
-    : UserManager<AuthUser>(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer,
+    ILogger<UserManager> logger
+)
+    : UserManager<AuthUser>(
+        store,
+        optionsAccessor,
+        passwordHasher,
+        userValidators,
+        passwordValidators,
+        keyNormalizer,
         errors,
-        services, logger)
+        services,
+        logger
+    )
 {
     public override async Task<AuthUser?> GetUserAsync(ClaimsPrincipal principal)
     {
@@ -46,7 +55,11 @@ public class UserManager(
 
     public override Task<AuthUser?> FindByLoginAsync(string loginProvider, string providerKey)
     {
-        logger.LogDebug("FindByLoginAsync {loginProvider} {providerKey}", loginProvider, providerKey);
+        logger.LogDebug(
+            "FindByLoginAsync {loginProvider} {providerKey}",
+            loginProvider,
+            providerKey
+        );
         return base.FindByLoginAsync(loginProvider, providerKey);
     }
 }

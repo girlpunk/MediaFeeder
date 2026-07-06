@@ -11,19 +11,26 @@ namespace MediaFeeder.Components.Pages;
 
 public sealed partial class Video : IDisposable
 {
-    [Parameter] public int Id { get; set; }
+    [Parameter]
+    public int Id { get; set; }
 
-    [Parameter] public string? Next { get; set; }
+    [Parameter]
+    public string? Next { get; set; }
 
-    [Inject] public required NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public required NavigationManager NavigationManager { get; set; }
 
-    [Inject] public required MessageService MessageService { get; set; }
+    [Inject]
+    public required MessageService MessageService { get; set; }
 
-    [Inject] public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
+    [Inject]
+    public required AuthenticationStateProvider AuthenticationStateProvider { get; init; }
 
-    [Inject] public required UserManager<AuthUser> UserManager { get; set; }
+    [Inject]
+    public required UserManager<AuthUser> UserManager { get; set; }
 
-    [Inject] public required PlaybackSessionManager SessionManager { get; set; }
+    [Inject]
+    public required PlaybackSessionManager SessionManager { get; set; }
 
     private Data.db.Video? VideoObject { get; set; }
     private IProvider? Provider { get; set; }
@@ -50,20 +57,28 @@ public sealed partial class Video : IDisposable
             PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
         }
 
-        VideoObject = await Context.Videos.SingleAsync(v => v.Id == Id && v.Subscription!.UserId == user.Id);
+        VideoObject = await Context.Videos.SingleAsync(v =>
+            v.Id == Id && v.Subscription!.UserId == user.Id
+        );
         StateHasChanged();
 
         await Context.Entry(VideoObject).Reference(static v => v.Subscription).LoadAsync();
-        await Context.Entry(VideoObject.Subscription!).Reference(static v => v.ParentFolder).LoadAsync();
+        await Context
+            .Entry(VideoObject.Subscription!)
+            .Reference(static v => v.ParentFolder)
+            .LoadAsync();
 
-        Provider = ServiceProvider.GetServices<IProvider>()
+        Provider = ServiceProvider
+            .GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == VideoObject.Subscription!.Provider);
 
         if (!string.IsNullOrWhiteSpace(Next))
         {
             var more = Next.Split(',').Select(int.Parse).ToList();
             UpNextCount = more.Count;
-            UpNextDuration = TimeSpan.FromSeconds(Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration ?? 0));
+            UpNextDuration = TimeSpan.FromSeconds(
+                Context.Videos.Where(v => more.Contains(v.Id)).Sum(static v => v.Duration ?? 0)
+            );
         }
         else
         {
@@ -75,7 +90,7 @@ public sealed partial class Video : IDisposable
         PlaybackSession.Provider = Provider.Provider;
         PlaybackSession.UpdateEvent += UpdateTimestamp;
 
-        lastSavePositionTime.Restart();  // wait for some actual playback before trying to save position.
+        lastSavePositionTime.Restart(); // wait for some actual playback before trying to save position.
         UpdateTimestamp();
         StateHasChanged();
     }
@@ -89,11 +104,11 @@ public sealed partial class Video : IDisposable
 
         if (lastSavePositionTime.Elapsed > TimeSpan.FromSeconds(60))
         {
-            int position = (int) (PlaybackSession?.CurrentPosition?.TotalSeconds ?? 0);
+            int position = (int)(PlaybackSession?.CurrentPosition?.TotalSeconds ?? 0);
             if (VideoObject != null && position > 0 && position != VideoObject.PlaybackPosition)
             {
                 VideoObject.PlaybackPosition = position;
-                Context.SaveChangesAsync();  // no need to wait.
+                Context.SaveChangesAsync(); // no need to wait.
             }
             lastSavePositionTime.Restart();
         }
@@ -123,7 +138,8 @@ public sealed partial class Video : IDisposable
     // TODO(fae) move to Video class?
     private async Task ToggleStar()
     {
-        if (VideoObject == null) return;
+        if (VideoObject == null)
+            return;
 
         VideoObject.Star = !VideoObject.Star;
         VideoObject.StarDate = DateTimeOffset.Now;

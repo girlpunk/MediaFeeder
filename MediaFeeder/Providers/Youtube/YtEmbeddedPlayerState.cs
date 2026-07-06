@@ -7,7 +7,7 @@ internal enum YtEmbeddedPlayerState
     Playing = 1,
     Paused = 2,
     Buffering = 3,
-    Cued = 5
+    Cued = 5,
 }
 
 static class YtEmbeddedPlayerStateExtensions
