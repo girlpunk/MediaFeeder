@@ -159,6 +159,17 @@ public sealed partial class Home
                     source = source.Where(v => string.IsNullOrWhiteSpace(v.DownloadedPath));
             }
 
+            if (
+                ShowFilters.HasFlag(VideosShowOnly.Stared)
+                ^ ShowFilters.HasFlag(VideosShowOnly.NotStared)
+            )
+            {
+                if (ShowFilters.HasFlag(VideosShowOnly.Stared))
+                    source = source.Where(v => v.Star);
+                if (ShowFilters.HasFlag(VideosShowOnly.NotStared))
+                    source = source.Where(v => !v.Star);
+            }
+
             if (!string.IsNullOrWhiteSpace(SearchValue))
             {
                 if (SearchValue.StartsWith("!"))

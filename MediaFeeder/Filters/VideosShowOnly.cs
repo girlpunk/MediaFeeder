@@ -7,4 +7,6 @@ public enum VideosShowOnly
     NotWatched = 1 << 1,
     Downloaded = 1 << 2,
     NotDownloaded = 1 << 3,
+    Stared = 1 << 4,
+    NotStared = 1 << 5,
 }
