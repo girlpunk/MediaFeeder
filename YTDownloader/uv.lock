@@ -172,5 +172,5 @@ requires-dist = [
     { name = "grpcio-reflection", specifier = ">=1.78.0" },
     { name = "grpcio-tools", specifier = ">=1.78.0" },
     { name = "protobuf", specifier = ">=6.33.5" },
-    { name = "yt-dlp", specifier = ">=2026.3.17" },
+    { name = "yt-dlp", specifier = ">=2026.7.4" },
 ]
