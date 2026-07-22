@@ -54,24 +54,60 @@ public static class ShuffleHelper
         List<Video> videos = [];
         var timeRemaining = TimeSpan.FromMinutes(durationMinutes ?? 60);
 
-        timeRemaining = await FindVideos(dataContext, subscriptions, false, excludeOrEmpty, timeRemaining,
-            q => q.Where(v => v.PlaybackPosition > 0), videos, cancellationToken);
+        timeRemaining = await FindVideos(
+            dataContext,
+            subscriptions,
+            false,
+            excludeOrEmpty,
+            timeRemaining,
+            q => q.Where(v => v.PlaybackPosition > 0),
+            videos,
+            cancellationToken
+        );
 
-        timeRemaining = await FindVideos(dataContext, subscriptions, false, excludeOrEmpty, timeRemaining,
-            q => q.Where(v => v.Star), videos, cancellationToken);
+        timeRemaining = await FindVideos(
+            dataContext,
+            subscriptions,
+            false,
+            excludeOrEmpty,
+            timeRemaining,
+            q => q.Where(v => v.Star),
+            videos,
+            cancellationToken
+        );
 
-        timeRemaining = await FindFirstVideo(dataContext, subscriptions, excludeOrEmpty, timeRemaining, videos, cancellationToken);
+        timeRemaining = await FindFirstVideo(
+            dataContext,
+            subscriptions,
+            excludeOrEmpty,
+            timeRemaining,
+            videos,
+            cancellationToken
+        );
 
         // ReSharper disable once RedundantAssignment
-        timeRemaining = await FindVideos(dataContext, subscriptions, true, excludeOrEmpty, timeRemaining,
-            null, videos, cancellationToken);
+        timeRemaining = await FindVideos(
+            dataContext,
+            subscriptions,
+            true,
+            excludeOrEmpty,
+            timeRemaining,
+            null,
+            videos,
+            cancellationToken
+        );
 
         return videos;
     }
 
-    private static async Task<TimeSpan> FindFirstVideo(MediaFeederDataContext dataContext,
-        List<Subscription> subscriptions, List<Video> excludeOrEmpty, TimeSpan timeRemaining, List<Video> reply,
-        CancellationToken cancellationToken)
+    private static async Task<TimeSpan> FindFirstVideo(
+        MediaFeederDataContext dataContext,
+        List<Subscription> subscriptions,
+        List<Video> excludeOrEmpty,
+        TimeSpan timeRemaining,
+        List<Video> reply,
+        CancellationToken cancellationToken
+    )
     {
         var query = dataContext.Videos.Where(v =>
             v.Watched == false
@@ -90,16 +126,23 @@ public static class ShuffleHelper
         return timeRemaining;
     }
 
-    private static async Task<TimeSpan> FindVideos(MediaFeederDataContext dataContext,
-        List<Subscription> subscriptions, bool forEachSubscription, List<Video> excludeOrEmpty, TimeSpan timeRemaining,
-        Func<IQueryable<Video>, IQueryable<Video>>? modifier, List<Video> reply, CancellationToken cancellationToken)
+    private static async Task<TimeSpan> FindVideos(
+        MediaFeederDataContext dataContext,
+        List<Subscription> subscriptions,
+        bool forEachSubscription,
+        List<Video> excludeOrEmpty,
+        TimeSpan timeRemaining,
+        Func<IQueryable<Video>, IQueryable<Video>>? modifier,
+        List<Video> reply,
+        CancellationToken cancellationToken
+    )
     {
         var baseQuery = dataContext.Videos.Where(v =>
-                v.Watched == false
-                && v.Duration != null
-                && !reply.Contains(v)
-                && !excludeOrEmpty.Contains(v)
-            );
+            v.Watched == false
+            && v.Duration != null
+            && !reply.Contains(v)
+            && !excludeOrEmpty.Contains(v)
+        );
 
         if (modifier != null)
             baseQuery = modifier(baseQuery);
@@ -114,21 +157,39 @@ public static class ShuffleHelper
                 foreach (var subscription in subscriptions)
                 {
                     var query = baseQuery.Where(v => v.SubscriptionId == subscription.Id);
-                    (var added, timeRemaining) = await MaybeAddVideo(query, timeRemaining, reply, cancellationToken);
-                    if (added) loopAgain = true;
+                    (var added, timeRemaining) = await MaybeAddVideo(
+                        query,
+                        timeRemaining,
+                        reply,
+                        cancellationToken
+                    );
+                    if (added)
+                        loopAgain = true;
                 }
             }
             else
             {
-                var query = baseQuery.Where(v => subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId));
-                (loopAgain, timeRemaining) = await MaybeAddVideo(query, timeRemaining, reply, cancellationToken);
+                var query = baseQuery.Where(v =>
+                    subscriptions.Select(static s => s.Id).Contains(v.SubscriptionId)
+                );
+                (loopAgain, timeRemaining) = await MaybeAddVideo(
+                    query,
+                    timeRemaining,
+                    reply,
+                    cancellationToken
+                );
             }
         } while (loopAgain);
 
         return timeRemaining;
     }
 
-    private static async Task<(bool added, TimeSpan timeRemaining)> MaybeAddVideo(IQueryable<Video> query, TimeSpan timeRemaining, List<Video> reply, CancellationToken cancellationToken)
+    private static async Task<(bool added, TimeSpan timeRemaining)> MaybeAddVideo(
+        IQueryable<Video> query,
+        TimeSpan timeRemaining,
+        List<Video> reply,
+        CancellationToken cancellationToken
+    )
     {
         var video = await query
             .Include(static v => v.Subscription)
