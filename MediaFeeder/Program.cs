@@ -260,7 +260,8 @@ builder.Services.AddMassTransit(config =>
         config.AddSqlMessageScheduler();
 
         config.UsingPostgres(
-            (context, cfg) => {
+            (context, cfg) =>
+            {
                 cfg.UseSqlMessageScheduler();
                 ConfigureMessageQueue(context, cfg);
             }
@@ -272,7 +273,8 @@ builder.Services.AddMassTransit(config =>
         config.AddMessageScheduler(schedulerEndpoint);
 
         config.UsingInMemory(
-            (context, cfg) => {
+            (context, cfg) =>
+            {
                 cfg.UseMessageScheduler(schedulerEndpoint);
                 ConfigureMessageQueue(context, cfg);
             }

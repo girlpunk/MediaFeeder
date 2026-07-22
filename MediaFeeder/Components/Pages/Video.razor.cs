@@ -57,8 +57,8 @@ public sealed partial class Video : IDisposable
             PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
         }
 
-        VideoObject = await Context.Videos
-            .Include(static v => v.Tags)
+        VideoObject = await Context
+            .Videos.Include(static v => v.Tags)
             .SingleAsync(v => v.Id == Id && v.Subscription!.UserId == user.Id);
         StateHasChanged();
 
