@@ -200,9 +200,13 @@ public class CCCSubscriptionSynchroniseConsumer(
 
         await db.SaveChangesAsync(cancellationToken);
 
-        var recordings = (
-            await client.GetFromJsonAsync<Event>(item.Url, cancellationToken)
-        )?.Recordings;
+        Recording[]? recordings;
+        try {
+            recordings = (await client.GetFromJsonAsync<Event>(item.Url, cancellationToken))?.Recordings;
+        } catch (Exception ex) {
+            throw new ApplicationException($"Error while getting recordings for event from {item.Url}", ex);
+        }
+
         ArgumentNullException.ThrowIfNull(recordings);
 
         video.DownloadedPath =
