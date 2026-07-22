@@ -8,7 +8,7 @@ namespace MediaFeeder.Components.Tree;
 
 public sealed partial class TreeSubscription
 {
-    private int Unwatched { get; set; }
+    private int? Unwatched { get; set; }
     private int Downloaded { get; set; }
 
     [Inject]
@@ -31,7 +31,7 @@ public sealed partial class TreeSubscription
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (
-            (firstRender || Unwatched == 0)
+            (firstRender || Unwatched == null)
             && Subscription != null
             && UnwatchedCache != null
             && Parent != null
@@ -41,10 +41,9 @@ public sealed partial class TreeSubscription
             {
                 Unwatched = value.unwatched;
                 Downloaded = value.downloaded;
+                Parent.AddUnwatched(Unwatched.Value, Downloaded);
+                StateHasChanged();
             }
-
-            Parent.AddUnwatched(Unwatched, Downloaded);
-            StateHasChanged();
         }
 
         await base.OnAfterRenderAsync(firstRender);
