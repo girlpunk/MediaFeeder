@@ -262,7 +262,7 @@ builder.Services.AddMassTransit(config =>
         config.UsingPostgres(
             (context, cfg) => {
                 cfg.UseSqlMessageScheduler();
-                ConfigureMessageQueue(context, cfg, schedulerEndpoint);
+                ConfigureMessageQueue(context, cfg);
             }
         );
     }
@@ -272,7 +272,10 @@ builder.Services.AddMassTransit(config =>
         config.AddMessageScheduler(schedulerEndpoint);
 
         config.UsingInMemory(
-            (context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint)
+            (context, cfg) => {
+                cfg.UseMessageScheduler(schedulerEndpoint);
+                ConfigureMessageQueue(context, cfg);
+            }
         );
     }
 
@@ -464,12 +467,10 @@ return;
 
 static void ConfigureMessageQueue<TBus>(
     IBusRegistrationContext context,
-    IBusFactoryConfigurator<TBus> cfg,
-    Uri schedulerEndpoint
+    IBusFactoryConfigurator<TBus> cfg
 )
     where TBus : IReceiveEndpointConfigurator
 {
-    cfg.UseMessageScheduler(schedulerEndpoint);
     cfg.UseConcurrencyLimit(1);
     cfg.UseInMemoryScheduler();
     cfg.UseMessageRetry(static r =>
