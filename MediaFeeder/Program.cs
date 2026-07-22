@@ -466,7 +466,6 @@ static void ConfigureMessageQueue<TBus>(
     where TBus : IReceiveEndpointConfigurator
 {
     cfg.UseMessageScheduler(schedulerEndpoint);
-    cfg.ConfigureEndpoints(context);
     cfg.UseConcurrencyLimit(1);
     cfg.UseInMemoryScheduler();
     cfg.UseMessageRetry(static r =>
@@ -478,7 +477,8 @@ static void ConfigureMessageQueue<TBus>(
         cb.TripThreshold = 15;
         cb.ActiveThreshold = 10;
         cb.ResetInterval = TimeSpan.FromMinutes(10);
-        // cb.Handle<>();
         cb.Ignore<HttpRequestException>();
     });
+
+    cfg.ConfigureEndpoints(context);
 }
