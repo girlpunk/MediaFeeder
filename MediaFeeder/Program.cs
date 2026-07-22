@@ -255,18 +255,22 @@ builder.Services.AddMassTransit(config =>
 {
     config.AddOpenTelemetry();
 
-    var schedulerEndpoint = new Uri("queue:scheduler");
-
-    config.AddMessageScheduler(schedulerEndpoint);
-
     if (useDatabaseMessageQueue)
     {
+        config.AddSqlMessageScheduler();
+
         config.UsingPostgres(
-            (context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint)
+            (context, cfg) => {
+                cfg.UseSqlMessageScheduler();
+                ConfigureMessageQueue(context, cfg, schedulerEndpoint);
+            }
         );
     }
     else
     {
+        var schedulerEndpoint = new Uri("queue:scheduler");
+        config.AddMessageScheduler(schedulerEndpoint);
+
         config.UsingInMemory(
             (context, cfg) => ConfigureMessageQueue(context, cfg, schedulerEndpoint)
         );
@@ -471,14 +475,14 @@ static void ConfigureMessageQueue<TBus>(
     cfg.UseMessageRetry(static r =>
         r.Exponential(15, TimeSpan.FromMinutes(1), TimeSpan.FromDays(2), TimeSpan.FromHours(1))
     );
-    cfg.UseCircuitBreaker(static cb =>
-    {
-        cb.TrackingPeriod = TimeSpan.FromMinutes(5);
-        cb.TripThreshold = 15;
-        cb.ActiveThreshold = 10;
-        cb.ResetInterval = TimeSpan.FromMinutes(10);
-        cb.Ignore<HttpRequestException>();
-    });
+    //cfg.UseCircuitBreaker(static cb =>
+    //{
+    //    cb.TrackingPeriod = TimeSpan.FromMinutes(5);
+    //    cb.TripThreshold = 15;
+    //    cb.ActiveThreshold = 10;
+    //    cb.ResetInterval = TimeSpan.FromMinutes(10);
+    //    cb.Ignore<HttpRequestException>();
+    //});
 
     cfg.ConfigureEndpoints(context);
 }
