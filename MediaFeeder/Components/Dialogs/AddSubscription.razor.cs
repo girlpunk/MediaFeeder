@@ -70,7 +70,7 @@ public partial class AddSubscription
         ActiveStep = 1;
 
         // Download Page
-        using HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, Add.Url);
+        using var req = new HttpRequestMessage(HttpMethod.Get, Add.Url);
         // this agent seems to result in less 302s / not the wanted page.
         req.Headers.UserAgent.ParseAdd("curl/8.14.1");
         UrlRequest = await HttpClient.SendAsync(req);

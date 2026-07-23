@@ -2,9 +2,23 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>true</ImplicitUsings>
     <UserSecretsId>aspnet-MediaFeeder-56267d35-21a2-4069-a71a-a6c1221ecb99</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
+    <RazorCompileOnBuild>true</RazorCompileOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,16 +63,12 @@
       Include="Microsoft.AspNetCore.Authentication.OpenIdConnect"
       Version="9.0.12"
     />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="9.0.12" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.12" />
-    <PackageReference
-      Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"
-      Version="9.0.12"
-    />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.12" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="9.0.4" />
-    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.14.1" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Npgsql.OpenTelemetry" Version="10.0.3" />
+    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.16.0" />
     <PackageReference
       Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"
       Version="1.11.2-beta.1"
@@ -76,8 +86,7 @@
       Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore"
       Version="9.0.12"
     />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.12">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

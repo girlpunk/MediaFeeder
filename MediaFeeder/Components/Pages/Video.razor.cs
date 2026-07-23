@@ -104,7 +104,7 @@ public sealed partial class Video : IDisposable
 
         if (lastSavePositionTime.Elapsed > TimeSpan.FromSeconds(60))
         {
-            int position = (int)(PlaybackSession?.CurrentPosition?.TotalSeconds ?? 0);
+            var position = (int) (PlaybackSession?.CurrentPosition?.TotalSeconds ?? 0);
             if (VideoObject != null && position > 0 && position != VideoObject.PlaybackPosition)
             {
                 VideoObject.PlaybackPosition = position;

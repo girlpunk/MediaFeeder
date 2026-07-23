@@ -610,7 +610,7 @@ public sealed class ApiService(
             if (session.Video?.Id != null)
                 reply.NextVideoId = session.Video.Id;
 
-            int p = 0;
+            var p = 0;
             if (session.CurrentPosition != null)
                 p = (int)session.CurrentPosition.Value.TotalSeconds;
             if (p <= 0)

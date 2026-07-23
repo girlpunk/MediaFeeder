@@ -151,7 +151,7 @@ public sealed partial class TreeView
         await using var context = await ContextFactory.CreateDbContextAsync();
         if (SelectedFolder != null)
         {
-            Folder folder = await context
+            var folder = await context
                 .Folders.Include(static folder => folder.Subfolders)
                 .Include(static folder => folder.Subscriptions)
                 .SingleAsync(f => f.Id == SelectedFolder && f.UserId == _userId);
@@ -187,7 +187,7 @@ public sealed partial class TreeView
         }
         else if (SelectedSubscription != null)
         {
-            Subscription subscription = await context.Subscriptions.SingleAsync(f =>
+            var subscription = await context.Subscriptions.SingleAsync(f =>
                 f.Id == SelectedSubscription && f.UserId == _userId
             );
             await ModalService.ConfirmAsync(
