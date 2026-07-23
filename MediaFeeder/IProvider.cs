@@ -15,6 +15,7 @@ public interface IProvider
     string Icon { get; }
     string? GetUrl(Video video);
     public Task<bool> IsUrlValid(Uri url, HttpResponseMessage request, HtmlDocument? doc);
+
     public Task CreateSubscription(
         Uri url,
         HttpResponseMessage request,

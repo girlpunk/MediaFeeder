@@ -1,27 +1,29 @@
-using MassTransit;
+using JetBrains.Annotations;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
 using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Base;
 
 namespace MediaFeeder.Providers.CCC;
 
-public class CCCSubscriptionSynchroniseConsumer(
+[UsedImplicitly]
+public sealed class CCCSubscriptionSynchroniseConsumer(
     ILogger<CCCSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory,
     Metrics metrics
-) : IConsumer<SynchroniseSubscriptionContract<CCCProvider>>
+) : ISynchroniseSubscription<CCCProvider>
 {
-    public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<CCCProvider>> context)
+    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<CCCProvider>> context, CancellationToken cancellationToken)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var subscription = await db.Subscriptions.SingleAsync(
-            s => s.Id == context.Message.SubscriptionId,
-            context.CancellationToken
+            s => s.Id == context.Request.SubscriptionId,
+            cancellationToken
         );
 
         // LastSynchronised needs a value as it is later used in a >= comparison, which is always false if one side is null.
@@ -47,11 +49,11 @@ public class CCCSubscriptionSynchroniseConsumer(
                     && v.New
                     && DateTimeOffset.UtcNow - v.PublishDate <= TimeSpan.FromDays(1)
                 )
-                .ToListAsync(context.CancellationToken)
+                .ToListAsync(cancellationToken)
         )
             video.New = false;
 
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
@@ -66,14 +68,14 @@ public class CCCSubscriptionSynchroniseConsumer(
                 page,
                 subscription,
                 client,
-                context.CancellationToken
+                cancellationToken
             );
             page++;
         }
 
         subscription.LastSynchronised = startTime;
 
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<bool> DownloadPage(
@@ -154,12 +156,16 @@ public class CCCSubscriptionSynchroniseConsumer(
         CancellationToken cancellationToken
     )
     {
+        ArgumentNullException.ThrowIfNull(item);
+        if (string.IsNullOrWhiteSpace(item.Guid))
+            throw new InvalidOperationException("Item GUID is empty");
+
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var video = await db
             .Videos.Include(static v => v.Tags)
             .SingleOrDefaultAsync(
-                v => v.VideoId == item.Guid.ToString() && v.SubscriptionId == subscription.Id,
+                v => v.VideoId == item.Guid && v.SubscriptionId == subscription.Id,
                 cancellationToken
             );
 
@@ -168,8 +174,7 @@ public class CCCSubscriptionSynchroniseConsumer(
         {
             video = new Video
             {
-                VideoId =
-                    item.Guid.ToString() ?? throw new InvalidOperationException("No GUID found"),
+                VideoId = item.Guid ?? throw new InvalidOperationException("No GUID found"),
                 Name = $"{item.Title} - {item.Subtitle} ({item.ConferenceTitle})",
                 Description = item.Description ?? "",
                 SubscriptionId = subscription.Id,

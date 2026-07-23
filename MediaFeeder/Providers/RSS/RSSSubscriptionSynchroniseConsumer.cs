@@ -1,11 +1,11 @@
 using System.ServiceModel.Syndication;
 using System.Xml;
-using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Base;
 
 namespace MediaFeeder.Providers.RSS;
 
@@ -14,15 +14,15 @@ public class RSSSubscriptionSynchroniseConsumer(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory,
     Metrics metrics
-) : IConsumer<SynchroniseSubscriptionContract<RSSProvider>>
+) : ISynchroniseSubscription<RSSProvider>
 {
-    public async Task Consume(ConsumeContext<SynchroniseSubscriptionContract<RSSProvider>> context)
+    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<RSSProvider>> context, CancellationToken cancellationToken = default)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var subscription = await db.Subscriptions.SingleAsync(
-            s => s.Id == context.Message.SubscriptionId,
-            context.CancellationToken
+            s => s.Id == context.Request.SubscriptionId,
+            cancellationToken
         );
 
         if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
@@ -44,23 +44,23 @@ public class RSSSubscriptionSynchroniseConsumer(
                     && v.New
                     && DateTimeOffset.UtcNow - v.PublishDate <= TimeSpan.FromDays(1)
                 )
-                .ToListAsync(context.CancellationToken)
+                .ToListAsync(cancellationToken)
         )
             video.New = false;
 
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
         using var client = httpClientFactory.CreateClient("retry");
         using var feedResponse = await client.GetAsync(
             subscription.ChannelId,
-            context.CancellationToken
+            cancellationToken
         );
         feedResponse.EnsureSuccessStatusCode();
 
         using var feedReader = XmlReader.Create(
-            await feedResponse.Content.ReadAsStreamAsync(context.CancellationToken)
+            await feedResponse.Content.ReadAsStreamAsync(cancellationToken)
         );
         var feed = SyndicationFeed.Load(feedReader);
 
@@ -83,10 +83,10 @@ public class RSSSubscriptionSynchroniseConsumer(
 
         subscription.LastSynchronised = DateTimeOffset.UtcNow;
 
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         foreach (var item in feed.Items)
-            await SyncVideo(item, subscription, context.CancellationToken);
+            await SyncVideo(item, subscription, cancellationToken);
     }
 
     private async Task SyncVideo(

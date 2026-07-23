@@ -1,8 +1,8 @@
-using MassTransit;
 using Mediafeeder;
 using MediaFeeder.Data;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Base;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -11,15 +11,15 @@ public sealed class YouTubeDownloadVideoConsumer(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IConfiguration configuration,
     YTDownloader.YTDownloaderClient downloaderClient
-) : IConsumer<DownloadVideoContract<YoutubeProvider>>
+) : IDownloadVideo<YoutubeProvider>
 {
-    public async Task Consume(ConsumeContext<DownloadVideoContract<YoutubeProvider>> context)
+    public async Task ExecuteAsync(TickerFunctionContext<DownloadVideoContract<YoutubeProvider>> context, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Starting video download for {}", context.Message.VideoId);
+        logger.LogInformation("Starting video download for {}", context.Request.VideoId);
         await using var dbContext = await contextFactory.CreateDbContextAsync();
         var video = await dbContext
             .Videos.Include(static v => v.Subscription)
-            .SingleAsync(v => v.Id == context.Message.VideoId);
+            .SingleAsync(v => v.Id == context.Request.VideoId);
 
         if (video.IsDownloaded)
         {
@@ -51,14 +51,14 @@ public sealed class YouTubeDownloadVideoConsumer(
                 VideoUrl = $"https://www.youtube.com/watch?v={video.VideoId}",
                 OutputPath = path,
             },
-            cancellationToken: context.CancellationToken
+            cancellationToken: cancellationToken
         );
 
         if (downloadResponse.Status == Status.Done)
         {
             logger.LogInformation(
                 "Successfully downloaded {Video} to {Path}",
-                context.Message.VideoId,
+                context.Request.VideoId,
                 downloadResponse.Filename
             );
             video.DownloadedPath = downloadResponse.Filename;
@@ -68,11 +68,12 @@ public sealed class YouTubeDownloadVideoConsumer(
         {
             logger.LogError(
                 "Problem while downloading {Video}:  {Error}",
-                context.Message.VideoId,
+                context.Request.VideoId,
                 downloadResponse.ExitCode
             );
         }
 
-        await context.RespondAsync(downloadResponse);
+        // New task library can't do this, and I don't think anything uses it anyway
+        //await context.RespondAsync(downloadResponse);
     }
 }

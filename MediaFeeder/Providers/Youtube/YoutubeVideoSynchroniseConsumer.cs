@@ -1,11 +1,12 @@
 using System.Net;
 using System.Xml;
 using Google.Apis.YouTube.v3;
-using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using TickerQ.Utilities.Base;
+using TickerQ.Utilities.Interfaces;
 
 namespace MediaFeeder.Providers.Youtube;
 
@@ -15,14 +16,14 @@ public sealed class YoutubeVideoSynchroniseConsumer(
     YouTubeService youTubeService,
     Utils utils,
     IHttpClientFactory httpClientFactory
-) : IConsumer<YoutubeVideoSynchroniseContract>
+) : ITickerFunction<YoutubeVideoSynchroniseContract>
 {
-    public async Task Consume(ConsumeContext<YoutubeVideoSynchroniseContract> context)
+    public async Task ExecuteAsync(TickerFunctionContext<YoutubeVideoSynchroniseContract> context, CancellationToken cancellationToken = default)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         var video = await db
             .Videos.Include(static v => v.Subscription)
-            .SingleAsync(v => v.Id == context.Message.VideoId, context.CancellationToken);
+            .SingleAsync(v => v.Id == context.Request.VideoId, cancellationToken);
 
         if (
             string.IsNullOrWhiteSpace(video.DownloadedPath)
@@ -37,15 +38,15 @@ public sealed class YoutubeVideoSynchroniseConsumer(
         logger.LogInformation("Starting synchronize video {}", video.Id);
 
         if (video.DownloadedPath != null)
-            await SynchroniseDownloaded(video, db, context.CancellationToken);
+            await SynchroniseDownloaded(video, db, cancellationToken);
 
         if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
-            await GetDetailsFromYouTube(video, db, context.CancellationToken);
+            await GetDetailsFromYouTube(video, db, cancellationToken);
 
         // if (video.Duration is 0 or null || string.IsNullOrWhiteSpace(video.Thumb))
         //     await GetDetailsFromDeArrow(video, db, context.CancellationToken);
 
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task GetDetailsFromDeArrow(

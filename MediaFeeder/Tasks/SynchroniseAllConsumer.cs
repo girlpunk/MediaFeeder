@@ -1,7 +1,10 @@
-using MassTransit;
+using System.Reflection;
 using MediaFeeder.Data;
-using MediaFeeder.Helpers;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Base;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces;
+using TickerQ.Utilities.Interfaces.Managers;
 
 namespace MediaFeeder.Tasks;
 
@@ -9,20 +12,20 @@ public class SynchroniseAllConsumer(
     ILogger<SynchroniseAllConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IServiceProvider serviceProvider,
-    IBus bus
-) : IConsumer<SynchroniseAllContract>
+    ITimeTickerManager<TimeTickerEntity> timeTicker
+) : ITickerFunction
 {
-    public async Task Consume(ConsumeContext<SynchroniseAllContract> context)
+    public async Task ExecuteAsync(TickerFunctionContext context, CancellationToken cancellationToken)
     {
         logger.LogInformation("Starting synchronize all");
 
-        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var subscriptions = await db
             .Subscriptions.Where(static s => !s.DisableSync)
             .OrderBy(static s => s.LastSynchronised)
             .Select(static s => new Tuple<int, string>(s.Id, s.Provider).ToValueTuple())
-            .ToListAsync(context.CancellationToken);
+            .ToListAsync(cancellationToken);
 
         var providers = serviceProvider
             .GetServices<IProvider>()
@@ -38,16 +41,18 @@ public class SynchroniseAllConsumer(
                 continue;
             }
 
-            var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(
-                providerType
-            );
-            var contract = Activator.CreateInstance(
-                contractType,
-                new object[] { subscription.Item1 }
-            );
-            ArgumentNullException.ThrowIfNull(contract);
+            var synchroniseFunctionType = typeof(ISynchroniseSubscription<>).MakeGenericType(providerType);
+            var synchroniseContractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(providerType);
 
-            await bus.PublishWithGuid(contract, context.CancellationToken);
+            var contract = Activator.CreateInstance(synchroniseContractType, subscription.Item1);
+
+            var queue = timeTicker.GetType()
+                .GetMethods(
+                    BindingFlags.Public | BindingFlags.Instance
+                ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+            queue = queue.MakeGenericMethod(synchroniseFunctionType, synchroniseContractType);
+
+            queue.Invoke(timeTicker, [DateTime.Now, contract, cancellationToken]);
         }
     }
 }

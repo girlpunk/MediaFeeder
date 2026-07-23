@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using System.Reflection;
-using MassTransit;
 using MediaFeeder.Data;
-using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces.Managers;
 
 namespace MediaFeeder.Controllers;
 
@@ -24,7 +24,7 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
             HttpContext.RequestAborted
         );
 
-        var lastHour = DateTime.UtcNow - TimeSpan.FromHours(1);
+        var lastHour = DateTimeOffset.UtcNow - TimeSpan.FromHours(1);
         var newPublished = await context.Videos.CountAsync(video => video.PublishDate >= lastHour);
         var newWatched = await context.Videos.CountAsync(video =>
             video.Watched && video.WatchedDate >= lastHour
@@ -68,11 +68,9 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
 
     [HttpGet("sync")]
     [AllowAnonymous]
-    public async Task<IActionResult> Sync([FromServices] IBus bus)
+    public async Task<IActionResult> Sync([FromServices] ITimeTickerManager<TimeTickerEntity> timeTicker, CancellationToken cancellationToken)
     {
-        var contract = new SynchroniseAllContract();
-
-        await bus.PublishWithGuid(contract, HttpContext.RequestAborted);
+        await timeTicker.AddAsync<SynchroniseAllConsumer>(DateTime.Now, cancellationToken);
 
         return Ok();
     }

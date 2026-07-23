@@ -1,12 +1,13 @@
+using System.Reflection;
 using AntDesign;
-using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
-using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces.Managers;
 
 namespace MediaFeeder.Components;
 
@@ -29,10 +30,13 @@ public sealed partial class VideoCard : ComponentBase
     public required IMessageService MessageService { get; set; }
 
     [Inject]
-    public required IBus Bus { get; set; }
+    public required ITimeTickerManager<TimeTickerEntity> TimeTicker { get; set; }
 
     [Inject]
     public required IServiceProvider ServiceProvider { get; set; }
+
+    [Inject]
+    public required HttpContext HttpContext { get; set; }
 
     private string? Badge
     {
@@ -131,11 +135,19 @@ public sealed partial class VideoCard : ComponentBase
                 return;
             }
 
+            var consumerType = typeof(IDownloadVideo<>).MakeGenericType(providerType);
             var contractType = typeof(DownloadVideoContract<>).MakeGenericType(providerType);
             var contract = Activator.CreateInstance(contractType, new object[] { Video.Id });
             ArgumentNullException.ThrowIfNull(contract);
 
-            await Bus.PublishWithGuid(contract);
+            var queue = TimeTicker.GetType()
+                .GetMethods(
+                    BindingFlags.Public | BindingFlags.Instance
+                ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+            queue = queue.MakeGenericMethod(consumerType, contractType);
+
+            queue.Invoke(TimeTicker, [DateTime.Now, contract, HttpContext.RequestAborted]);
+
             await MessageService.InfoAsync("Sent for download");
         }
         else

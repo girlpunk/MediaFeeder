@@ -3,8 +3,6 @@ using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using FluentValidation;
 using Google.Apis.Services;
-using MassTransit;
-using MassTransit.Logging;
 using Mediafeeder;
 using MediaFeeder;
 using MediaFeeder.Components;
@@ -38,9 +36,11 @@ using OpenTelemetry.Trace;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
-using Quartz;
-using ResQueue;
-using ResQueue.Enums;
+using TickerQ.Dashboard.DependencyInjection;
+using TickerQ.DependencyInjection;
+using TickerQ.EntityFrameworkCore.Customizer;
+using TickerQ.EntityFrameworkCore.DependencyInjection;
+using TickerQ.Instrumentation.OpenTelemetry;
 using IPAddress = System.Net.IPAddress;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
@@ -191,15 +191,13 @@ builder
     .PersistKeysToFileSystem(
         new DirectoryInfo(
             Path.Join(
-                builder.Configuration.GetValue<string>("MediaRoot")
-                    ?? throw new InvalidOperationException(),
+                builder.Configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException(),
                 "dpkeys"
             )
         )
     );
 
-builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>(
-    (sp, options) =>
+builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>((sp, options) =>
     {
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         options.UseNpgsql(
@@ -233,69 +231,32 @@ builder
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, IdentityNoOpEmailSender>();
 
-var useDatabaseMessageQueue = builder.Configuration.GetValue("UseDatabaseMessageQueue", false);
-
-builder.Services.AddQuartz();
-builder.Services.AddQuartzHostedService();
-
-if (useDatabaseMessageQueue)
+builder.Services.AddTickerQ(static opt =>
 {
-    builder
-        .Services.AddOptions<SqlTransportOptions>()
-        .Configure(options =>
-        {
-            options.ConnectionString = builder.Configuration.GetConnectionString(
-                "DefaultConnection"
-            );
-        });
-    builder.Services.AddPostgresMigrationHostedService();
-}
-
-builder.Services.AddMassTransit(config =>
-{
-    config.AddOpenTelemetry();
-
-    if (useDatabaseMessageQueue)
+    opt.AddOperationalStore(static ef =>
     {
-        config.AddSqlMessageScheduler();
+        ef.UseApplicationDbContext<MediaFeederDataContext>(ConfigurationType.UseModelCustomizer);
+    });
 
-        config.UsingPostgres(
-            (context, cfg) =>
-            {
-                cfg.UseSqlMessageScheduler();
-                ConfigureMessageQueue(context, cfg);
-            }
-        );
-    }
-    else
+    opt.AddDashboard(static dashboard => dashboard.WithHostAuthentication());
+    opt.AddOpenTelemetryInstrumentation();
+
+    opt.ConfigureScheduler(static s =>
     {
-        var schedulerEndpoint = new Uri("queue:scheduler");
-        config.AddMessageScheduler(schedulerEndpoint);
-
-        config.UsingInMemory(
-            (context, cfg) =>
-            {
-                cfg.UseMessageScheduler(schedulerEndpoint);
-                ConfigureMessageQueue(context, cfg);
-            }
-        );
-    }
-
-    config.AddConsumer<SynchroniseAllConsumer>();
-
-    config.AddConsumer<YoutubeSubscriptionSynchroniseConsumer>();
-    config.AddConsumer<YoutubeVideoSynchroniseConsumer>();
-    config.AddConsumer<YouTubeDownloadVideoConsumer>();
-
-    config.AddConsumer<RSSSubscriptionSynchroniseConsumer>();
-    config.AddConsumer<CCCSubscriptionSynchroniseConsumer>();
+        s.MaxConcurrency = 1;
+    });
 });
 
-if (useDatabaseMessageQueue)
-{
-    builder.Services.AddResQueue(static o => o.SqlEngine = ResQueueSqlEngine.Postgres);
-    builder.Services.AddResQueueMigrationsHostedService();
-}
+//    configuration.UseFilter(new AutomaticRetryAttribute { Attempts = 5, DelaysInSeconds = new int[] { 300 } });
+
+builder.Services.MapTicker<SynchroniseAllConsumer>();
+
+builder.Services.MapTicker<YoutubeSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<YoutubeProvider>>();
+builder.Services.MapTicker<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>();
+builder.Services.MapTicker<YouTubeDownloadVideoConsumer, DownloadVideoContract<YoutubeProvider>>();
+
+builder.Services.MapTicker<RSSSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<RSSProvider>>();
+builder.Services.MapTicker<CCCSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<CCCProvider>>();
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -323,16 +284,15 @@ builder
             .AddProcessRuntimeDetector()
             .AddTelemetrySdk();
     })
-    .WithMetrics(
-        static (metrics) =>
+    .WithMetrics(static (metrics) =>
         {
             metrics
                 .AddRuntimeInstrumentation()
                 .AddProcessInstrumentation()
                 .AddAspNetCoreInstrumentation()
                 // .AddHttpClientInstrumentation()
+                .AddMeter("TickerQ")
                 .AddNpgsqlInstrumentation()
-                .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
                 .AddMeter("Microsoft.EntityFrameworkCore") // https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/metrics
                 .AddMeter(Metrics.MeterName)
                 .AddPrometheusExporter();
@@ -348,8 +308,8 @@ builder
             .AddHttpClientInstrumentation()
             .AddGrpcClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation()
-            .AddNpgsql()
-            .AddSource(DiagnosticHeaders.DefaultListenerName);
+            .AddSource("TickerQ")
+            .AddNpgsql();
     });
 
 builder.Services.AddHealthChecks().AddDbContextCheck<MediaFeederDataContext>("DB");
@@ -370,8 +330,7 @@ builder
 builder.Services.AddSingleton<SystemNetClientFactory>();
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<Utils>();
-builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(
-    sp => new Google.Apis.YouTube.v3.YouTubeService(
+builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp => new Google.Apis.YouTube.v3.YouTubeService(
         new BaseClientService.Initializer
         {
             ApplicationName = "MediaFeeder",
@@ -434,17 +393,7 @@ app.MapControllers();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.UseOutputCache();
 
-if (useDatabaseMessageQueue)
-{
-    app.UseResQueue(
-        "resqueue",
-        static options =>
-        {
-            // Highly recommended for production
-            options.RequireAuthorization();
-        }
-    );
-}
+app.UseTickerQ();
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
@@ -465,27 +414,3 @@ await using (
 }
 
 app.Run();
-return;
-
-static void ConfigureMessageQueue<TBus>(
-    IBusRegistrationContext context,
-    IBusFactoryConfigurator<TBus> cfg
-)
-    where TBus : IReceiveEndpointConfigurator
-{
-    cfg.UseConcurrencyLimit(1);
-    cfg.UseInMemoryScheduler();
-    cfg.UseMessageRetry(static r =>
-        r.Exponential(15, TimeSpan.FromMinutes(1), TimeSpan.FromDays(2), TimeSpan.FromHours(1))
-    );
-    //cfg.UseCircuitBreaker(static cb =>
-    //{
-    //    cb.TrackingPeriod = TimeSpan.FromMinutes(5);
-    //    cb.TripThreshold = 15;
-    //    cb.ActiveThreshold = 10;
-    //    cb.ResetInterval = TimeSpan.FromMinutes(10);
-    //    cb.Ignore<HttpRequestException>();
-    //});
-
-    cfg.ConfigureEndpoints(context);
-}

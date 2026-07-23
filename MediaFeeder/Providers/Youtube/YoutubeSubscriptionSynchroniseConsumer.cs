@@ -2,13 +2,14 @@ using System.Xml.Linq;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using JetBrains.Annotations;
-using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Enums;
 using MediaFeeder.Filters;
-using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Base;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces.Managers;
 using Subscription = MediaFeeder.Data.db.Subscription;
 using Video = MediaFeeder.Data.db.Video;
 
@@ -19,21 +20,19 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     ILogger<YoutubeSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory,
-    IBus bus,
+    ITimeTickerManager<TimeTickerEntity> timeTicker,
     Utils utils,
     YouTubeService youTubeService,
     Metrics metrics
-) : IConsumer<SynchroniseSubscriptionContract<YoutubeProvider>>
+) : ISynchroniseSubscription<YoutubeProvider>
 {
-    public async Task Consume(
-        ConsumeContext<SynchroniseSubscriptionContract<YoutubeProvider>> context
-    )
+    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<YoutubeProvider>> context, CancellationToken cancellationToken = default)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var subscription = await db.Subscriptions.SingleAsync(
-            s => s.Id == context.Message.SubscriptionId,
-            context.CancellationToken
+            s => s.Id == context.Request.SubscriptionId,
+            cancellationToken
         );
 
         if (subscription.LastSynchronised > DateTimeOffset.Now - TimeSpan.FromHours(1))
@@ -55,11 +54,11 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                     && v.New
                     && DateTimeOffset.UtcNow - v.PublishDate >= TimeSpan.FromDays(1)
                 )
-                .ToListAsync(context.CancellationToken)
+                .ToListAsync(cancellationToken)
         )
             video.New = false;
 
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         foreach (
             var video in db.Videos.Where(v =>
@@ -71,9 +70,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 )
             )
         )
-            await bus.PublishWithGuid(
+            await timeTicker.AddAsync<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>(
+                DateTime.Now,
                 new YoutubeVideoSynchroniseContract(video.Id),
-                context.CancellationToken
+                cancellationToken
             );
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
@@ -85,7 +85,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         {
             var channelRequest = youTubeService.Channels.List("snippet");
             channelRequest.Id = subscription.ChannelId;
-            var channelResponse = await channelRequest.ExecuteAsync(context.CancellationToken);
+            var channelResponse = await channelRequest.ExecuteAsync(cancellationToken);
             var channelResult = channelResponse?.Items?.SingleOrDefault();
 
             if (channelResult == null)
@@ -109,7 +109,7 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                     "sub",
                     channelResult.Snippet.Thumbnails,
                     logger,
-                    context.CancellationToken
+                    cancellationToken
                 );
 
             if (channelResult?.Snippet?.Description != null)
@@ -119,13 +119,13 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         if (subscription.LastSynchronised == null)
         {
             logger.LogInformation("New subscription, forcing full sync for {}", subscription.Name);
-            await CheckAllVideos(subscription, db, context.CancellationToken);
+            await CheckAllVideos(subscription, db, cancellationToken);
         }
         else
         {
             try
             {
-                await CheckRssVideos(subscription, db, context.CancellationToken);
+                await CheckRssVideos(subscription, db, cancellationToken);
             }
             catch (Exception e)
             {
@@ -134,19 +134,19 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                     "Error while running RSS Sync, running full sync ({})",
                     subscription.Id
                 );
-                await CheckAllVideos(subscription, db, context.CancellationToken);
+                await CheckAllVideos(subscription, db, cancellationToken);
             }
         }
 
         subscription.LastSynchronised = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(context.CancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         if (!subscription.AutoDownload)
             return;
 
         var alreadyDownloaded = await db.Videos.CountAsync(
             v => v.SubscriptionId == subscription.Id && v.IsDownloaded,
-            context.CancellationToken
+            cancellationToken
         );
 
         if (alreadyDownloaded >= subscription.DownloadLimit)
@@ -158,13 +158,17 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         var videoToDownload = await db
             .Videos.Where(v => v.SubscriptionId == subscription.Id && !v.IsDownloaded && !v.Watched)
             .SortVideos(subscription.DownloadOrder)
-            .FirstOrDefaultAsync(context.CancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (videoToDownload != null)
         {
             logger.LogInformation("Starting download {}", videoToDownload.Name);
-            var downloadContract = new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id);
-            await bus.PublishWithGuid(downloadContract, context.CancellationToken);
+
+            await timeTicker.AddAsync<YouTubeDownloadVideoConsumer, DownloadVideoContract<YoutubeProvider>>(
+                DateTime.Now,
+                new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id),
+                cancellationToken
+            );
         }
         else
         {
@@ -355,9 +359,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 await db.SaveChangesAsync(cancellationToken);
                 metrics.incProviderVideoChanged(Provider.YouTube, true);
 
-                await bus.PublishWithGuid(
-                    new YoutubeVideoSynchroniseContract(video.Id),
-                    cancellationToken
+                await timeTicker.AddAsync<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>(
+                    DateTime.Now,
+                    new YoutubeVideoSynchroniseContract(video.Id)
                 );
             }
         }
@@ -467,6 +471,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         await db.SaveChangesAsync(cancellationToken);
         metrics.incProviderVideoChanged(Provider.YouTube, true);
 
-        await bus.PublishWithGuid(new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
+        await timeTicker.AddAsync<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>(
+            DateTime.Now,
+            new YoutubeVideoSynchroniseContract(video.Id),
+            cancellationToken
+        );
     }
 }

@@ -1,15 +1,17 @@
+using System.Reflection;
 using AntDesign;
 using FluentValidation;
 using HtmlAgilityPack;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
-using MediaFeeder.Helpers;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces.Managers;
 
 namespace MediaFeeder.Components.Dialogs;
 
@@ -23,6 +25,13 @@ public partial class AddSubscription
 
     [Inject]
     public required UserManager<AuthUser> UserManager { get; set; }
+
+    [Inject]
+    public required HttpContext HttpContext { get; set; }
+
+    [Inject]
+    public required ITimeTickerManager<TimeTickerEntity> TimeTicker { get; set; }
+
     public required Form<AddForm> Form { get; set; }
     private AddForm Add { get; set; } = new AddForm();
     private SubscriptionForm Subscription { get; set; } = new SubscriptionForm();
@@ -66,10 +75,8 @@ public partial class AddSubscription
         req.Headers.UserAgent.ParseAdd("curl/8.14.1");
         UrlRequest = await HttpClient.SendAsync(req);
         if (!UrlRequest.IsSuccessStatusCode)
-        {
             //TODO: Do we need to handle differently?
             UrlRequest.EnsureSuccessStatusCode();
-        }
 
         // Parse page if HTML
         var contentType = UrlRequest.Content.Headers.ContentType;
@@ -188,13 +195,18 @@ public partial class AddSubscription
 
         await Context.SaveChangesAsync();
 
-        var contractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(
-            FoundProvider.GetType()
-        );
-        var contract = Activator.CreateInstance(contractType, subscription.Id);
-        ArgumentNullException.ThrowIfNull(contract);
+        var synchroniseFunctionType = typeof(ISynchroniseSubscription<>).MakeGenericType(FoundProvider.GetType());
+        var synchroniseContractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(FoundProvider.GetType());
 
-        await Bus.PublishWithGuid(contract);
+        var contract = Activator.CreateInstance(synchroniseContractType, subscription.Id);
+
+        var queue = TimeTicker.GetType()
+            .GetMethods(
+                BindingFlags.Public | BindingFlags.Instance
+            ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+        queue = queue.MakeGenericMethod(synchroniseFunctionType, synchroniseContractType);
+
+        queue.Invoke(TimeTicker, [DateTime.Now, contract, HttpContext]);
 
         await FeedbackRef.CloseAsync();
     }

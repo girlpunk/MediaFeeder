@@ -1,7 +1,7 @@
+using System.Reflection;
 using BlazorComponentUtilities;
 using Google.Protobuf;
 using Grpc.Core;
-using MassTransit;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Filters;
@@ -10,11 +10,13 @@ using MediaFeeder.PlaybackManager;
 using MediaFeeder.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces.Managers;
 
 namespace MediaFeeder.Services;
 
 public sealed class ApiService(
-    IBus bus,
+    ITimeTickerManager<TimeTickerEntity> timeTicker,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager<AuthUser> userManager,
     IServiceProvider serviceProvider,
@@ -320,15 +322,15 @@ public sealed class ApiService(
         var contract = Activator.CreateInstance(contractType, new object[] { video.Id });
         ArgumentNullException.ThrowIfNull(contract);
 
-        // var client = bus.CreateRequestClient<dynamic>();
-        // var response = await client.GetResponse<DownloadReply>(context, context.CancellationToken);
+        var consumerType = typeof(IDownloadVideo<>).MakeGenericType(videoProvider.GetType());
 
-        await bus.PublishWithGuid(contract, context.CancellationToken);
-        // return response?.Message ?? new DownloadReply
-        // {
-        //     Status = DownloadStatus.TemporaryError,
-        //     ExitCode = -1
-        // };
+        var queue = timeTicker.GetType()
+            .GetMethods(
+                BindingFlags.Public | BindingFlags.Instance
+            ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+        queue = queue.MakeGenericMethod(consumerType, contractType);
+
+        queue.Invoke(timeTicker, [DateTime.Now, contract, context.CancellationToken]);
 
         return new DownloadReply { Status = DownloadStatus.InProgress };
     }
