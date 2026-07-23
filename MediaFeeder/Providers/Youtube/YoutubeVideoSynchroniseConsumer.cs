@@ -18,7 +18,10 @@ public sealed class YoutubeVideoSynchroniseConsumer(
     IHttpClientFactory httpClientFactory
 ) : ITickerFunction<YoutubeVideoSynchroniseContract>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<YoutubeVideoSynchroniseContract> context, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(
+        TickerFunctionContext<YoutubeVideoSynchroniseContract> context,
+        CancellationToken cancellationToken = default
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         var video = await db

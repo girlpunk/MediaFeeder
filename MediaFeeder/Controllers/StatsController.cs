@@ -68,7 +68,10 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
 
     [HttpGet("sync")]
     [AllowAnonymous]
-    public async Task<IActionResult> Sync([FromServices] ITimeTickerManager<TimeTickerEntity> timeTicker, CancellationToken cancellationToken)
+    public async Task<IActionResult> Sync(
+        [FromServices] ITimeTickerManager<TimeTickerEntity> timeTicker,
+        CancellationToken cancellationToken
+    )
     {
         await timeTicker.AddAsync<SynchroniseAllConsumer>(DateTime.Now, cancellationToken);
 

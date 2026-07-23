@@ -140,10 +140,14 @@ public sealed partial class VideoCard : ComponentBase
             var contract = Activator.CreateInstance(contractType, new object[] { Video.Id });
             ArgumentNullException.ThrowIfNull(contract);
 
-            var queue = TimeTicker.GetType()
-                .GetMethods(
-                    BindingFlags.Public | BindingFlags.Instance
-                ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+            var queue = TimeTicker
+                .GetType()
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Single(static m =>
+                    m.Name == "AddAsync"
+                    && m.ContainsGenericParameters
+                    && m.GetParameters().Length == 3
+                );
             queue = queue.MakeGenericMethod(consumerType, contractType);
 
             queue.Invoke(TimeTicker, [DateTime.Now, contract, HttpContext.RequestAborted]);

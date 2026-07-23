@@ -89,7 +89,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
         Console.WriteLine($"Adding known proxy network: {network}");
         var parts = network.Split('/');
-        options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse(parts[0]), int.Parse(parts[1])));
+        options.KnownNetworks.Add(
+            new IPNetwork(
+                IPAddress.Parse(parts[0]),
+                int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture)
+            )
+        );
     }
 });
 
@@ -191,13 +196,15 @@ builder
     .PersistKeysToFileSystem(
         new DirectoryInfo(
             Path.Join(
-                builder.Configuration.GetValue<string>("MediaRoot") ?? throw new InvalidOperationException(),
+                builder.Configuration.GetValue<string>("MediaRoot")
+                    ?? throw new InvalidOperationException(),
                 "dpkeys"
             )
         )
     );
 
-builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>((sp, options) =>
+builder.Services.AddPooledDbContextFactory<MediaFeederDataContext>(
+    (sp, options) =>
     {
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         options.UseNpgsql(
@@ -251,12 +258,21 @@ builder.Services.AddTickerQ(static opt =>
 
 builder.Services.MapTicker<SynchroniseAllConsumer>();
 
-builder.Services.MapTicker<YoutubeSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<YoutubeProvider>>();
+builder.Services.MapTicker<
+    YoutubeSubscriptionSynchroniseConsumer,
+    SynchroniseSubscriptionContract<YoutubeProvider>
+>();
 builder.Services.MapTicker<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>();
 builder.Services.MapTicker<YouTubeDownloadVideoConsumer, DownloadVideoContract<YoutubeProvider>>();
 
-builder.Services.MapTicker<RSSSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<RSSProvider>>();
-builder.Services.MapTicker<CCCSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<CCCProvider>>();
+builder.Services.MapTicker<
+    RSSSubscriptionSynchroniseConsumer,
+    SynchroniseSubscriptionContract<RSSProvider>
+>();
+builder.Services.MapTicker<
+    CCCSubscriptionSynchroniseConsumer,
+    SynchroniseSubscriptionContract<CCCProvider>
+>();
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {
@@ -284,7 +300,8 @@ builder
             .AddProcessRuntimeDetector()
             .AddTelemetrySdk();
     })
-    .WithMetrics(static (metrics) =>
+    .WithMetrics(
+        static (metrics) =>
         {
             metrics
                 .AddRuntimeInstrumentation()
@@ -330,7 +347,8 @@ builder
 builder.Services.AddSingleton<SystemNetClientFactory>();
 builder.Services.AddScoped<IProvider, YoutubeProvider>();
 builder.Services.AddScoped<Utils>();
-builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(sp => new Google.Apis.YouTube.v3.YouTubeService(
+builder.Services.AddScoped<Google.Apis.YouTube.v3.YouTubeService>(
+    sp => new Google.Apis.YouTube.v3.YouTubeService(
         new BaseClientService.Initializer
         {
             ApplicationName = "MediaFeeder",
@@ -404,13 +422,13 @@ app.MapGrpcService<ApiService>().RequireAuthorization("API");
 if (app.Environment.IsDevelopment())
     app.MapGrpcReflectionService();
 
-await using (
-    var context = await app
-        .Services.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>()
-        .CreateDbContextAsync()
-)
+var context = await app
+    .Services.GetRequiredService<IDbContextFactory<MediaFeederDataContext>>()
+    .CreateDbContextAsync();
+
+await using (context.ConfigureAwait(false).ConfigureAwait(false))
 {
-    await context.Database.MigrateAsync();
+    await context.Database.MigrateAsync().ConfigureAwait(false);
 }
 
 app.Run();

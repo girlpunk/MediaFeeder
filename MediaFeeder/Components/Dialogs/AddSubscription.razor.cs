@@ -195,15 +195,21 @@ public partial class AddSubscription
 
         await Context.SaveChangesAsync();
 
-        var synchroniseFunctionType = typeof(ISynchroniseSubscription<>).MakeGenericType(FoundProvider.GetType());
-        var synchroniseContractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(FoundProvider.GetType());
+        var synchroniseFunctionType = typeof(ISynchroniseSubscription<>).MakeGenericType(
+            FoundProvider.GetType()
+        );
+        var synchroniseContractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(
+            FoundProvider.GetType()
+        );
 
         var contract = Activator.CreateInstance(synchroniseContractType, subscription.Id);
 
-        var queue = TimeTicker.GetType()
-            .GetMethods(
-                BindingFlags.Public | BindingFlags.Instance
-            ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+        var queue = TimeTicker
+            .GetType()
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(static m =>
+                m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3
+            );
         queue = queue.MakeGenericMethod(synchroniseFunctionType, synchroniseContractType);
 
         queue.Invoke(TimeTicker, [DateTime.Now, contract, HttpContext]);

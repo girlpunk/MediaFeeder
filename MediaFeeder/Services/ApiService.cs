@@ -324,10 +324,12 @@ public sealed class ApiService(
 
         var consumerType = typeof(IDownloadVideo<>).MakeGenericType(videoProvider.GetType());
 
-        var queue = timeTicker.GetType()
-            .GetMethods(
-                BindingFlags.Public | BindingFlags.Instance
-            ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
+        var queue = timeTicker
+            .GetType()
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(static m =>
+                m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3
+            );
         queue = queue.MakeGenericMethod(consumerType, contractType);
 
         queue.Invoke(timeTicker, [DateTime.Now, contract, context.CancellationToken]);
