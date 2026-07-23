@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace MediaFeeder.Data;
 
+using TickerQ.EntityFrameworkCore.Configurations;
+using TickerQ.Utilities.Entities;
+
+/// <inheritdoc />
 public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> options)
     : DbContext(options)
 {
@@ -34,9 +38,14 @@ public class MediaFeederDataContext(DbContextOptions<MediaFeederDataContext> opt
     public virtual DbSet<Video> Videos { get; init; }
     public virtual DbSet<VideoTag> VideoTags { get; init; }
 
+    /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(new TimeTickerConfigurations<TimeTickerEntity>("ticker"));
+        modelBuilder.ApplyConfiguration(new CronTickerConfigurations<CronTickerEntity>("ticker"));
+        modelBuilder.ApplyConfiguration(new CronTickerOccurrenceConfigurations<CronTickerEntity>("ticker"));
 
         modelBuilder.Entity<AuthGroup>(static entity =>
         {
