@@ -13,7 +13,10 @@ public sealed class YouTubeDownloadVideoConsumer(
     YTDownloader.YTDownloaderClient downloaderClient
 ) : IDownloadVideo<YoutubeProvider>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<DownloadVideoContract<YoutubeProvider>> context, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(
+        TickerFunctionContext<DownloadVideoContract<YoutubeProvider>> context,
+        CancellationToken cancellationToken
+    )
     {
         logger.LogInformation("Starting video download for {}", context.Request.VideoId);
         await using var dbContext = await contextFactory.CreateDbContextAsync();

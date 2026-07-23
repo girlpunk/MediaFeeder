@@ -26,7 +26,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     Metrics metrics
 ) : ISynchroniseSubscription<YoutubeProvider>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<YoutubeProvider>> context, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(
+        TickerFunctionContext<SynchroniseSubscriptionContract<YoutubeProvider>> context,
+        CancellationToken cancellationToken = default
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -70,11 +73,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 )
             )
         )
-            await timeTicker.AddAsync<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>(
-                DateTime.Now,
-                new YoutubeVideoSynchroniseContract(video.Id),
-                cancellationToken
-            );
+            await timeTicker.AddAsync<
+                YoutubeVideoSynchroniseConsumer,
+                YoutubeVideoSynchroniseContract
+            >(DateTime.Now, new YoutubeVideoSynchroniseContract(video.Id), cancellationToken);
 
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
@@ -164,7 +166,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         {
             logger.LogInformation("Starting download {}", videoToDownload.Name);
 
-            await timeTicker.AddAsync<YouTubeDownloadVideoConsumer, DownloadVideoContract<YoutubeProvider>>(
+            await timeTicker.AddAsync<
+                YouTubeDownloadVideoConsumer,
+                DownloadVideoContract<YoutubeProvider>
+            >(
                 DateTime.Now,
                 new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id),
                 cancellationToken
@@ -359,10 +364,10 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
                 await db.SaveChangesAsync(cancellationToken);
                 metrics.incProviderVideoChanged(Provider.YouTube, true);
 
-                await timeTicker.AddAsync<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>(
-                    DateTime.Now,
-                    new YoutubeVideoSynchroniseContract(video.Id)
-                );
+                await timeTicker.AddAsync<
+                    YoutubeVideoSynchroniseConsumer,
+                    YoutubeVideoSynchroniseContract
+                >(DateTime.Now, new YoutubeVideoSynchroniseContract(video.Id));
             }
         }
 

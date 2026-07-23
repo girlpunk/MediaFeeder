@@ -17,7 +17,10 @@ public sealed class CCCSubscriptionSynchroniseConsumer(
     Metrics metrics
 ) : ISynchroniseSubscription<CCCProvider>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<CCCProvider>> context, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(
+        TickerFunctionContext<SynchroniseSubscriptionContract<CCCProvider>> context,
+        CancellationToken cancellationToken
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -64,12 +67,7 @@ public sealed class CCCSubscriptionSynchroniseConsumer(
 
         while (continueDownloading)
         {
-            continueDownloading = await DownloadPage(
-                page,
-                subscription,
-                client,
-                cancellationToken
-            );
+            continueDownloading = await DownloadPage(page, subscription, client, cancellationToken);
             page++;
         }
 

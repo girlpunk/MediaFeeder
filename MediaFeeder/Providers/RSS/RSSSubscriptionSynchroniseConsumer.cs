@@ -16,7 +16,10 @@ public class RSSSubscriptionSynchroniseConsumer(
     Metrics metrics
 ) : ISynchroniseSubscription<RSSProvider>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<RSSProvider>> context, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(
+        TickerFunctionContext<SynchroniseSubscriptionContract<RSSProvider>> context,
+        CancellationToken cancellationToken = default
+    )
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -53,10 +56,7 @@ public class RSSSubscriptionSynchroniseConsumer(
         logger.LogInformation("Starting check new videos {}", subscription.Name);
 
         using var client = httpClientFactory.CreateClient("retry");
-        using var feedResponse = await client.GetAsync(
-            subscription.ChannelId,
-            cancellationToken
-        );
+        using var feedResponse = await client.GetAsync(subscription.ChannelId, cancellationToken);
         feedResponse.EnsureSuccessStatusCode();
 
         using var feedReader = XmlReader.Create(
