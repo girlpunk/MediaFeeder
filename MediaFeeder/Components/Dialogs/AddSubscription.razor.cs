@@ -25,7 +25,7 @@ public partial class AddSubscription
     [Inject]
     public required UserManager<AuthUser> UserManager { get; set; }
 
-    [Inject]
+    [CascadingParameter]
     public required HttpContext HttpContext { get; set; }
 
     [Inject]

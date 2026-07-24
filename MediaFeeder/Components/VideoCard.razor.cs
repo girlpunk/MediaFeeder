@@ -34,7 +34,7 @@ public sealed partial class VideoCard : ComponentBase
     [Inject]
     public required IServiceProvider ServiceProvider { get; set; }
 
-    [Inject]
+    [CascadingParameter]
     public required HttpContext HttpContext { get; set; }
 
     [Inject]
