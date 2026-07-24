@@ -51,21 +51,8 @@ public sealed partial class Home
     private PlaybackSession? SelectedSession { get; set; }
     private bool VideoOnClickPreventDefault;
     private string Title { get; set; } = "MediaFeeder";
-    private int FilterHash { get; set; }
 
     private SemaphoreSlim Updating { get; } = new(1);
-
-    private bool UpdateHash()
-    {
-        var newHash =
-            $"{FolderId}{SubscriptionId}{SortOrder}{ShowFilters.Humanize()}{SearchValue}".GetHashCode();
-
-        if (newHash == FilterHash)
-            return false;
-
-        FilterHash = newHash;
-        return true;
-    }
 
     private async Task OnSortChange()
     {
@@ -97,7 +84,7 @@ public sealed partial class Home
         this.menuDrawOpen = false;
     }
 
-    private async Task Update(bool force = false)
+    private async Task Update()
     {
         // if (force || !UpdateHash())
         //     return;
@@ -142,9 +129,9 @@ public sealed partial class Home
             )
             {
                 if (ShowFilters.HasFlag(VideosShowOnly.Watched))
-                    source = source.Where(v => v.Watched);
+                    source = source.Where(static v => v.Watched);
                 if (ShowFilters.HasFlag(VideosShowOnly.NotWatched))
-                    source = source.Where(v => !v.Watched);
+                    source = source.Where(static v => !v.Watched);
             }
 
             if (
@@ -153,9 +140,9 @@ public sealed partial class Home
             )
             {
                 if (ShowFilters.HasFlag(VideosShowOnly.Downloaded))
-                    source = source.Where(v => !string.IsNullOrWhiteSpace(v.DownloadedPath));
+                    source = source.Where(static v => !string.IsNullOrWhiteSpace(v.DownloadedPath));
                 if (ShowFilters.HasFlag(VideosShowOnly.NotDownloaded))
-                    source = source.Where(v => string.IsNullOrWhiteSpace(v.DownloadedPath));
+                    source = source.Where(static v => string.IsNullOrWhiteSpace(v.DownloadedPath));
             }
 
             if (
@@ -164,9 +151,9 @@ public sealed partial class Home
             )
             {
                 if (ShowFilters.HasFlag(VideosShowOnly.Stared))
-                    source = source.Where(v => v.Star);
+                    source = source.Where(static v => v.Star);
                 if (ShowFilters.HasFlag(VideosShowOnly.NotStared))
-                    source = source.Where(v => !v.Star);
+                    source = source.Where(static v => !v.Star);
             }
 
             if (!string.IsNullOrWhiteSpace(SearchValue))
@@ -260,7 +247,7 @@ public sealed partial class Home
         }
 
         await context.SaveChangesAsync();
-        await Update(true);
+        await Update();
     }
 
     private void WatchAll()
