@@ -107,7 +107,7 @@ public sealed partial class SessionInfo
         var remaining = TimeSpan.FromSeconds(Session.Playlist.Sum(static v => v.Duration ?? 0));
 
         if (Session.CurrentPosition != null && Session.Video?.DurationSpan != null)
-            remaining += (TimeSpan)(Session.Video.DurationSpan - Session.CurrentPosition);
+            remaining += (TimeSpan) (Session.Video.DurationSpan - Session.CurrentPosition);
 
         return remaining;
     }

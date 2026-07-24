@@ -88,4 +88,6 @@ public class YoutubeProvider : IProvider
     public string ProviderIdentifier => "Youtube";
 
     public string? StreamMimeType { get; } = "Video/YouTube";
+    public Type? SubscriptionSynchroniseType => typeof(YoutubeSubscriptionSynchroniseConsumer);
+    public Type? VideoDownloadType => typeof(YouTubeDownloadVideoConsumer);
 }

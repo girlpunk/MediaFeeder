@@ -151,7 +151,7 @@ public sealed partial class Video : IDisposable
 
     internal async Task GoNext(bool watch)
     {
-        if (watch)
+        if (VideoObject != null && watch)
         {
             VideoObject.MarkWatched(true);
             await Context.SaveChangesAsync();

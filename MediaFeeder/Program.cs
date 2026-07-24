@@ -247,16 +247,16 @@ builder.Services.AddTickerQ(static opt =>
     });
 });
 
-//    configuration.UseFilter(new AutomaticRetryAttribute { Attempts = 5, DelaysInSeconds = new int[] { 300 } });
+builder.Services.MapTicker<SynchroniseAllConsumer>()
+    .WithMaxConcurrency(1)
+    .WithCron("0 * * * *");
 
-builder.Services.MapTicker<SynchroniseAllConsumer>();
+builder.Services.MapTicker<YoutubeSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract>().WithMaxConcurrency(1);
+builder.Services.MapTicker<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>().WithMaxConcurrency(1);
+builder.Services.MapTicker<YouTubeDownloadVideoConsumer, DownloadVideoContract>().WithMaxConcurrency(1);
 
-builder.Services.MapTicker<YoutubeSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<YoutubeProvider>>();
-builder.Services.MapTicker<YoutubeVideoSynchroniseConsumer, YoutubeVideoSynchroniseContract>();
-builder.Services.MapTicker<YouTubeDownloadVideoConsumer, DownloadVideoContract<YoutubeProvider>>();
-
-builder.Services.MapTicker<RSSSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<RSSProvider>>();
-builder.Services.MapTicker<CCCSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract<CCCProvider>>();
+builder.Services.MapTicker<RSSSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract>().WithMaxConcurrency(1);
+builder.Services.MapTicker<CCCSubscriptionSynchroniseConsumer, SynchroniseSubscriptionContract>().WithMaxConcurrency(1);
 
 builder.Logging.AddOpenTelemetry(static logging =>
 {

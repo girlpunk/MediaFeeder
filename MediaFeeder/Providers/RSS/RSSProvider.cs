@@ -45,4 +45,6 @@ public sealed class RSSProvider : IProvider
     public string ProviderIdentifier => "RSS";
 
     public string? StreamMimeType { get; } = null;
+    public Type? SubscriptionSynchroniseType => typeof(RSSSubscriptionSynchroniseConsumer);
+    public Type? VideoDownloadType => null;
 }

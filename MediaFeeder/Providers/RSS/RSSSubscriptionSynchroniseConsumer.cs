@@ -9,14 +9,16 @@ using TickerQ.Utilities.Base;
 
 namespace MediaFeeder.Providers.RSS;
 
+using TickerQ.Utilities.Interfaces;
+
 public class RSSSubscriptionSynchroniseConsumer(
     ILogger<RSSSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory,
     Metrics metrics
-) : ISynchroniseSubscription<RSSProvider>
+) : ITickerFunction<SynchroniseSubscriptionContract>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<RSSProvider>> context, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract> context, CancellationToken cancellationToken = default)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 

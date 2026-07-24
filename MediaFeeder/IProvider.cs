@@ -1,9 +1,10 @@
-using HtmlAgilityPack;
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using MediaFeeder.Data.Enums;
-
 namespace MediaFeeder;
+
+using HtmlAgilityPack;
+using Data;
+using Data.db;
+using Data.Enums;
+using TickerQ.Utilities.Interfaces;
 
 public interface IProvider
 {
@@ -22,4 +23,14 @@ public interface IProvider
         HtmlDocument? doc,
         SubscriptionForm subscription
     );
+
+    /// <summary>
+    /// Must implement <see cref="ITickerFunction{SynchroniseSubscriptionContract}"/>
+    /// </summary>
+    public Type? SubscriptionSynchroniseType { get; }
+
+    /// <summary>
+    /// Must implement <see cref="ITickerFunction{DownloadVideoContract}"/>
+    /// </summary>
+    public Type? VideoDownloadType { get; }
 }

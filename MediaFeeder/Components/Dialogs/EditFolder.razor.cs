@@ -20,6 +20,7 @@ public partial class EditFolder
 
     [Inject]
     public required UserManager<AuthUser> UserManager { get; set; }
+
     private List<Folder> ExistingFolders { get; set; } = [];
     public required Form<Folder> Form { get; set; }
     private Folder? Folder { get; set; }

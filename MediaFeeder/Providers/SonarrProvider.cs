@@ -35,4 +35,6 @@ public class SonarrProvider : IProvider
     public string Icon => IconType.Outline.Monitor;
 
     public string GetUrl(Video video) => throw new NotImplementedException();
+    public Type? SubscriptionSynchroniseType => null;
+   public Type? VideoDownloadType => null;
 }

@@ -1,4 +1,3 @@
-using System.Reflection;
 using MediaFeeder.Data;
 using Microsoft.EntityFrameworkCore;
 using TickerQ.Utilities.Base;
@@ -7,6 +6,8 @@ using TickerQ.Utilities.Interfaces;
 using TickerQ.Utilities.Interfaces.Managers;
 
 namespace MediaFeeder.Tasks;
+
+using Helpers;
 
 public class SynchroniseAllConsumer(
     ILogger<SynchroniseAllConsumer> logger,
@@ -33,7 +34,7 @@ public class SynchroniseAllConsumer(
 
         foreach (var subscription in subscriptions)
         {
-            var providerType = providers[subscription.Item2].SingleOrDefault()?.GetType();
+            var providerType = providers[subscription.Item2].SingleOrDefault();
 
             if (providerType == null)
             {
@@ -41,18 +42,7 @@ public class SynchroniseAllConsumer(
                 continue;
             }
 
-            var synchroniseFunctionType = typeof(ISynchroniseSubscription<>).MakeGenericType(providerType);
-            var synchroniseContractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(providerType);
-
-            var contract = Activator.CreateInstance(synchroniseContractType, subscription.Item1);
-
-            var queue = timeTicker.GetType()
-                .GetMethods(
-                    BindingFlags.Public | BindingFlags.Instance
-                ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
-            queue = queue.MakeGenericMethod(synchroniseFunctionType, synchroniseContractType);
-
-            queue.Invoke(timeTicker, [DateTime.Now, contract, cancellationToken]);
+            await timeTicker.AddSynchroniseSubscription(subscription.Item1, providerType, logger, cancellationToken);
         }
     }
 }

@@ -1,10 +1,10 @@
-using System.Reflection;
+namespace MediaFeeder.Components.Dialogs;
+
 using AntDesign;
 using FluentValidation;
 using HtmlAgilityPack;
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using MediaFeeder.Tasks;
+using Data;
+using Data.db;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -12,8 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TickerQ.Utilities.Entities;
 using TickerQ.Utilities.Interfaces.Managers;
-
-namespace MediaFeeder.Components.Dialogs;
+using Helpers;
 
 public partial class AddSubscription
 {
@@ -33,9 +32,8 @@ public partial class AddSubscription
     public required ITimeTickerManager<TimeTickerEntity> TimeTicker { get; set; }
 
     public required Form<AddForm> Form { get; set; }
-    private AddForm Add { get; set; } = new AddForm();
-    private SubscriptionForm Subscription { get; set; } = new SubscriptionForm();
-
+    private AddForm Add { get; set; } = new();
+    private SubscriptionForm Subscription { get; set; } = new();
     private IProvider? FoundProvider { get; set; }
     private IList<IProvider>? FoundProviders { get; set; }
 
@@ -92,21 +90,22 @@ public partial class AddSubscription
         // Offer page to all providers
         var providerMatches = Providers
             .Select(async provider =>
-            {
-                try
                 {
-                    Logger.LogDebug("Offering URL to provider {}", provider.Name);
-                    return (
-                        provider,
-                        match: await provider.IsUrlValid(new Uri(Add.Url), UrlRequest, UrlDocument)
-                    );
+                    try
+                    {
+                        Logger.LogDebug("Offering URL to provider {}", provider.Name);
+                        return (
+                            provider,
+                            match: await provider.IsUrlValid(new Uri(Add.Url), UrlRequest, UrlDocument)
+                        );
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError(e, "Error while offering URL to provider");
+                        return (provider, match: false);
+                    }
                 }
-                catch (Exception e)
-                {
-                    Logger.LogError(e, "Error while offering URL to provider");
-                    return (provider, match: false);
-                }
-            })
+            )
             .ToList();
         await Task.WhenAll(providerMatches);
         var matches = providerMatches
@@ -195,18 +194,7 @@ public partial class AddSubscription
 
         await Context.SaveChangesAsync();
 
-        var synchroniseFunctionType = typeof(ISynchroniseSubscription<>).MakeGenericType(FoundProvider.GetType());
-        var synchroniseContractType = typeof(SynchroniseSubscriptionContract<>).MakeGenericType(FoundProvider.GetType());
-
-        var contract = Activator.CreateInstance(synchroniseContractType, subscription.Id);
-
-        var queue = TimeTicker.GetType()
-            .GetMethods(
-                BindingFlags.Public | BindingFlags.Instance
-            ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
-        queue = queue.MakeGenericMethod(synchroniseFunctionType, synchroniseContractType);
-
-        queue.Invoke(TimeTicker, [DateTime.Now, contract, HttpContext]);
+        await TimeTicker.AddSynchroniseSubscription(subscription.Id, FoundProvider, Logger, HttpContext.RequestAborted);
 
         await FeedbackRef.CloseAsync();
     }

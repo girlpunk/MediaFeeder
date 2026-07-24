@@ -15,6 +15,8 @@ using Video = MediaFeeder.Data.db.Video;
 
 namespace MediaFeeder.Providers.Youtube;
 
+using TickerQ.Utilities.Interfaces;
+
 [UsedImplicitly]
 public sealed class YoutubeSubscriptionSynchroniseConsumer(
     ILogger<YoutubeSubscriptionSynchroniseConsumer> logger,
@@ -24,9 +26,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
     Utils utils,
     YouTubeService youTubeService,
     Metrics metrics
-) : ISynchroniseSubscription<YoutubeProvider>
+) : ITickerFunction<SynchroniseSubscriptionContract>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<YoutubeProvider>> context, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract> context, CancellationToken cancellationToken = default)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -164,9 +166,9 @@ public sealed class YoutubeSubscriptionSynchroniseConsumer(
         {
             logger.LogInformation("Starting download {}", videoToDownload.Name);
 
-            await timeTicker.AddAsync<YouTubeDownloadVideoConsumer, DownloadVideoContract<YoutubeProvider>>(
+            await timeTicker.AddAsync<YouTubeDownloadVideoConsumer, DownloadVideoContract>(
                 DateTime.Now,
-                new DownloadVideoContract<YoutubeProvider>(videoToDownload.Id),
+                new DownloadVideoContract(videoToDownload.Id),
                 cancellationToken
             );
         }

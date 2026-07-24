@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+namespace MediaFeeder.Controllers;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
-namespace MediaFeeder.Controllers;
 
 [ApiController]
 [Route("[controller]")]

@@ -1,5 +1,4 @@
 using AntDesign;
-using Humanizer;
 using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Filters;
@@ -209,10 +208,8 @@ public sealed partial class Home
     }
 
     // TODO put this somewhere better?
-    private String EscapeSearch(String term)
-    {
-        return term.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_").Replace("*", "%");
-    }
+    private String EscapeSearch(String term) =>
+        term.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_").Replace("*", "%");
 
     private Task PageChange(PaginationEventArgs paginationEventArgs)
     {

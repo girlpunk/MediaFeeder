@@ -20,12 +20,14 @@ public sealed partial class EditSubscription
 
     [Inject]
     public required UserManager<AuthUser> UserManager { get; set; }
+
     private List<Folder> ExistingFolders { get; set; } = [];
     public required Form<SubscriptionForm> Form { get; set; }
     private SubscriptionForm? Subscription { get; set; }
 
     [Inject]
     public required ILogger<EditSubscription> Logger { get; set; }
+
     private IEnumerable<(string ProviderIdentifier, string Name)> Providers { get; set; } = [];
 
     protected override async Task OnInitializedAsync()

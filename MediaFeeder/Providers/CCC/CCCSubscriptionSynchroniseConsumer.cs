@@ -9,15 +9,17 @@ using TickerQ.Utilities.Base;
 
 namespace MediaFeeder.Providers.CCC;
 
+using TickerQ.Utilities.Interfaces;
+
 [UsedImplicitly]
 public sealed class CCCSubscriptionSynchroniseConsumer(
     ILogger<CCCSubscriptionSynchroniseConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IHttpClientFactory httpClientFactory,
     Metrics metrics
-) : ISynchroniseSubscription<CCCProvider>
+) : ITickerFunction<SynchroniseSubscriptionContract>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract<CCCProvider>> context, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(TickerFunctionContext<SynchroniseSubscriptionContract> context, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 

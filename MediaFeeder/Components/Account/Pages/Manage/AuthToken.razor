@@ -9,7 +9,7 @@
 
 @code {
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
-    [Inject] private TokenHelper TokenHelper { get; set; }
+    [Inject] private TokenHelper TokenHelper { get; set; } = default!;
     public string Token1 { get; set; } = "Loading...";
     public string Token2 { get; set; } = "";
 

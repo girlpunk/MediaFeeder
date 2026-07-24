@@ -318,19 +318,7 @@ public sealed class ApiService(
             .GetServices<IProvider>()
             .Single(provider => provider.ProviderIdentifier == video.Subscription?.Provider);
 
-        var contractType = typeof(DownloadVideoContract<>).MakeGenericType(videoProvider.GetType());
-        var contract = Activator.CreateInstance(contractType, new object[] { video.Id });
-        ArgumentNullException.ThrowIfNull(contract);
-
-        var consumerType = typeof(IDownloadVideo<>).MakeGenericType(videoProvider.GetType());
-
-        var queue = timeTicker.GetType()
-            .GetMethods(
-                BindingFlags.Public | BindingFlags.Instance
-            ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
-        queue = queue.MakeGenericMethod(consumerType, contractType);
-
-        queue.Invoke(timeTicker, [DateTime.Now, contract, context.CancellationToken]);
+        await timeTicker.AddDownloadVideo(video.Id, videoProvider, logger, context.CancellationToken);
 
         return new DownloadReply { Status = DownloadStatus.InProgress };
     }

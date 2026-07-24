@@ -7,7 +7,7 @@ using MediaFeeder.Helpers;
 
 namespace MediaFeeder.Providers.CCC;
 
-public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvider> logger)
+public sealed class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvider> logger)
     : IProvider
 {
     public string Name => "CCC Media";
@@ -106,4 +106,6 @@ public class CCCProvider(IHttpClientFactory httpClientFactory, ILogger<CCCProvid
     public string ProviderIdentifier => "CCC";
 
     public string? StreamMimeType { get; } = null;
+    public Type? SubscriptionSynchroniseType => typeof(CCCSubscriptionSynchroniseConsumer);
+    public Type? VideoDownloadType => null;
 }

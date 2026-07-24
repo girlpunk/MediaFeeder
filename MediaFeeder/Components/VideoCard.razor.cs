@@ -1,15 +1,14 @@
-using System.Reflection;
+namespace MediaFeeder.Components;
+
+using Helpers;
 using AntDesign;
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using MediaFeeder.Tasks;
+using Data;
+using Data.db;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using TickerQ.Utilities.Entities;
 using TickerQ.Utilities.Interfaces.Managers;
-
-namespace MediaFeeder.Components;
 
 public sealed partial class VideoCard : ComponentBase
 {
@@ -37,6 +36,9 @@ public sealed partial class VideoCard : ComponentBase
 
     [Inject]
     public required HttpContext HttpContext { get; set; }
+
+    [Inject]
+    public required ILogger<VideoCard> Logger { get; set; }
 
     private string? Badge
     {
@@ -125,7 +127,7 @@ public sealed partial class VideoCard : ComponentBase
                 .GetServices<IProvider>()
                 .ToLookup(static p => p.ProviderIdentifier);
 
-            var providerType = providers[Video.Subscription.Provider].SingleOrDefault()?.GetType();
+            var providerType = providers[Video.Subscription.Provider].SingleOrDefault();
 
             if (providerType == null)
             {
@@ -135,18 +137,7 @@ public sealed partial class VideoCard : ComponentBase
                 return;
             }
 
-            var consumerType = typeof(IDownloadVideo<>).MakeGenericType(providerType);
-            var contractType = typeof(DownloadVideoContract<>).MakeGenericType(providerType);
-            var contract = Activator.CreateInstance(contractType, new object[] { Video.Id });
-            ArgumentNullException.ThrowIfNull(contract);
-
-            var queue = TimeTicker.GetType()
-                .GetMethods(
-                    BindingFlags.Public | BindingFlags.Instance
-                ).Single(static m => m.Name == "AddAsync" && m.ContainsGenericParameters && m.GetParameters().Length == 3);
-            queue = queue.MakeGenericMethod(consumerType, contractType);
-
-            queue.Invoke(TimeTicker, [DateTime.Now, contract, HttpContext.RequestAborted]);
+            await TimeTicker.AddDownloadVideo(Video.Id, providerType, Logger, HttpContext.RequestAborted);
 
             await MessageService.InfoAsync("Sent for download");
         }

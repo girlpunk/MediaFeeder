@@ -6,14 +6,16 @@ using TickerQ.Utilities.Base;
 
 namespace MediaFeeder.Providers.Youtube;
 
+using TickerQ.Utilities.Interfaces;
+
 public sealed class YouTubeDownloadVideoConsumer(
     ILogger<YouTubeDownloadVideoConsumer> logger,
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     IConfiguration configuration,
     YTDownloader.YTDownloaderClient downloaderClient
-) : IDownloadVideo<YoutubeProvider>
+) : ITickerFunction<DownloadVideoContract>
 {
-    public async Task ExecuteAsync(TickerFunctionContext<DownloadVideoContract<YoutubeProvider>> context, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(TickerFunctionContext<DownloadVideoContract> context, CancellationToken cancellationToken)
     {
         logger.LogInformation("Starting video download for {}", context.Request.VideoId);
         await using var dbContext = await contextFactory.CreateDbContextAsync();
