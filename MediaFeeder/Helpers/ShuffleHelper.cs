@@ -68,17 +68,6 @@ public static class ShuffleHelper
             cancellationToken
         );
 
-        timeRemaining = await FindVideos(
-            dataContext,
-            subscriptions,
-            false,
-            excludeOrEmpty,
-            timeRemaining,
-            q => q.Where(v => v.Star),
-            videos,
-            cancellationToken
-        );
-
         timeRemaining = await FindFirstVideo(
             dataContext,
             subscriptions,
@@ -205,23 +194,26 @@ public static class ShuffleHelper
         CancellationToken cancellationToken
     )
     {
-        var sortOrder = SortOrders.Oldest;
+        var subQuery = query.Include(static v => v.Subscription);
+        IOrderedQueryable<Video> sorted;
         if (subscription != null)
         {
-            // TODO there is a probably a nicer way to do this.
-            sortOrder = subscription.WatchOrder switch
-            {
-                WatchOrder.OldestFirst => SortOrders.Oldest,
-                WatchOrder.NewestFirst => SortOrders.Newest,
-                _ => SortOrders.Oldest,
-            };
+            sorted = subQuery.OrderByDescending(static v => v.Star);
+            switch (subscription.WatchOrder) {
+                case WatchOrder.OldestFirst:
+                default:
+                    sorted = sorted.ThenBy(static v => v.PublishDate);
+                    break;
+                case WatchOrder.NewestFirst:
+                    sorted = sorted.ThenByDescending(static v => v.PublishDate);
+                    break;
+            }
+        }
+        else {
+            sorted = subQuery.OrderBy(static v => v.PublishDate);
         }
 
-        var video = await query
-            .Include(static v => v.Subscription)
-            .SortVideos(sortOrder)
-            .FirstOrDefaultAsync(cancellationToken);
-
+        var video = await sorted.FirstOrDefaultAsync(cancellationToken);
         if (video == null || (video.DurationSpan > timeRemaining && enforceTimeRemaining))
             return (false, timeRemaining);
 
