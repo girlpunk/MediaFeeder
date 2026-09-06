@@ -290,7 +290,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
 
                     var positionToRestore = await PlaybackSession.PlaybackPositionToRestore();
                     Console.WriteLine(
-                        $"(session: {PlaybackSession.SessionId}) Restoring position: {positionToRestore}"
+                        $"(session: {PlaybackSession.PlayerId}) Restoring position: {positionToRestore}"
                     );
 
                     if (positionToRestore != null)
@@ -312,7 +312,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             catch (Exception e)
             {
                 Console.WriteLine(
-                    $"(session: {PlaybackSession.SessionId}) Exception reading data from YT player: "
+                    $"(session: {PlaybackSession.PlayerId}) Exception reading data from YT player: "
                         + e
                 );
             }

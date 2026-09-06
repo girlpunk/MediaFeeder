@@ -59,6 +59,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
 
     _have_control: bool = False
     _content_id_to_video_id: dict[str, int] = {}
+    _player_id: str | None
 
     def __init__(self, cast_name: str, cast_host: str, verbose: bool) -> None:
         """Set up variables, but doesn't connect yet."""
@@ -241,7 +242,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
         self._logger.debug("Main")
 
         await asyncio.to_thread(self.sync_find_cast)
-        await self._shuffler.start()
+        await self._shuffler.start(self._player_id)
 
     def sync_find_cast(self):
         chromecasts, browser = pychromecast.get_listed_chromecasts(
@@ -254,6 +255,7 @@ class VidFilePlayer(common.PlayerBase, MediaStatusListener):
             )
             sys.exit(1)
         self._cast = chromecasts[0]
+        self._player_id = self._cast.cast_info.uuid.hex
         self._cast.wait()  # Start socket client's worker thread and wait for initial status update
         self._cast.register_handler(self._file_con)
         self._cast.register_handler(self._yt_con)

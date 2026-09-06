@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using AntDesign;
+using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.PlaybackManager;
 using Microsoft.AspNetCore.Components;
@@ -32,9 +33,12 @@ public sealed partial class Video : IDisposable
     [Inject]
     public required PlaybackSessionManager SessionManager { get; set; }
 
+    [Inject]
+    public required SessionIdProvider SessionIdProvider { get; set; }
+
     private Data.db.Video? VideoObject { get; set; }
     private IProvider? Provider { get; set; }
-    private PlaybackSession? PlaybackSession { get; set; }
+    private PlaybackSessionReference? PlaybackSession { get; set; }
 
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; } = TimeSpan.Zero;
@@ -51,10 +55,10 @@ public sealed partial class Video : IDisposable
 
         if (PlaybackSession == null)
         {
-            PlaybackSession = SessionManager.NewSession(user);
-            PlaybackSession.Title = "Web Player";
-            PlaybackSession.SkipEvent += async () => await InvokeAsync(() => GoNext(false));
-            PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
+            PlaybackSession = SessionManager.NewSession(SessionIdProvider.Guid.ToString(), user);
+            PlaybackSession.Session.Title = "Web Player";
+            PlaybackSession.Session.SkipEvent += async () => await InvokeAsync(() => GoNext(false));
+            PlaybackSession.Session.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
         }
 
         VideoObject = await Context
@@ -86,9 +90,9 @@ public sealed partial class Video : IDisposable
             UpNextDuration = TimeSpan.Zero;
         }
 
-        PlaybackSession.Video = VideoObject;
-        PlaybackSession.Provider = Provider.Provider;
-        PlaybackSession.UpdateEvent += UpdateTimestamp;
+        PlaybackSession.Session.Video = VideoObject;
+        PlaybackSession.Session.Provider = Provider.Provider;
+        PlaybackSession.Session.UpdateEvent += UpdateTimestamp;
 
         lastSavePositionTime.Restart(); // wait for some actual playback before trying to save position.
         UpdateTimestamp();
@@ -97,14 +101,14 @@ public sealed partial class Video : IDisposable
 
     private void UpdateTimestamp()
     {
-        var remaining = VideoObject?.DurationSpan - PlaybackSession?.CurrentPosition;
+        var remaining = VideoObject?.DurationSpan - PlaybackSession?.Session.CurrentPosition;
         TotalDuration = UpNextDuration + (remaining ?? TimeSpan.Zero);
 
         InvokeAsync(StateHasChanged);
 
         if (lastSavePositionTime.Elapsed > TimeSpan.FromSeconds(60))
         {
-            var position = (int) (PlaybackSession?.CurrentPosition?.TotalSeconds ?? 0);
+            var position = (int) (PlaybackSession?.Session.CurrentPosition?.TotalSeconds ?? 0);
             if (VideoObject != null && position > 0 && position != VideoObject.PlaybackPosition)
             {
                 VideoObject.PlaybackPosition = position;

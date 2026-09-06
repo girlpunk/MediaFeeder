@@ -346,6 +346,7 @@ builder.Services.AddScoped<IProvider, CCCProvider>();
 
 builder.Services.AddSingleton<PlaybackSessionManager>();
 builder.Services.AddSingleton<TokenHelper>();
+builder.Services.AddScoped<SessionIdProvider>();
 
 builder.Services.AddTransient<AbstractValidator<Folder>, EditFolder.Validator>();
 

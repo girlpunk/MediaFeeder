@@ -9,6 +9,7 @@ import asyncio
 import logging
 import sys
 import time
+import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
 from pathlib import Path
@@ -206,7 +207,7 @@ class Shuffler(MfClient):
             asyncio.Queue()
         )
 
-    async def _connect_to_server(self) -> None:
+    async def _connect_to_server(self, player_id: str) -> None:
         """Connect to the MediaFeeder server."""
         self._logger.debug("Connect to server")
         if self._session_reader is not None:
@@ -222,7 +223,7 @@ class Shuffler(MfClient):
         )
 
         await self._status_report_queue.put(
-            Api_pb2.PlaybackSessionRequest(Title=self.name)
+            Api_pb2.PlaybackSessionRequest(PlayerId=player_id, Title=self.name)
         )
         self._logger.info("Server connected.")
         await asyncio.sleep(
@@ -379,7 +380,7 @@ class Shuffler(MfClient):
         else:
             return item
 
-    async def start(self) -> None:
+    async def start(self, player_id: str|None = None) -> None:
         """Start playback, if available."""
         self._logger.debug("Start")
 
@@ -388,10 +389,13 @@ class Shuffler(MfClient):
         position_to_restore_seconds = None
         rate_to_restore = None
 
+        if player_id is None:
+            player_id = uuid.UUID().hex
+
         while True:
             if self._session_reader is None or self._session_reader.done():
                 self._logger.debug("Loop reconnecting...")
-                await self._connect_to_server()
+                await self._connect_to_server(player_id)
 
                 # if connection was lost, at least restore what is currently playing.
                 if current_video_id:

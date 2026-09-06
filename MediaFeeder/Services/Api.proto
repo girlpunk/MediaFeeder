@@ -190,11 +190,13 @@ enum PlayerState {
   PLAYING = 3;
   PAUSED = 4;
   ADVERT = 5;
+  DISCONNECTED = 6;
 }
 
 message PlaybackSessionRequest {
   PlaybackSessionAction Action = 1;
   optional string Title = 11;
+  optional string PlayerId = 17;
   optional int32 VideoId = 2;
   optional int32 Position = 3;
   optional string Quality = 4;

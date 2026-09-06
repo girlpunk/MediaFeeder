@@ -581,8 +581,22 @@ public sealed class ApiService(
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
+        // Wait for initial message
+        await requestStream.MoveNext(context.CancellationToken);
+
+        string playerId;
+        if (requestStream.Current.HasPlayerId) {
+            playerId = requestStream.Current.PlayerId;
+        } else {
+            playerId = Guid.NewGuid().ToString();
+        }
+
         // TODO pass some kinda init block to this so listeners only see the ready object?
-        using var session = playbackSessionManager.NewSession(user);
+        using var sessionReference = playbackSessionManager.NewSession(playerId, user);
+        var session = sessionReference.Session;
+
+        if (requestStream.Current.HasTitle)
+            session.Title = requestStream.Current.Title;
 
         session.StartPlayingVideo += async (video, positionSeconds) =>
         {

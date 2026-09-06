@@ -2,14 +2,17 @@ using MediaFeeder.Data;
 using MediaFeeder.Data.db;
 using MediaFeeder.Data.Enums;
 using Microsoft.EntityFrameworkCore;
+using Timer = System.Threading.Timer;
 
 namespace MediaFeeder.PlaybackManager;
 
 public sealed class PlaybackSession : IDisposable
 {
-    public readonly string SessionId = Guid.NewGuid().ToString();
+    public string PlayerId {get;}
+
     private readonly PlaybackSessionManager _manager;
-    private IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
+    private List<PlaybackSessionReference> _references = [];
+    private Timer? _timer;
 
     public string? _title;
     private Video? _video;
@@ -27,7 +30,9 @@ public sealed class PlaybackSession : IDisposable
     private bool _supportsRateChange;
     private bool _supportsVolumeChange;
     private bool _supportsSubtitles;
+    public bool SleepMode;
 
+    private IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
     public event Action? UpdateEvent;
     public event Action? PlayPauseEvent;
     public event Action? PauseIfPlayingEvent;
@@ -40,7 +45,6 @@ public sealed class PlaybackSession : IDisposable
     public event Action? SkipEvent;
     public int? SelectedFolderId { get; set; }
     public event Action<int>? AddVideos;
-    public bool SleepMode;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
 
@@ -54,18 +58,20 @@ public sealed class PlaybackSession : IDisposable
 
     internal PlaybackSession(
         PlaybackSessionManager manager,
+        string playerId,
         AuthUser user,
         IDbContextFactory<MediaFeederDataContext> dbContextFactory
     )
     {
         _manager = manager;
-        _user = user;
+        PlayerId = playerId;
         User = user;
         DbContextFactory = dbContextFactory;
     }
 
     public void Dispose()
     {
+        _timer?.Dispose();
         _manager.RemoveSession(this);
     }
 
@@ -370,5 +376,26 @@ public sealed class PlaybackSession : IDisposable
             return position;
 
         return null;
+    }
+
+    public PlaybackSessionReference GetReference() {
+        _timer?.Dispose();
+        var reference = new PlaybackSessionReference(this);
+        _references.Add(reference);
+        return reference;
+    }
+
+    public void RemoveReference(PlaybackSessionReference reference) {
+        _references.Remove(reference);
+
+        if(_references.Count == 0) {
+            State = PlayerState.Disconnected;
+
+            _timer?.Dispose();
+            _timer = new Timer(_ => {
+              if(_references.Count == 0)
+                  this.Dispose();
+            }, null, 60 * 60 * 1000, 60 * 60 * 1000);
+        }
     }
 }
