@@ -13,5 +13,5 @@ public abstract class VideoFrame : ComponentBase
     public MediaFeeder.Components.Pages.Video? Page { get; set; }
 
     [Parameter]
-    public PlaybackSession? PlaybackSession { get; set; }
+    public PlaybackSession.PlaybackSessionReference? PlaybackSession { get; set; }
 }

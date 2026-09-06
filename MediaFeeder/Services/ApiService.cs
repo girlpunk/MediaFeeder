@@ -593,12 +593,11 @@ public sealed class ApiService(
 
         // TODO pass some kinda init block to this so listeners only see the ready object?
         using var sessionReference = playbackSessionManager.NewSession(playerId, user);
-        var session = sessionReference.Session;
 
         if (requestStream.Current.HasTitle)
-            session.Title = requestStream.Current.Title;
+            sessionReference.Session.Title = requestStream.Current.Title;
 
-        session.StartPlayingVideo += async (video, positionSeconds) =>
+        sessionReference.StartPlayingVideo += async (video, positionSeconds) =>
         {
             var reply = new PlaybackSessionReply { NextVideoId = video.Id };
             if (positionSeconds != null)
@@ -606,69 +605,69 @@ public sealed class ApiService(
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
 
-        session.PlayPauseEvent += async () =>
+        sessionReference.PlayPauseEvent += async () =>
         {
             var reply = new PlaybackSessionReply { ShouldPlayPause = true };
-            if (session.Video?.Id != null)
-                reply.NextVideoId = session.Video.Id;
+            if (sessionReference.Session.Video?.Id != null)
+                reply.NextVideoId = sessionReference.Session.Video.Id;
 
             var p = 0;
-            if (session.CurrentPosition != null)
-                p = (int)session.CurrentPosition.Value.TotalSeconds;
+            if (sessionReference.Session.CurrentPosition != null)
+                p = (int)sessionReference.Session.CurrentPosition.Value.TotalSeconds;
             if (p <= 0)
-                p = await session.PlaybackPositionToRestore() ?? 0;
+                p = await sessionReference.Session.PlaybackPositionToRestore() ?? 0;
             if (p > 0)
                 reply.PlaybackPosition = p;
 
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
 
-        session.PauseIfPlayingEvent += async () =>
+        sessionReference.PauseIfPlayingEvent += async () =>
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldPauseIfPlaying = true },
                 context.CancellationToken
             );
-        session.SeekRelativeEvent += async seconds =>
+        sessionReference.SeekRelativeEvent += async seconds =>
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds },
                 context.CancellationToken
             );
-        session.ChangeRateEvent += async (direction) =>
+        sessionReference.ChangeRateEvent += async (direction) =>
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldChangeRate = direction ? 1 : -1 },
                 context.CancellationToken
             );
-        session.ChangeVolumeEvent += async (direction) =>
+        sessionReference.ChangeVolumeEvent += async (direction) =>
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldChangeVolume = direction ? 1 : -1 },
                 context.CancellationToken
             );
-        session.ToggleSubtitleEvent += async () =>
+        sessionReference.ToggleSubtitleEvent += async () =>
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldToggleSubtitles = true },
                 context.CancellationToken
             );
 
         // TODO move to PlaybackSession.
-        session.AddVideos += async minutes =>
+        sessionReference.AddVideos += async minutes =>
         {
-            if (session.SelectedFolderId == null)
+            if (sessionReference.Session.SelectedFolderId == null)
                 return;
 
-            var exclude = new List<Video>(session.Playlist);
-            if (session.Video != null)
-                exclude.Add(session.Video);
+            var exclude = new List<Video>(sessionReference.Session.Playlist);
+            if (sessionReference.Session.Video != null)
+                exclude.Add(sessionReference.Session.Video);
 
             await using var dataContext = await contextFactory.CreateDbContextAsync();
             var videos = await ShuffleHelper.Shuffle(
                 dataContext,
                 user,
                 minutes,
-                session.SelectedFolderId,
+                sessionReference.Session.SelectedFolderId,
                 null,
                 exclude
             );
-            session.AddToPlaylist(videos);
+            sessionReference.Session.AddToPlaylist(videos);
         };
 
         while (true)
@@ -678,38 +677,38 @@ public sealed class ApiService(
             if (await requestStream.MoveNext(context.CancellationToken))
             {
                 if (requestStream.Current.HasTitle)
-                    session.Title = requestStream.Current.Title;
+                    sessionReference.Session.Title = requestStream.Current.Title;
 
                 if (requestStream.Current.HasPosition)
-                    session.CurrentPosition =
+                    sessionReference.Session.CurrentPosition =
                         requestStream.Current.Position != null
                             ? TimeSpan.FromSeconds(requestStream.Current.Position)
                             : null;
 
                 if (requestStream.Current.HasLoaded)
-                    session.Loaded = requestStream.Current.Loaded;
+                    sessionReference.Session.Loaded = requestStream.Current.Loaded;
 
                 if (requestStream.Current.HasProvider)
                 {
                     if (requestStream.Current.Provider != null)
-                        session.Provider = serviceProvider
+                        sessionReference.Session.Provider = serviceProvider
                             .GetServices<IProvider>()
                             .SingleOrDefault(provider =>
                                 provider.ProviderIdentifier == requestStream.Current.Provider
                             )
                             ?.Provider;
                     else
-                        session.Provider = null;
+                        sessionReference.Session.Provider = null;
                 }
 
                 if (requestStream.Current.HasQuality)
-                    session.Quality = requestStream.Current.Quality;
+                    sessionReference.Session.Quality = requestStream.Current.Quality;
 
                 if (requestStream.Current.HasRate)
-                    session.Rate = requestStream.Current.Rate;
+                    sessionReference.Session.Rate = requestStream.Current.Rate;
 
                 if (requestStream.Current.HasState)
-                    session.State = requestStream.Current.State;
+                    sessionReference.Session.State = requestStream.Current.State;
 
                 if (requestStream.Current.HasVideoId)
                 {
@@ -719,7 +718,7 @@ public sealed class ApiService(
                             context.CancellationToken
                         );
 
-                        session.Video = await db
+                        sessionReference.Session.Video = await db
                             .Videos.Include(static v => v.Subscription)
                             .SingleAsync(
                                 v => v.Id == requestStream.Current.VideoId,
@@ -728,33 +727,33 @@ public sealed class ApiService(
                     }
                     else
                     {
-                        session.Video = null;
+                        sessionReference.Session.Video = null;
                     }
                 }
 
                 if (requestStream.Current.HasVolume)
-                    session.Volume = requestStream.Current.Volume;
+                    sessionReference.Session.Volume = requestStream.Current.Volume;
 
                 if (requestStream.Current.HasSupportsRateChange)
-                    session.SupportsRateChange = requestStream.Current.SupportsRateChange;
+                    sessionReference.Session.SupportsRateChange = requestStream.Current.SupportsRateChange;
 
                 if (requestStream.Current.HasSupportsVolumeChange)
-                    session.SupportsVolumeChange = requestStream.Current.SupportsVolumeChange;
+                    sessionReference.Session.SupportsVolumeChange = requestStream.Current.SupportsVolumeChange;
 
                 if (requestStream.Current.HasSupportsSubtitles)
-                    session.SupportsSubtitles = requestStream.Current.SupportsSubtitles;
+                    sessionReference.Session.SupportsSubtitles = requestStream.Current.SupportsSubtitles;
 
                 if (requestStream.Current.HasSubtitles)
-                    session.Subtitles = requestStream.Current.Subtitles;
+                    sessionReference.Session.Subtitles = requestStream.Current.Subtitles;
 
                 if (requestStream.Current.HasBannerMessage)
-                    session.Message = requestStream.Current.BannerMessage.NullIfEmpty();
+                    sessionReference.Session.Message = requestStream.Current.BannerMessage.NullIfEmpty();
 
                 // process actions after status updates so that status is up to date for whatever the actiond does.
                 switch (requestStream.Current.Action)
                 {
                     case PlaybackSessionAction.OnWatchedToEnd:
-                        await session.OnWatchedToEnd(requestStream.Current.VideoId);
+                        await sessionReference.Session.OnWatchedToEnd(requestStream.Current.VideoId);
                         break;
                 }
 

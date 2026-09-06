@@ -34,17 +34,17 @@ public sealed class PlaybackSession : IDisposable
 
     private IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
     public event Action? UpdateEvent;
-    public event Action? PlayPauseEvent;
-    public event Action? PauseIfPlayingEvent;
-    public event Action<Video, int?>? StartPlayingVideo; // params: video, position to play from in seconds.
-    public event Action<int>? SeekRelativeEvent; // param: position to play from in seconds.
-    public event Action? ToggleSubtitleEvent;
-    public event Action<bool>? ChangeRateEvent;
-    public event Action<bool>? ChangeVolumeEvent;
-    public event Action? WatchEvent;
-    public event Action? SkipEvent;
+    event Action? PlayPauseEvent;
+    event Action? PauseIfPlayingEvent;
+    event Action<Video, int?>? StartPlayingVideo; // params: video, position to play from in seconds.
+    event Action<int>? SeekRelativeEvent; // param: position to play from in seconds.
+    event Action? ToggleSubtitleEvent;
+    event Action<bool>? ChangeRateEvent;
+    event Action<bool>? ChangeVolumeEvent;
+    event Action? WatchEvent;
+    event Action? SkipEvent;
     public int? SelectedFolderId { get; set; }
-    public event Action<int>? AddVideos;
+    event Action<int>? AddVideos;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
 
@@ -396,6 +396,68 @@ public sealed class PlaybackSession : IDisposable
               if(_references.Count == 0)
                   this.Dispose();
             }, null, 60 * 60 * 1000, 60 * 60 * 1000);
+        }
+    }
+
+    public sealed class PlaybackSessionReference : IDisposable
+    {
+        internal PlaybackSession Session { get; }
+
+        public PlaybackSessionReference(PlaybackSession session) {
+            Session = session;
+
+            session.UpdateEvent += updateEvent;
+            session.PlayPauseEvent += playPauseEvent;
+            session.PauseIfPlayingEvent += pauseIfPlayingEvent;
+            session.StartPlayingVideo += startPlayingVideo;
+            session.SeekRelativeEvent += seekRelativeEvent;
+            session.ToggleSubtitleEvent += toggleSubtitleEvent;
+            session.ChangeRateEvent += changeRateEvent;
+            session.ChangeVolumeEvent += changeVolumeEvent;
+            session.WatchEvent += watchEvent;
+            session.SkipEvent += skipEvent;
+            session.AddVideos += addVideos;
+        }
+
+        public event Action? UpdateEvent;
+        public event Action? PlayPauseEvent;
+        public event Action? PauseIfPlayingEvent;
+        public event Action<Video, int?>? StartPlayingVideo; // params: video, position to play from in seconds.
+        public event Action<int>? SeekRelativeEvent; // param: position to play from in seconds.
+        public event Action? ToggleSubtitleEvent;
+        public event Action<bool>? ChangeRateEvent;
+        public event Action<bool>? ChangeVolumeEvent;
+        public event Action? WatchEvent;
+        public event Action? SkipEvent;
+        public event Action<int>? AddVideos;
+
+        private void updateEvent() => UpdateEvent?.Invoke();
+        private void playPauseEvent() => PlayPauseEvent?.Invoke();
+        private void pauseIfPlayingEvent() => PauseIfPlayingEvent.Invoke();
+        private void startPlayingVideo(Video video, int? position) => StartPlayingVideo?.Invoke(video, position);
+        private void seekRelativeEvent(int position) => SeekRelativeEvent?.Invoke(position);
+        private void toggleSubtitleEvent() => ToggleSubtitleEvent?.Invoke();
+        private void changeRateEvent(bool value) => ChangeRateEvent?.Invoke(value);
+        private void changeVolumeEvent(bool value) => ChangeVolumeEvent?.Invoke(value);
+        private void watchEvent() => WatchEvent?.Invoke();
+        private void skipEvent() => SkipEvent?.Invoke();
+        private void addVideos(int qty) => AddVideos?.Invoke(qty);
+
+        public void Dispose()
+        {
+            Session.UpdateEvent -= updateEvent;
+            Session.PlayPauseEvent -= playPauseEvent;
+            Session.PauseIfPlayingEvent -= pauseIfPlayingEvent;
+            Session.StartPlayingVideo -= startPlayingVideo;
+            Session.SeekRelativeEvent -= seekRelativeEvent;
+            Session.ToggleSubtitleEvent -= toggleSubtitleEvent;
+            Session.ChangeRateEvent -= changeRateEvent;
+            Session.ChangeVolumeEvent -= changeVolumeEvent;
+            Session.WatchEvent -= watchEvent;
+            Session.SkipEvent -= skipEvent;
+            Session.AddVideos -= addVideos;
+
+            Session.RemoveReference(this);
         }
     }
 }

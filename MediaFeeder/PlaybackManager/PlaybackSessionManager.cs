@@ -10,7 +10,7 @@ public sealed class PlaybackSessionManager(
 {
     internal Dictionary<string, PlaybackSession> PlaybackSessions { get; } = new();
 
-    internal PlaybackSessionReference NewSession(string PlayerId, AuthUser user)
+    internal PlaybackSession.PlaybackSessionReference NewSession(string PlayerId, AuthUser user)
     {
         PlaybackSession session;
         if(!PlaybackSessions.TryGetValue(PlayerId, out session)) {
@@ -33,12 +33,3 @@ public sealed class PlaybackSessionManager(
     public event Action? UpdateEvent;
 }
 
-public sealed class PlaybackSessionReference(PlaybackSession session) : IDisposable
-{
-    internal PlaybackSession Session { get; } = session;
-
-    public void Dispose()
-    {
-        Session.RemoveReference(this);
-    }
-}

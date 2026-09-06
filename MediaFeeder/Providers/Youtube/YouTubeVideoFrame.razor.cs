@@ -63,9 +63,9 @@ public sealed partial class YouTubeVideoFrame : IDisposable
                 PlaybackSession.ChangeRateEvent += ChangeRate;
                 PlaybackSession.ChangeVolumeEvent += ChangeVolume;
 
-                PlaybackSession.SupportsRateChange = true;
-                PlaybackSession.SupportsSubtitles = false;
-                PlaybackSession.SupportsVolumeChange = true;
+                PlaybackSession.Session.SupportsRateChange = true;
+                PlaybackSession.Session.SupportsSubtitles = false;
+                PlaybackSession.Session.SupportsVolumeChange = true;
             }
         }
     }
@@ -179,8 +179,8 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         ProgressUpdate(this);
         if (PlaybackSession != null)
         {
-            PlaybackSession.State = PlayerState.Unknown;
-            PlaybackSession.Message = $"Error {data.ToString()}";
+            PlaybackSession.Session.State = PlayerState.Unknown;
+            PlaybackSession.Session.Message = $"Error {data.ToString()}";
         }
 
         if (data.GetInt32() == 150)
@@ -206,8 +206,8 @@ public sealed partial class YouTubeVideoFrame : IDisposable
 
         if (PlaybackSession != null)
         {
-            PlaybackSession.State = _state.ToPlayState();
-            PlaybackSession.Message = null;
+            PlaybackSession.Session.State = _state.ToPlayState();
+            PlaybackSession.Session.Message = null;
             ProgressUpdate(this);
         }
 
@@ -240,7 +240,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         if (PlaybackSession == null)
             return;
 
-        PlaybackSession.Rate = (float?)data.GetDouble();
+        PlaybackSession.Session.Rate = (float?)data.GetDouble();
         ProgressUpdate(this);
     }
 
@@ -250,7 +250,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
         if (PlaybackSession == null)
             return;
 
-        PlaybackSession.Quality = data.ToString();
+        PlaybackSession.Session.Quality = data.ToString();
         ProgressUpdate(this);
     }
 
@@ -265,17 +265,17 @@ public sealed partial class YouTubeVideoFrame : IDisposable
 
             try
             {
-                PlaybackSession.Volume = await CallJsOrNull<int?>(_player, "getVolume");
-                PlaybackSession.Loaded = await CallJsOrNull<float?>(
+                PlaybackSession.Session.Volume = await CallJsOrNull<int?>(_player, "getVolume");
+                PlaybackSession.Session.Loaded = await CallJsOrNull<float?>(
                     _player,
                     "getVideoLoadedFraction"
                 );
 
                 // TODO error: Could not find 'getSubtitles' ('getSubtitles' was undefined).
-                //PlaybackSession.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
+                //PlaybackSession.Session.Subtitles = await _player.InvokeAsync<string>("getSubtitles");
 
                 var progress = await CallJsOrNull<float?>(_player, "getCurrentTime");
-                PlaybackSession.CurrentPosition =
+                PlaybackSession.Session.CurrentPosition =
                     progress != null ? TimeSpan.FromSeconds(progress.Value) : null;
 
                 // trying to seek before playback has actually started seems to do nothing.
@@ -288,9 +288,9 @@ public sealed partial class YouTubeVideoFrame : IDisposable
                 {
                     _lastRestoredPositionVideoId = Video.Id;
 
-                    var positionToRestore = await PlaybackSession.PlaybackPositionToRestore();
+                    var positionToRestore = await PlaybackSession.Session.PlaybackPositionToRestore();
                     Console.WriteLine(
-                        $"(session: {PlaybackSession.PlayerId}) Restoring position: {positionToRestore}"
+                        $"(session: {PlaybackSession.Session.PlayerId}) Restoring position: {positionToRestore}"
                     );
 
                     if (positionToRestore != null)
@@ -312,7 +312,7 @@ public sealed partial class YouTubeVideoFrame : IDisposable
             catch (Exception e)
             {
                 Console.WriteLine(
-                    $"(session: {PlaybackSession.PlayerId}) Exception reading data from YT player: "
+                    $"(session: {PlaybackSession.Session.PlayerId}) Exception reading data from YT player: "
                         + e
                 );
             }

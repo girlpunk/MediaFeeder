@@ -38,7 +38,7 @@ public sealed partial class Video : IDisposable
 
     private Data.db.Video? VideoObject { get; set; }
     private IProvider? Provider { get; set; }
-    private PlaybackSessionReference? PlaybackSession { get; set; }
+    private PlaybackSession.PlaybackSessionReference? PlaybackSession { get; set; }
 
     private int UpNextCount { get; set; }
     private TimeSpan UpNextDuration { get; set; } = TimeSpan.Zero;
@@ -57,8 +57,8 @@ public sealed partial class Video : IDisposable
         {
             PlaybackSession = SessionManager.NewSession(SessionIdProvider.Guid.ToString(), user);
             PlaybackSession.Session.Title = "Web Player";
-            PlaybackSession.Session.SkipEvent += async () => await InvokeAsync(() => GoNext(false));
-            PlaybackSession.Session.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
+            PlaybackSession.SkipEvent += async () => await InvokeAsync(() => GoNext(false));
+            PlaybackSession.WatchEvent += async () => await InvokeAsync(() => GoNext(true));
         }
 
         VideoObject = await Context
@@ -92,7 +92,7 @@ public sealed partial class Video : IDisposable
 
         PlaybackSession.Session.Video = VideoObject;
         PlaybackSession.Session.Provider = Provider.Provider;
-        PlaybackSession.Session.UpdateEvent += UpdateTimestamp;
+        PlaybackSession.UpdateEvent += UpdateTimestamp;
 
         lastSavePositionTime.Restart(); // wait for some actual playback before trying to save position.
         UpdateTimestamp();
