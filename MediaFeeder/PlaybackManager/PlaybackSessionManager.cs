@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace MediaFeeder.PlaybackManager;
 
 public sealed class PlaybackSessionManager(
-    IDbContextFactory<MediaFeederDataContext> dbContextFactory
+    IDbContextFactory<MediaFeederDataContext> dbContextFactory,
+    ILogger logger
 )
 {
     internal Dictionary<string, PlaybackSession> PlaybackSessions { get; } = new();
@@ -14,9 +15,12 @@ public sealed class PlaybackSessionManager(
     {
         PlaybackSession session;
         if(!PlaybackSessions.TryGetValue(PlayerId, out session)) {
-            session = new PlaybackSession(this, PlayerId, user, dbContextFactory);
+            logger.LogDebug("Creating new sesion for player {PlayerId}", PlayerId);
+            session = new PlaybackSession(this, PlayerId, user, dbContextFactory, logger);
             session.UpdateEvent += () => UpdateEvent?.Invoke();
             PlaybackSessions.Add(PlayerId, session);
+        } else {
+            logger.LogDebug("Connecting existing session for player {PlayerId}", PlayerId);
         }
 
         UpdateEvent?.Invoke();

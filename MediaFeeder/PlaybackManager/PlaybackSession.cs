@@ -13,6 +13,7 @@ public sealed class PlaybackSession : IDisposable
     private readonly PlaybackSessionManager _manager;
     private List<PlaybackSessionReference> _references = [];
     private Timer? _timer;
+    private ILogger _logger;
 
     public string? _title;
     private Video? _video;
@@ -60,10 +61,12 @@ public sealed class PlaybackSession : IDisposable
         PlaybackSessionManager manager,
         string playerId,
         AuthUser user,
-        IDbContextFactory<MediaFeederDataContext> dbContextFactory
+        IDbContextFactory<MediaFeederDataContext> dbContextFactory,
+        ILogger logger
     )
     {
         _manager = manager;
+        _logger = logger;
         PlayerId = playerId;
         User = user;
         DbContextFactory = dbContextFactory;
@@ -71,6 +74,7 @@ public sealed class PlaybackSession : IDisposable
 
     public void Dispose()
     {
+        _logger.LogDebug("Disposing of PlaybackSession");
         _timer?.Dispose();
         _manager.RemoveSession(this);
     }
@@ -101,6 +105,8 @@ public sealed class PlaybackSession : IDisposable
 
     public Video? PopPlaylistHead()
     {
+       _logger.LogDebug("Getting next video");
+
         if (Playlist.Count < 1)
             return null;
 
@@ -179,6 +185,8 @@ public sealed class PlaybackSession : IDisposable
 
     public async Task PlayNextInPlaylist()
     {
+        _logger.LogDebug("Playing next in playlist");
+
         if (StartPlayingVideo == null)
             throw new InvalidOperationException("StartPlayingVideo not defined.");
 
@@ -389,6 +397,7 @@ public sealed class PlaybackSession : IDisposable
         _references.Remove(reference);
 
         if(_references.Count == 0) {
+            _logger.LogDebug("Starting player disposal timer");
             State = PlayerState.Disconnected;
 
             _timer?.Dispose();

@@ -30,6 +30,7 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API List Folder");
         logger.LogError(userManager.GetType().ToString());
 
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
@@ -231,6 +232,8 @@ public sealed class ApiService(
 
     public override async Task<VideoReply> Video(VideoRequest request, ServerCallContext context)
     {
+        logger.LogDebug("Start API Get Video");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -296,6 +299,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Start Download");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -328,6 +333,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Mark as Watched");
+
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await CheckAuthAndGetVideo(context, db, request.Id);
 
@@ -345,6 +352,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Save Playback Position");
+
         await using var db = await contextFactory.CreateDbContextAsync(context.CancellationToken);
         var video = await CheckAuthAndGetVideo(context, db, request.Id);
 
@@ -364,6 +373,8 @@ public sealed class ApiService(
         int videoId
     )
     {
+        logger.LogDebug("Start API Check Auth & Get Video");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -382,6 +393,8 @@ public sealed class ApiService(
 
     public override async Task<SearchReply> Search(SearchRequest request, ServerCallContext context)
     {
+        logger.LogDebug("Start API Search");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -436,6 +449,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Shuffle");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -463,6 +478,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Get Subscription Thumbnail");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -503,6 +520,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Get Video Thumbnail");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -542,6 +561,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Get Video");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -578,6 +599,8 @@ public sealed class ApiService(
         ServerCallContext context
     )
     {
+        logger.LogDebug("Start API Playback Session");
+
         var user = await userManager.GetUserAsync(context.GetHttpContext().User);
         ArgumentNullException.ThrowIfNull(user);
 
@@ -587,8 +610,10 @@ public sealed class ApiService(
         string playerId;
         if (requestStream.Current.HasPlayerId) {
             playerId = requestStream.Current.PlayerId;
+            logger.LogDebug("Got player ID {PlayerID}", playerId);
         } else {
             playerId = Guid.NewGuid().ToString();
+            logger.LogDebug("Generating new player ID {PlayerID}", playerId);
         }
 
         // TODO pass some kinda init block to this so listeners only see the ready object?
@@ -599,6 +624,8 @@ public sealed class ApiService(
 
         sessionReference.StartPlayingVideo += async (video, positionSeconds) =>
         {
+            logger.LogDebug("Sending callback start playing video");
+
             var reply = new PlaybackSessionReply { NextVideoId = video.Id };
             if (positionSeconds != null)
                 reply.PlaybackPosition = positionSeconds.Value;
@@ -607,6 +634,8 @@ public sealed class ApiService(
 
         sessionReference.PlayPauseEvent += async () =>
         {
+            logger.LogDebug("Sending callback play pause event");
+
             var reply = new PlaybackSessionReply { ShouldPlayPause = true };
             if (sessionReference.Session.Video?.Id != null)
                 reply.NextVideoId = sessionReference.Session.Video.Id;
@@ -622,35 +651,47 @@ public sealed class ApiService(
             await responseStream.WriteAsync(reply, context.CancellationToken);
         };
 
-        sessionReference.PauseIfPlayingEvent += async () =>
+        sessionReference.PauseIfPlayingEvent += async () => {
+            logger.LogDebug("Sending callback pause if playing");
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldPauseIfPlaying = true },
                 context.CancellationToken
             );
-        sessionReference.SeekRelativeEvent += async seconds =>
+        };
+        sessionReference.SeekRelativeEvent += async seconds => {
+            logger.LogDebug("Sending callback seek relative");
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldSeekRelativeSeconds = seconds },
                 context.CancellationToken
             );
-        sessionReference.ChangeRateEvent += async (direction) =>
+        };
+        sessionReference.ChangeRateEvent += async (direction) => {
+            logger.LogDebug("Sending callback change playback rate");
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldChangeRate = direction ? 1 : -1 },
                 context.CancellationToken
             );
-        sessionReference.ChangeVolumeEvent += async (direction) =>
+        };
+        sessionReference.ChangeVolumeEvent += async (direction) => {
+            logger.LogDebug("Sending callback change volume");
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldChangeVolume = direction ? 1 : -1 },
                 context.CancellationToken
             );
-        sessionReference.ToggleSubtitleEvent += async () =>
+        };
+        sessionReference.ToggleSubtitleEvent += async () => {
+            logger.LogDebug("Sending callback toggle subtitles");
             await responseStream.WriteAsync(
                 new PlaybackSessionReply { ShouldToggleSubtitles = true },
                 context.CancellationToken
             );
+        };
 
         // TODO move to PlaybackSession.
         sessionReference.AddVideos += async minutes =>
         {
+            logger.LogDebug("Sending callback add videos");
+
             if (sessionReference.Session.SelectedFolderId == null)
                 return;
 
@@ -672,6 +713,7 @@ public sealed class ApiService(
 
         while (true)
         {
+            logger.LogDebug("Waiting for event");
             context.CancellationToken.ThrowIfCancellationRequested();
 
             if (await requestStream.MoveNext(context.CancellationToken))
