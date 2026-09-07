@@ -1,26 +1,33 @@
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using Microsoft.EntityFrameworkCore;
-
 namespace MediaFeeder.PlaybackManager;
+
+using Data;
+using Data.db;
+using Microsoft.EntityFrameworkCore;
 
 public sealed class PlaybackSessionManager(
     IDbContextFactory<MediaFeederDataContext> dbContextFactory,
-    ILogger logger
-)
+    ILogger<PlaybackSession> logger
+) : IDisposable
 {
-    internal Dictionary<string, PlaybackSession> PlaybackSessions { get; } = new();
+    internal Dictionary<string, PlaybackSession> PlaybackSessions { get; } = new(StringComparer.Ordinal);
 
-    internal PlaybackSession.PlaybackSessionReference NewSession(string PlayerId, AuthUser user)
+    internal PlaybackSession.PlaybackSessionReference NewSession(string playerId, AuthUser user)
     {
         PlaybackSession session;
-        if(!PlaybackSessions.TryGetValue(PlayerId, out session)) {
-            logger.LogDebug("Creating new sesion for player {PlayerId}", PlayerId);
-            session = new PlaybackSession(this, PlayerId, user, dbContextFactory, logger);
+#pragma warning disable IDISP001
+        if (!PlaybackSessions.TryGetValue(playerId, out session))
+#pragma warning restore IDISP001
+        {
+            logger.LogDebug("Creating new sesion for player {PlayerId}", playerId);
+#pragma warning disable IDISP001
+            session = new PlaybackSession(this, playerId, user, dbContextFactory, logger);
+#pragma warning restore IDISP001
             session.UpdateEvent += () => UpdateEvent?.Invoke();
-            PlaybackSessions.Add(PlayerId, session);
-        } else {
-            logger.LogDebug("Connecting existing session for player {PlayerId}", PlayerId);
+            PlaybackSessions.Add(playerId, session);
+        }
+        else
+        {
+            logger.LogDebug("Connecting existing session for player {PlayerId}", playerId);
         }
 
         UpdateEvent?.Invoke();
@@ -35,5 +42,13 @@ public sealed class PlaybackSessionManager(
     }
 
     public event Action? UpdateEvent;
+
+    public void Dispose()
+    {
+        foreach (var session in PlaybackSessions)
+        {
+            session.Value.Dispose();
+        }
+    }
 }
 

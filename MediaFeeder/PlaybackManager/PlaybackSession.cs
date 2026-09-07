@@ -1,21 +1,21 @@
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using MediaFeeder.Data.Enums;
-using Microsoft.EntityFrameworkCore;
-using Timer = System.Threading.Timer;
-
 namespace MediaFeeder.PlaybackManager;
+
+using Data;
+using Data.db;
+using Data.Enums;
+using Microsoft.EntityFrameworkCore;
+using Timer = Timer;
 
 public sealed class PlaybackSession : IDisposable
 {
-    public string PlayerId {get;}
+    public string PlayerId { get; }
 
     private readonly PlaybackSessionManager _manager;
     private List<PlaybackSessionReference> _references = [];
     private Timer? _timer;
     private ILogger _logger;
 
-    public string? _title;
+    private string? _title;
     private Video? _video;
     private TimeSpan? _currentPosition;
     private AuthUser _user;
@@ -31,21 +31,21 @@ public sealed class PlaybackSession : IDisposable
     private bool _supportsRateChange;
     private bool _supportsVolumeChange;
     private bool _supportsSubtitles;
-    public bool SleepMode;
+    public bool SleepMode { get; set; }
 
     private IDbContextFactory<MediaFeederDataContext> DbContextFactory { get; }
     public event Action? UpdateEvent;
-    event Action? PlayPauseEvent;
-    event Action? PauseIfPlayingEvent;
-    event Action<Video, int?>? StartPlayingVideo; // params: video, position to play from in seconds.
-    event Action<int>? SeekRelativeEvent; // param: position to play from in seconds.
-    event Action? ToggleSubtitleEvent;
-    event Action<bool>? ChangeRateEvent;
-    event Action<bool>? ChangeVolumeEvent;
-    event Action? WatchEvent;
-    event Action? SkipEvent;
+    private event Action? PlayPauseEvent;
+    private event Action? PauseIfPlayingEvent;
+    private event Action<Video, int?>? StartPlayingVideo; // params: video, position to play from in seconds.
+    private event Action<int>? SeekRelativeEvent; // param: position to play from in seconds.
+    private event Action? ToggleSubtitleEvent;
+    private event Action<bool>? ChangeRateEvent;
+    private event Action<bool>? ChangeVolumeEvent;
+    private event Action? WatchEvent;
+    private event Action? SkipEvent;
     public int? SelectedFolderId { get; set; }
-    event Action<int>? AddVideos;
+    private event Action<int>? AddVideos;
 
     public void PlayPause() => PlayPauseEvent?.Invoke();
 
@@ -62,12 +62,13 @@ public sealed class PlaybackSession : IDisposable
         string playerId,
         AuthUser user,
         IDbContextFactory<MediaFeederDataContext> dbContextFactory,
-        ILogger logger
+        ILogger<PlaybackSession> logger
     )
     {
         _manager = manager;
         _logger = logger;
         PlayerId = playerId;
+        _user = user;
         User = user;
         DbContextFactory = dbContextFactory;
     }
@@ -105,7 +106,7 @@ public sealed class PlaybackSession : IDisposable
 
     public Video? PopPlaylistHead()
     {
-       _logger.LogDebug("Getting next video");
+        _logger.LogDebug("Getting next video");
 
         if (Playlist.Count < 1)
             return null;
@@ -145,19 +146,16 @@ public sealed class PlaybackSession : IDisposable
         await PlayNextInPlaylist();
     }
 
-    public async Task OnWatchedToEnd(int videoId)
-    {
-        await MarkVideoPlayedToEnd(videoId, !SleepMode);
-    }
+    public Task OnWatchedToEnd(int videoId) => MarkVideoPlayedToEnd(videoId, !SleepMode);
 
-    private async Task MarkAsWatchedAndGoNext()
+    private Task MarkAsWatchedAndGoNext()
     {
         var video = Video; // capture for thread safety.
 
         if (video == null)
             throw new InvalidOperationException("Video not set in session.");
 
-        await MarkVideoPlayedToEnd(video.Id, true);
+        return MarkVideoPlayedToEnd(video.Id, true);
     }
 
     private async Task MarkVideoPlayedToEnd(int videoId, bool markWatchedAndGoNext)
@@ -209,7 +207,8 @@ public sealed class PlaybackSession : IDisposable
         var video = _video;
         if (rate is null or 1.0f || video?.Duration == null)
             return "";
-        var span = TimeSpan.FromSeconds((long)(video.Duration / rate));
+
+        var span = TimeSpan.FromSeconds((long) (video.Duration / rate));
         return $" ({span.ToString()})";
     }
 
@@ -386,25 +385,36 @@ public sealed class PlaybackSession : IDisposable
         return null;
     }
 
-    public PlaybackSessionReference GetReference() {
+    public PlaybackSessionReference GetReference()
+    {
         _timer?.Dispose();
         var reference = new PlaybackSessionReference(this);
         _references.Add(reference);
         return reference;
     }
 
-    public void RemoveReference(PlaybackSessionReference reference) {
+    public void RemoveReference(PlaybackSessionReference reference)
+    {
         _references.Remove(reference);
 
-        if(_references.Count == 0) {
+        if (_references.Count == 0)
+        {
             _logger.LogDebug("Starting player disposal timer");
             State = PlayerState.Disconnected;
 
             _timer?.Dispose();
-            _timer = new Timer(_ => {
-              if(_references.Count == 0)
-                  this.Dispose();
-            }, null, 60 * 60 * 1000, 60 * 60 * 1000);
+            _timer = new Timer(
+                _ =>
+                {
+                    if (_references.Count == 0)
+                    {
+                        Dispose();
+                    }
+                },
+                null,
+                60 * 60 * 1000,
+                60 * 60 * 1000
+            );
         }
     }
 
@@ -412,20 +422,21 @@ public sealed class PlaybackSession : IDisposable
     {
         internal PlaybackSession Session { get; }
 
-        public PlaybackSessionReference(PlaybackSession session) {
+        public PlaybackSessionReference(PlaybackSession session)
+        {
             Session = session;
 
-            session.UpdateEvent += updateEvent;
-            session.PlayPauseEvent += playPauseEvent;
-            session.PauseIfPlayingEvent += pauseIfPlayingEvent;
-            session.StartPlayingVideo += startPlayingVideo;
-            session.SeekRelativeEvent += seekRelativeEvent;
-            session.ToggleSubtitleEvent += toggleSubtitleEvent;
-            session.ChangeRateEvent += changeRateEvent;
-            session.ChangeVolumeEvent += changeVolumeEvent;
-            session.WatchEvent += watchEvent;
-            session.SkipEvent += skipEvent;
-            session.AddVideos += addVideos;
+            Session.UpdateEvent += updateEvent;
+            Session.PlayPauseEvent += playPauseEvent;
+            Session.PauseIfPlayingEvent += pauseIfPlayingEvent;
+            Session.StartPlayingVideo += startPlayingVideo;
+            Session.SeekRelativeEvent += seekRelativeEvent;
+            Session.ToggleSubtitleEvent += toggleSubtitleEvent;
+            Session.ChangeRateEvent += changeRateEvent;
+            Session.ChangeVolumeEvent += changeVolumeEvent;
+            Session.WatchEvent += watchEvent;
+            Session.SkipEvent += skipEvent;
+            Session.AddVideos += addVideos;
         }
 
         public event Action? UpdateEvent;
@@ -442,14 +453,25 @@ public sealed class PlaybackSession : IDisposable
 
         private void updateEvent() => UpdateEvent?.Invoke();
         private void playPauseEvent() => PlayPauseEvent?.Invoke();
-        private void pauseIfPlayingEvent() => PauseIfPlayingEvent.Invoke();
-        private void startPlayingVideo(Video video, int? position) => StartPlayingVideo?.Invoke(video, position);
+        private void pauseIfPlayingEvent() => PauseIfPlayingEvent?.Invoke();
+        private void startPlayingVideo(Video video, int? position)
+        {
+            Session._logger.LogDebug("Passing on skip event");
+            StartPlayingVideo?.Invoke(video, position);
+        }
+
         private void seekRelativeEvent(int position) => SeekRelativeEvent?.Invoke(position);
         private void toggleSubtitleEvent() => ToggleSubtitleEvent?.Invoke();
         private void changeRateEvent(bool value) => ChangeRateEvent?.Invoke(value);
         private void changeVolumeEvent(bool value) => ChangeVolumeEvent?.Invoke(value);
         private void watchEvent() => WatchEvent?.Invoke();
-        private void skipEvent() => SkipEvent?.Invoke();
+
+        private void skipEvent()
+        {
+            Session._logger.LogDebug("Passing on skip event");
+            SkipEvent?.Invoke();
+        }
+
         private void addVideos(int qty) => AddVideos?.Invoke(qty);
 
         public void Dispose()
