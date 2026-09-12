@@ -456,7 +456,7 @@ public sealed class PlaybackSession : IDisposable
         private void pauseIfPlayingEvent() => PauseIfPlayingEvent?.Invoke();
         private void startPlayingVideo(Video video, int? position)
         {
-            Session._logger.LogDebug("Passing on skip event");
+            Session._logger.LogDebug("Passing on start playing event");
             StartPlayingVideo?.Invoke(video, position);
         }
 
@@ -469,7 +469,15 @@ public sealed class PlaybackSession : IDisposable
         private void skipEvent()
         {
             Session._logger.LogDebug("Passing on skip event");
-            SkipEvent?.Invoke();
+
+            if (SkipEvent != null)
+            {
+                SkipEvent.Invoke();
+                return;
+            }
+
+            Session._logger.LogDebug("No skip handlers registered, sending playNextInPlaylist instead");
+            Session.PlayNextInPlaylist();
         }
 
         private void addVideos(int qty) => AddVideos?.Invoke(qty);
