@@ -464,7 +464,16 @@ public sealed class PlaybackSession : IDisposable
         private void toggleSubtitleEvent() => ToggleSubtitleEvent?.Invoke();
         private void changeRateEvent(bool value) => ChangeRateEvent?.Invoke(value);
         private void changeVolumeEvent(bool value) => ChangeVolumeEvent?.Invoke(value);
-        private void watchEvent() => WatchEvent?.Invoke();
+        private void watchEvent()
+        {
+            if (WatchEvent != null)
+            {
+                WatchEvent.Invoke();
+                return;
+            }
+
+            Session.MarkAsWatchedAndGoNext();
+        }
 
         private void skipEvent()
         {
