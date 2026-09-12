@@ -25,9 +25,6 @@ public partial class AddSubscription
     [Inject]
     public required UserManager<AuthUser> UserManager { get; set; }
 
-    [CascadingParameter]
-    public required HttpContext HttpContext { get; set; }
-
     [Inject]
     public required ITimeTickerManager<TimeTickerEntity> TimeTicker { get; set; }
 
@@ -194,7 +191,7 @@ public partial class AddSubscription
 
         await Context.SaveChangesAsync();
 
-        await TimeTicker.AddSynchroniseSubscription(subscription.Id, FoundProvider, Logger, HttpContext.RequestAborted);
+        await TimeTicker.AddSynchroniseSubscription(subscription.Id, FoundProvider, Logger);
 
         await FeedbackRef.CloseAsync();
     }

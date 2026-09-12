@@ -13,7 +13,7 @@ internal static class TimerQHelper
         int subscriptionId,
         IProvider provider,
         ILogger logger,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         ArgumentNullException.ThrowIfNull(provider);
