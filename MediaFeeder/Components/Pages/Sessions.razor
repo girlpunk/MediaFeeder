@@ -14,7 +14,7 @@
         {
             @foreach (var session in SessionManager.PlaybackSessions.OrderBy(static s => s.Value.Title).Select(s => s.Value))
             {
-                <TabPane Key="@session.Title">
+                <TabPane Key="@session.PlayerId">
                     <TabTemplate>
                         <span style="font-size: 120%;">@(session.State switch
                                                        {
