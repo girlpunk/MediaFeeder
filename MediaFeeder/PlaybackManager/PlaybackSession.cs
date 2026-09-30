@@ -205,7 +205,7 @@ public sealed class PlaybackSession : IDisposable
     {
         var rate = _rate;
         var video = _video;
-        if (rate is null or 1.0f || video?.Duration == null)
+        if (rate is null or 1.0f || rate <= 0f || video?.Duration == null)
             return "";
 
         var span = TimeSpan.FromSeconds((long) (video.Duration / rate));
