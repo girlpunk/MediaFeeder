@@ -73,6 +73,7 @@ _: {
         makeWrapper "${lib.getExe python}" $bin/mediafeeder-chromecast-bridge --add-flags "$sp/chromecast_bridge.py"
         makeWrapper "${lib.getExe python}" $bin/mediafeeder-get-stars         --add-flags "$sp/get_stars.py"
         makeWrapper "${lib.getExe python}" $bin/mediafeeder-lounge-bridge     --add-flags "$sp/lounge_bridge.py"
+        makeWrapper "${lib.getExe python}" $bin/mediafeeder-lounge-setup      --add-flags "$sp/lounge_setup.py"
 
         runHook postInstall
       '';
