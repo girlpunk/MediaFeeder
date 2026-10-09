@@ -390,7 +390,7 @@ class Shuffler(MfClient):
         rate_to_restore = None
 
         if player_id is None:
-            player_id = uuid.UUID().hex
+            player_id = uuid.uuid4().hex
 
         while True:
             if self._session_reader is None or self._session_reader.done():
