@@ -43,7 +43,11 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.debug("LoungePlayer Init")
         self._prov_id_to_video_id: dict[str, int] = {}
 
-        self._api = pyytlounge.YtLoungeApi("MediaFeeder", self)
+        pyytlounge_logger = logging.getLogger("pyytlounge")
+        if verbose:
+            pyytlounge_logger.setLevel(logging.DEBUG)
+        self._api = pyytlounge.YtLoungeApi("MediaFeeder", self, pyytlounge_logger)
+
         self._shuffler = common.Shuffler(name, self, verbose=verbose)
 
         config = auth.MediaFeederConfig()
