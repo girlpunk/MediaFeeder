@@ -390,6 +390,8 @@ class Shuffler(MfClient):
 
         if player_id is None:
             player_id = uuid.uuid4().hex
+        self._logger.debug("Using player_id: %s", player_id)
+
 
         while True:
             if self._session_reader is None or self._session_reader.done():

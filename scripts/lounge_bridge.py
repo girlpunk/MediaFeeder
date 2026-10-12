@@ -141,7 +141,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         asyncio.get_event_loop().create_task(self._subscribe_events())
         asyncio.get_event_loop().create_task(self._request_updates())
 
-        await self._shuffler.start()
+        await self._shuffler.start(player_id=self._api.auth.screen_id)
 
     async def _request_updates(self) -> None:
         self._logger.debug("Request Updates")
