@@ -31,6 +31,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     _now_provider_id: str | None = None
     _now_duration: float | None = None
+    _now_position: float | None = None
 
     _prev_provider_id: str | None = None
     _prev_duration: float | None = None
@@ -197,6 +198,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             self._now_duration = event.duration
 
         if event.current_time is not None:
+            self._now_position = event.current_time
             update.Position = int(event.current_time)
         update.Provider = "Youtube"
 
@@ -208,6 +210,12 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             and event.video_id == self._now_provider_id
             and self._now_provider_id is not None
             and self._now_duration is not None
+        ) or (
+            # smarttube
+            event.current_time is None
+            and event.state == pyytlounge.State.Paused
+            and event.video_id == self._now_provider_id
+            and self.is_close(self._now_position, self._now_duration, 10)  # 10 seconds of fudge factor :(
         ):
             self._logger.debug(
                 "Assuming video finished: now_provider_id=%s  now_duration=%s",
@@ -219,6 +227,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             )
             self._now_provider_id = None
             self._now_duration = None
+            self._now_position = None
             self._prev_provider_id = None
             self._prev_duration = None
 
@@ -330,6 +339,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             return
 
         if event.current_time is not None:
+            self._now_position = event.current_time
             update.Position = int(event.current_time)
 
         await self._shuffler.send_status(update)
@@ -365,6 +375,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
                 )
                 self._now_provider_id = None
                 self._now_duration = None
+                self._now_position = None
                 self._prev_provider_id = None
                 self._prev_duration = None
 
