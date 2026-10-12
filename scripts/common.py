@@ -410,6 +410,8 @@ class Shuffler(MfClient):
                 await self._player.ensure_ready()
 
             event = await self.get_event(5)
+            if event:
+                self._logger.debug("Processing event: %s", event)
 
             if event and event.next_video_id:
                 current_video_id = event.next_video_id
