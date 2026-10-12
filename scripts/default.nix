@@ -48,7 +48,14 @@ _: {
         pyatv
         pychromecast
         pyyaml
-        pyytlounge
+        (pyytlounge.overrideAttrs (old: {
+          src = pkgs.fetchFromGitHub {
+            owner = "haku";
+            repo = "pyytlounge";
+            rev = "f5361f02d3fe4c1532f07562b16b2a4d15caa449";
+            hash = "sha256-IAdJQkCegB6zvSMdpuuhdVvnCYl2+Hl1fy6Pz5sQ+V0=";
+          };
+        }))
         requests
         types-protobuf
         types-pyyaml
