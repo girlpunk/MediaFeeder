@@ -155,7 +155,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.debug("Subscribe Events")
         while True:
             await asyncio.sleep(10)
-            self._logger.warning("Subscribing to events")
+            self._logger.debug("Subscribing to events")
             await self._api.subscribe()
 
     async def now_playing_changed(self, event: pyytlounge.NowPlayingEvent) -> None:

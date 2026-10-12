@@ -248,7 +248,6 @@ class Shuffler(MfClient):
 
     async def _on_ses_rep_msg(self, rep: Api_pb2.PlaybackSessionReply) -> None:
         """Process message from MediaFeeder."""
-        self._logger.debug("On Ses Rep Msg")
         if rep.ShouldPlayPause:
             await self._player.play_pause(rep.NextVideoId, rep.PlaybackPosition)
 
