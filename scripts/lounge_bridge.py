@@ -42,7 +42,6 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         if verbose:
             self._logger.setLevel(logging.DEBUG)
         self._logger.debug("LoungePlayer Init")
-        self._prov_id_to_video_id: dict[str, int] = {}
 
         pyytlounge_logger = logging.getLogger("pyytlounge")
         pyytlounge_logger.setLevel(logging.DEBUG if verbose else logging.WARNING)
@@ -81,7 +80,6 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
         self._logger.debug("Play Video: Id=%s VideoId=%s", video.Id, video.VideoId)
-        self._prov_id_to_video_id[video.VideoId] = video.Id
         await self._api.play_video(video.VideoId)
         await self._api.next()
 
@@ -219,9 +217,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
                 self._now_provider_id,
                 self._now_duration,
             )
-            await self._shuffler.finished(
-                self._prov_id_to_video_id[self._now_provider_id]
-            )
+            await self._shuffler.finished_provider_id(self._now_provider_id)
             self._now_provider_id = None
             self._now_duration = None
             self._now_position = None
@@ -352,9 +348,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
                     self._prev_provider_id,
                     self._prev_duration,
                 )
-                await self._shuffler.finished(
-                    self._prov_id_to_video_id[self._prev_provider_id]
-                )
+                await self._shuffler.finished_provider_id(self._prev_provider_id)
                 self._prev_provider_id = None
                 self._prev_duration = None
             elif (
@@ -367,9 +361,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
                     self._now_provider_id,
                     self._now_duration,
                 )
-                await self._shuffler.finished(
-                    self._prov_id_to_video_id[self._now_provider_id]
-                )
+                await self._shuffler.finished_provider_id(self._now_provider_id)
                 self._now_provider_id = None
                 self._now_duration = None
                 self._now_position = None

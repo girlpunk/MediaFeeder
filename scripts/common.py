@@ -364,6 +364,13 @@ class Shuffler(MfClient):
         self._logger.debug("Finished playing: video_id=%s", video_id)
         self._event_queue.put_nowait(QueueEvent(watched_to_end=True, video_id=video_id))
 
+    async def finished_provider_id(self, provider_id: str):
+        search = await self._stub.Search(Api_pb2.SearchRequest(Provider="Youtube", ProviderVideoId=provider_id))
+        if len(search.Videos) == 1:
+            await self.finished(search.Videos[0].VideoId)
+        else:
+            self._logger.warning("Failed to look up video_id for provider_id %s: %s", provider_id, search)
+
     async def playback_abandoned(self) -> None:
         """Process that current video has been abandoned."""
         self._logger.debug("Playback abandoned.")
