@@ -80,6 +80,8 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
         self._logger.debug("Play Video: Id=%s VideoId=%s", video.Id, video.VideoId)
+
+        await self._api.set_auto_play_mode(False)
         await self._api.play_video(video.VideoId)
         await self._api.next()
 
@@ -284,15 +286,8 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             event.supported,
         )
         if event.enabled:
-            asyncio.get_event_loop().create_task(self._disable_autoplay())
-
-    async def _disable_autoplay(self) -> None:
-        """Disable autoplay in the app."""
-        await asyncio.sleep(10)
-        await self._api._command(  # noqa: SLF001
-            "setAutoplayMode",
-            {"autoplayMode": "DISABLED"},
-        )
+            await asyncio.sleep(10)
+            await self._api.set_auto_play_mode(False)
 
     async def autoplay_up_next_changed(
         self, event: pyytlounge.AutoplayUpNextEvent
