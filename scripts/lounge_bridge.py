@@ -45,8 +45,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._prov_id_to_video_id: dict[str, int] = {}
 
         pyytlounge_logger = logging.getLogger("pyytlounge")
-        if verbose:
-            pyytlounge_logger.setLevel(logging.DEBUG)
+        pyytlounge_logger.setLevel(logging.DEBUG if verbose else logging.WARNING)
         self._api = pyytlounge.YtLoungeApi("MediaFeeder", self, pyytlounge_logger)
 
         self._shuffler = common.Shuffler(name, self, verbose=verbose)
