@@ -143,7 +143,13 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         asyncio.get_event_loop().create_task(self._subscribe_events())
         asyncio.get_event_loop().create_task(self._request_updates())
 
-        await self._shuffler.start(player_id=self._api.auth.screen_id)
+        try:
+            await self._shuffler.start(player_id=self._api.auth.screen_id)
+        except asyncio.exceptions.CancelledError:
+            # clean disconnect on exit.  this is a vague work around to not
+            # having a way to clear the accumulated playlist.
+            self._logger.info("Disconnecting...")
+            await self._api.disconnect()
 
     async def _request_updates(self) -> None:
         self._logger.debug("Request Updates")
