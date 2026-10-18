@@ -85,6 +85,15 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         await self._api.play_video(video.VideoId)
         await self._api.next()
 
+        # this does not help
+        # https://github.com/bertybuttface/youtube-lounge-rs/blob/main/loungedocs/API-Remote-Commands.md
+        # await self._api._command("setPlaylist", {
+        #     "videoId": video.VideoId,
+        #     "listId": "",
+        #     "currentIndex": -1,
+        #     "currentTime": 0,
+        #     })
+
     # PlayerBase
     @override
     async def play_pause(
@@ -217,7 +226,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             # smarttube
             event.current_time is None
             and event.state == pyytlounge.State.Paused
-            and event.video_id == self._now_provider_id
+            and event.video_id == self._now_provider_id  # or sometimes None?
             and self.is_close(self._now_position, self._now_duration, 10)  # 10 seconds of fudge factor :(
         ) or (
             # smarttube
