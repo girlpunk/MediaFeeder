@@ -211,6 +211,11 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             and event.state == pyytlounge.State.Paused
             and event.video_id == self._now_provider_id
             and self.is_close(self._now_position, self._now_duration, 10)  # 10 seconds of fudge factor :(
+        ) or (
+            # smarttube
+            event.state == pyytlounge.State.Paused
+            and event.video_id == self._now_provider_id
+            and self.is_close(event.current_time, event.duration, 1)
         ):
             self._logger.debug(
                 "Assuming video finished: now_provider_id=%s  now_duration=%s",
