@@ -126,7 +126,8 @@ class MediaFeederConfig:
         """
         self._logger.debug("Get Server Token")
         if (
-            "Token" in cfg["Auth"]["Server"]
+            "Server" in cfg["Auth"]
+            and "Token" in cfg["Auth"]["Server"]
             and cfg["Auth"]["Server"]["Token"] is not None
             and cfg["Auth"]["Server"]["Expiry"] is not None
             and cfg["Auth"]["Server"]["Expiry"] - datetime.now(tz=timezone.utc)
@@ -174,7 +175,9 @@ class MediaFeederConfig:
         self._logger.debug("Get Token")
         # Check if we have a token already
         if (
-            "Token" in cfg["Auth"]["Server"]
+            "Server" in cfg["Auth"]
+            and "Token" in cfg["Auth"]["Server"]
+            and "Device" in cfg["Auth"]
             and cfg["Auth"]["Device"]["Token"] is not None
             and cfg["Auth"]["Device"]["Expiry"] is not None
             and cfg["Auth"]["Device"]["Expiry"] - datetime.now(tz=timezone.utc)
