@@ -214,7 +214,8 @@ class MediaFeederConfig:
         """
         self._logger.debug("Use Refresh")
         if (
-            "Refresh" not in cfg["Auth"]["Device"]
+            "Device" not in cfg["Auth"]
+            or "Refresh" not in cfg["Auth"]["Device"]
             or cfg["Auth"]["Device"]["Refresh"] is None
         ):
             return self._get_new_token(cfg)
