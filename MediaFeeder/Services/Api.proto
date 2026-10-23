@@ -201,6 +201,7 @@ message PlaybackSessionRequest {
   optional int32 Position = 3;
   optional string Quality = 4;
   optional string Provider = 5;
+  optional string ProviderVideoId = 18;
   optional PlayerState State = 6;
   optional int32 Volume = 7;
   optional float Rate = 8;

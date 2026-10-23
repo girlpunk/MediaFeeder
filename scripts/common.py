@@ -41,6 +41,9 @@ class StatusUpdate:
     """Which provider is playing the video"""
     Provider: str | None = None
 
+    """Provider's ID of the video, for reporting wrong video is playing"""
+    ProviderVideoId: str | None = None
+
     """Player state, using Api.proto PlayerState enum values"""
     State: int | None = None
 
@@ -321,6 +324,9 @@ class Shuffler(MfClient):
 
         if status.Provider is not None:
             status_message.Provider = status.Provider
+
+        if status.ProviderVideoId is not None:
+            status_message.ProviderVideoId = status.ProviderVideoId
 
         if status.Volume is not None:
             status_message.Volume = status.Volume

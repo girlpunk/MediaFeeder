@@ -205,6 +205,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
                     self._prev_duration,
                 )
             self._now_provider_id = event.video_id
+            update.ProviderVideoId = event.video_id
 
         if event.duration:
             self._now_duration = event.duration
