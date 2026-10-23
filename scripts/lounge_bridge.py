@@ -25,7 +25,7 @@ from typing_extensions import Self
 class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     """Player for Youtube TV App's 'Lounge' API."""
 
-    _api: pyytlounge.YtLoungeApi
+    _api: pyytlounge.YtLoungeApi = None
     _shuffler: common.Shuffler
     _current_player_state: pyytlounge.State | None = None
 
@@ -38,19 +38,17 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     def __init__(self, name: str, *, verbose: bool) -> None:
         """Set up variables, but doesn't connect yet."""
-        self._logger = logging.getLogger(f"LoungePlayer: {name}")
+        self.name = name
+
+        self._logger = logging.getLogger(f"LoungePlayer")
         if verbose:
             self._logger.setLevel(logging.DEBUG)
         self._logger.debug("LoungePlayer Init")
 
-        pyytlounge_logger = logging.getLogger("pyytlounge")
-        pyytlounge_logger.setLevel(logging.DEBUG if verbose else logging.WARNING)
-        self._api = pyytlounge.YtLoungeApi("MediaFeeder", self, pyytlounge_logger)
+        self.pyytlounge_logger = logging.getLogger("pyytlounge")
+        self.pyytlounge_logger.setLevel(logging.DEBUG if verbose else logging.WARNING)
 
         self._shuffler = common.Shuffler(name, self, verbose=verbose)
-
-        config = auth.MediaFeederConfig()
-        self._api.load_auth_state(config.get_player(name))
 
     async def __aenter__(self) -> Self:
         """Connect to Lounge.
@@ -60,7 +58,6 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
         """
         self._logger.debug("AEnter")
-        await self._api.__aenter__()
         await self._shuffler.__aenter__()
         return self
 
@@ -68,12 +65,40 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         """Disconnect from Lounge."""
         self._logger.debug("AExit")
         await self._shuffler.__aexit__(*args)
-        await self._api.__aexit__(*args)
+
+        if self._api:
+            # clean disconnect on exit.  this is a vague work around to not
+            # having a way to clear the accumulated playlist.
+            if self._api.connected():
+                self._logger.info("Disconnecting...")
+                await self._api.disconnect()
+            await self._api.__aexit__(*args)
+
+        self._logger.debug("AExit complete.")
+
+    async def resetup_api(self) -> None:
+        old = self._api
+        if old:
+            self._logger.debug("Recreating YtLoungeApi")
+
+        api = pyytlounge.YtLoungeApi("MediaFeeder", self, self.pyytlounge_logger)
+        config = auth.MediaFeederConfig()
+        api.load_auth_state(config.get_player(self.name))
+        await api.__aenter__()
+        self._logger.info("Trying to link: %s", await api.refresh_auth())
+        self._logger.info("Trying to connect: %s", await api.connect())
+        self._api = api
+
+        if old:
+            if old.connected():
+                await old.disconnect()
+            await old.__aexit__(None, None, None)
 
     # PlayerBase
     @override
     async def ensure_ready(self) -> None:
-        pass
+        if not self._api.connected():
+            await self.resetup_api()
 
     # PlayerBase
     @override
@@ -107,7 +132,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         elif self._current_player_state == pyytlounge.State.Playing:
             await self._api.pause()
         elif (
-            self._current_player_state == pyytlounge.State.Starting and resume_video_id
+            self._current_player_state in (None, pyytlounge.State.Starting) and resume_video_id
         ):
             self._logger.info(
                 "Player is idle so requesting replay of %s from %s seconds.",
@@ -145,9 +170,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def main(self) -> None:
         """Connect to the Lounge API."""
-        self._logger.debug("Main")
-        self._logger.info("Trying to link: %s", await self._api.refresh_auth())
-        self._logger.info("Trying to connect: %s", await self._api.connect())
+        await self.resetup_api()
 
         asyncio.get_event_loop().create_task(self._subscribe_events())
         asyncio.get_event_loop().create_task(self._request_updates())
@@ -155,10 +178,10 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         try:
             await self._shuffler.start(player_id=self._api.auth.screen_id)
         except asyncio.exceptions.CancelledError:
-            # clean disconnect on exit.  this is a vague work around to not
-            # having a way to clear the accumulated playlist.
-            self._logger.info("Disconnecting...")
-            await self._api.disconnect()
+            pass
+        except Exception as e:
+            self._logger.warning("Main loop exception: %s: %s", type(e).__name__, e)
+        self._logger.debug("Main loop exiting.")
 
     async def _request_updates(self) -> None:
         self._logger.debug("Request Updates")
@@ -471,4 +494,7 @@ async def _main() -> None:
 
 if __name__ == "__main__":
     # https://docs.python.org/3/library/asyncio-dev.html#asyncio-debug-mode
-    asyncio.run(_main(), debug=True)
+    try:
+        asyncio.run(_main(), debug=True)
+    except KeyboardInterrupt:
+        pass
