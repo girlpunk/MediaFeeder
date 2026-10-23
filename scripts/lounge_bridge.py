@@ -104,11 +104,19 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
     @override
     async def play_video(self, video: Api_pb2.VideoReply) -> None:
         """Play a video immidiately."""
-        self._logger.debug("Play Video: Id=%s VideoId=%s", video.Id, video.VideoId)
+        self._logger.debug("play_video: Id=%s VideoId=%s", video.Id, video.VideoId)
 
-        await self._api.set_auto_play_mode(False)
-        await self._api.play_video(video.VideoId)
-        await self._api.next()
+        async def do_play():
+            await self._api.play_video(video.VideoId)
+            #await self._api.next()
+
+        try:
+            await do_play()
+        except pyytlounge.exceptions.NotConnectedException as e:
+            self._logger.debug("play_video: not connected, reconnecting and retrying...")
+            await self.resetup_api()
+            await asyncio.sleep(1)
+            await do_play()
 
         # this does not help
         # https://github.com/bertybuttface/youtube-lounge-rs/blob/main/loungedocs/API-Remote-Commands.md
