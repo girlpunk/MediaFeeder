@@ -184,7 +184,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.debug("Main loop exiting.")
 
     async def _request_updates(self) -> None:
-        self._logger.debug("Request Updates")
+        self._logger.debug("Starting request_updates loop...")
         try:
             while True:
                 await asyncio.sleep(10)
@@ -198,7 +198,7 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
             self._logger.warning("request_updates loop exited.")
 
     async def _subscribe_events(self) -> None:
-        self._logger.debug("Subscribe Events")
+        self._logger.debug("Starting subscribe_events loop...")
         try:
             while True:
                 await asyncio.sleep(10)

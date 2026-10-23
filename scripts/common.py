@@ -141,7 +141,7 @@ class MfClient:
         server_cert = self._settings.get_certificate_path()
         cert_cn = None
         if server_cert is not None:
-            self._logger.info("Using server cert: %s", server_cert)
+            self._logger.debug("Using server cert: %s", server_cert)
             with Path(server_cert).open("rb") as f:
                 root_certs = f.read()
             ssl_credentials = grpc.ssl_channel_credentials(root_certificates=root_certs)
@@ -164,7 +164,7 @@ class MfClient:
         ]
 
         if cert_cn is not None:
-            self._logger.info("Using cert CN: %s", cert_cn)
+            self._logger.debug("Using cert CN: %s", cert_cn)
             channel_options += [("grpc.ssl_target_name_override", cert_cn)]
 
         self._channel: grpc.aio.Channel = grpc.aio.secure_channel(
@@ -216,7 +216,7 @@ class Shuffler(MfClient):
         if self._session_reader is not None:
             self._session_reader.cancel()
 
-        self._logger.info("Connecting to server...")
+        self._logger.debug("Connecting to server...")
         await self._channel.channel_ready()
         status_report_iterator = self._stub.PlaybackSession(
             self._status_report_queue_iterator()
@@ -237,7 +237,6 @@ class Shuffler(MfClient):
         self, iterator: AsyncGenerator[Api_pb2.PlaybackSessionReply]
     ) -> None:
         """Process incoming messages from MediaFeeder."""
-        self._logger.debug("On Ses Rep")
         try:
             self._logger.info("Started streaming RPC.")
             async for rep in iterator:
@@ -405,8 +404,6 @@ class Shuffler(MfClient):
 
     async def start(self, player_id: str|None = None) -> None:
         """Main event loop, blocks forever."""
-        self._logger.debug("Start")
-
         self._current_video_id = None
         last_save_position_time = time.monotonic()
         position_to_restore_seconds = None
