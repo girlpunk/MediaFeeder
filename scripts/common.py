@@ -400,11 +400,14 @@ class Shuffler(MfClient):
         else:
             return item
 
+    def should_be_playing(self):
+        return self._current_video_id is not None
+
     async def start(self, player_id: str|None = None) -> None:
-        """Start playback, if available."""
+        """Main event loop, blocks forever."""
         self._logger.debug("Start")
 
-        current_video_id = None
+        self._current_video_id = None
         last_save_position_time = time.monotonic()
         position_to_restore_seconds = None
         rate_to_restore = None
@@ -420,14 +423,14 @@ class Shuffler(MfClient):
                 await self._connect_to_server(player_id)
 
                 # if connection was lost, at least restore what is currently playing.
-                if current_video_id:
+                if self._current_video_id:
                     await self._status_report_queue.put(
-                        Api_pb2.PlaybackSessionRequest(VideoId=current_video_id)
+                        Api_pb2.PlaybackSessionRequest(VideoId=self._current_video_id)
                     )
-                    self._logger.info("Restored VideoId: %s", current_video_id)
+                    self._logger.info("Restored VideoId: %s", self._current_video_id)
                 self._logger.debug("Loop reconnected.")
 
-            if current_video_id:
+            if self._current_video_id:
                 await self.call_ensure_ready()
 
             event = await self.get_event(5)
@@ -435,21 +438,21 @@ class Shuffler(MfClient):
                 self._logger.debug("Processing event: %s", event)
 
             if event and event.next_video_id:
-                current_video_id = event.next_video_id
+                self._current_video_id = event.next_video_id
                 await self.call_ensure_ready()
 
                 id_response = await self._stub.Video(
-                    Api_pb2.VideoRequest(Id=current_video_id)
+                    Api_pb2.VideoRequest(Id=self._current_video_id)
                 )
 
                 self._logger.info(
                     "Playing %s: %s [%s]",
-                    current_video_id,
+                    self._current_video_id,
                     id_response.Title,
                     id_response.VideoId,
                 )
                 await self._status_report_queue.put(
-                    Api_pb2.PlaybackSessionRequest(VideoId=current_video_id)
+                    Api_pb2.PlaybackSessionRequest(VideoId=self._current_video_id)
                 )
 
                 self._last_save_position_time = (
@@ -469,30 +472,30 @@ class Shuffler(MfClient):
                 rate_to_restore = self._saved_rate
 
             elif event and event.watched_to_end:
-                if event.video_id == current_video_id:
+                if event.video_id == self._current_video_id:
                     await self._status_report_queue.put(
                         Api_pb2.PlaybackSessionRequest(
-                            Action=Api_pb2.ON_WATCHED_TO_END, VideoId=current_video_id
+                            Action=Api_pb2.ON_WATCHED_TO_END, VideoId=self._current_video_id
                         )
                     )
                     self._logger.info(
-                        "Notified server video was watched: %s", current_video_id
+                        "Notified server video was watched: %s", self._current_video_id
                     )
 
-                    current_video_id = None
+                    self._current_video_id = None
                 else:
                     self._logger.warning(
                         "Mismatched watched_to_end event: expected=%s  got=%s",
-                        current_video_id,
+                        self._current_video_id,
                         event.video_id,
                     )
 
             elif event and event.abandoned:
                 self._logger.info("Playback abandoned.")
-                current_video_id = None
+                self._current_video_id = None
 
             elif (
-                current_video_id
+                self._current_video_id
                 and self._now_state in [Api_pb2.PLAYING, Api_pb2.PAUSED]
                 and self._now_position_seconds
                 and self._now_position_seconds > 0
@@ -513,7 +516,7 @@ class Shuffler(MfClient):
                 ):
                     self._stub.SavePlaybackPosition(
                         Api_pb2.SavePlaybackPositionRequest(
-                            Id=current_video_id,
+                            Id=self._current_video_id,
                             PositionSeconds=self._now_position_seconds,
                         )
                     )
