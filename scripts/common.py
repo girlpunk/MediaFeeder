@@ -382,6 +382,14 @@ class Shuffler(MfClient):
         self._logger.debug("Playback abandoned.")
         self._event_queue.put_nowait(QueueEvent(abandoned=True))
 
+    async def call_ensure_ready(self) -> None:
+        try:
+            await self._player.ensure_ready()
+        except Exception as e:
+            msg = f"Not ready: {type(e).__name__}: {e}"
+            self._logger.debug(msg)
+            await self.send_banner(msg)
+
     async def get_event(self, timeout: int) -> QueueEvent | None:
         """Get next event in queue."""
         try:
@@ -420,7 +428,7 @@ class Shuffler(MfClient):
                 self._logger.debug("Loop reconnected.")
 
             if current_video_id:
-                await self._player.ensure_ready()
+                await self.call_ensure_ready()
 
             event = await self.get_event(5)
             if event:
@@ -428,6 +436,8 @@ class Shuffler(MfClient):
 
             if event and event.next_video_id:
                 current_video_id = event.next_video_id
+                await self.call_ensure_ready()
+
                 id_response = await self._stub.Video(
                     Api_pb2.VideoRequest(Id=current_video_id)
                 )
