@@ -136,8 +136,10 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
         self._logger.debug("Play Pause")
 
         if self._current_player_state == pyytlounge.State.Paused:
+            self._logger.debug("Sending: Play")
             await self._api.play()
         elif self._current_player_state == pyytlounge.State.Playing:
+            self._logger.debug("Sending: Pause")
             await self._api.pause()
         elif (
             self._current_player_state in (None, pyytlounge.State.Starting) and resume_video_id
