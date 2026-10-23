@@ -162,18 +162,32 @@ class LoungePlayer(pyytlounge.EventListener, common.PlayerBase):
 
     async def _request_updates(self) -> None:
         self._logger.debug("Request Updates")
-        while True:
-            await asyncio.sleep(10)
-            self._logger.debug(
-                "Requesting update: %s", await self._api.get_now_playing()
-            )
+        try:
+            while True:
+                await asyncio.sleep(10)
+                if not self._shuffler.should_be_playing():
+                    continue
+                try:
+                    self._logger.debug("Requesting update: %s", await self._api.get_now_playing())
+                except Exception as e:
+                    self._logger.warning("request_updates loop exception: %s: %s", type(e).__name__, e)
+        finally:
+            self._logger.warning("request_updates loop exited.")
 
     async def _subscribe_events(self) -> None:
         self._logger.debug("Subscribe Events")
-        while True:
-            await asyncio.sleep(10)
-            self._logger.debug("Subscribing to events")
-            await self._api.subscribe()
+        try:
+            while True:
+                await asyncio.sleep(10)
+                if not self._shuffler.should_be_playing():
+                    continue
+                self._logger.debug("Subscribing to events")
+                try:
+                    await self._api.subscribe()
+                except Exception as e:
+                    self._logger.warning("subscribe_events loop exception: %s: %s", type(e).__name__, e)
+        finally:
+            self._logger.warning("subscribe_events loop exited.")
 
     async def now_playing_changed(self, event: pyytlounge.NowPlayingEvent) -> None:
         """Process active video change."""
