@@ -321,6 +321,9 @@ class MediaFeederConfig:
                 # Successfully retrieved the token
                 token = token_response.json()
 
+                if "refresh_token" not in token:
+                    raise ValueError("Token missing 'refresh_token', did you add 'offline_access' in Authentik?")
+
                 cfg["Auth"]["Device"]["Token"] = token["access_token"]
                 cfg["Auth"]["Device"]["Expiry"] = datetime.now(
                     tz=timezone.utc
