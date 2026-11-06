@@ -189,3 +189,28 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             HASH=${{ github.sha }}
+
+  AndroidTV:
+    name: "Android TV"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Run unit tests and build debug APK
+        env:
+          NIXPKGS_ALLOW_UNFREE: "1"
+          NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE: "1"
+        run: |
+          nix develop --impure .#android \
+            -c sh -c 'cd AndroidTV && ./gradlew :app:testDebugUnitTest :app:assembleDebug --console=plain'
+      - name: Upload APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mediafeeder-android-tv-apk
+          path: AndroidTV/app/build/outputs/apk/debug/app-debug.apk
