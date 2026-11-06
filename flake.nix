@@ -38,6 +38,7 @@
         inputs.treefmt-nix.flakeModule
         inputs.git-hooks-nix.flakeModule
         ./scripts
+        ./AndroidTV
       ];
       #flake = {
       #  # Put your original flake attributes here.

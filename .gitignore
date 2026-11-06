@@ -804,3 +804,7 @@ devenv.local.nix
 
 # pre-commit
 .pre-commit-config.yaml
+
+# Android / Gradle
+.gradle/
+local.properties
