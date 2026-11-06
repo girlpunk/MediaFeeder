@@ -39,6 +39,19 @@ class AuthStore(private val prefs: SharedPreferences) {
         get() = prefs.getString(KEY_REFRESH_TOKEN, null)
         set(value) { prefs.edit().putString(KEY_REFRESH_TOKEN, value).apply() }
 
+    /**
+     * Cached server access token (client_credentials exchange used as the API bearer).
+     * The refresh flow re-derives it from [accessToken] + [refreshToken], so it is cache only.
+     */
+    var serverToken: String?
+        get() = prefs.getString(KEY_SERVER_TOKEN, null)
+        set(value) { prefs.edit().putString(KEY_SERVER_TOKEN, value).apply() }
+
+    /** Epoch millis when the stored [serverToken] expires (null = unknown / not set). */
+    var expiresAtEpochMillis: Long?
+        get() = prefs.getString(KEY_EXPIRES_AT_EPOCH_MILLIS, null)?.toLongOrNull()
+        set(value) { prefs.edit().putString(KEY_EXPIRES_AT_EPOCH_MILLIS, value?.toString()).apply() }
+
     /** Removes all stored settings and tokens (logout). */
     fun clear() {
         prefs.edit().clear().apply()
@@ -51,5 +64,7 @@ class AuthStore(private val prefs: SharedPreferences) {
         const val KEY_SERVER_CLIENT_ID: String = "serverClientId"
         const val KEY_ACCESS_TOKEN: String = "accessToken"
         const val KEY_REFRESH_TOKEN: String = "refreshToken"
+        const val KEY_SERVER_TOKEN: String = "serverToken"
+        const val KEY_EXPIRES_AT_EPOCH_MILLIS: String = "expiresAtEpochMillis"
     }
 }

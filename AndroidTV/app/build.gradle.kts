@@ -45,8 +45,12 @@ dependencies {
     val media3 = "1.11.1"
 
     implementation(platform("androidx.compose:compose-bom:2026.06.01"))
+    implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.lifecycle:lifecycle-viewmodel")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
     implementation("androidx.tv:tv-material:1.1.0")
     implementation("androidx.tv:tv-foundation:1.0.0")
     implementation("androidx.navigation:navigation-compose:2.9.8")
