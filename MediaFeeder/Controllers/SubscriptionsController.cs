@@ -88,10 +88,11 @@ public class SubscriptionsController(
             return new UnauthorizedObjectResult(null);
 
         var videoQuery = context.Videos.Where(v => v.SubscriptionId == id);
+        // Id as tie-break: equal PublishDate order is otherwise non-deterministic in Postgres.
         var ordered =
             subscription.WatchOrder == MediaFeeder.Data.Enums.WatchOrder.NewestFirst
-                ? videoQuery.OrderByDescending(static v => v.PublishDate)
-                : videoQuery.OrderBy(static v => v.PublishDate);
+                ? videoQuery.OrderByDescending(static v => v.PublishDate).ThenBy(static v => v.Id)
+                : videoQuery.OrderBy(static v => v.PublishDate).ThenBy(static v => v.Id);
 
         return Ok(await ordered.ToListAsync(HttpContext.RequestAborted));
     }
