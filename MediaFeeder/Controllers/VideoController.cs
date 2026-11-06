@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MediaFeeder.Data;
 using MediaFeeder.Data.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
@@ -19,44 +18,49 @@ public class VideoController(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager userManager,
     IConfiguration configuration,
+    MediaFeeder.Helpers.TokenHelper tokenHelper,
     ILogger<VideoController> logger
 ) : ControllerBase
 {
     [HttpGet("{id:int}/play")]
-    [Authorize(Roles = "Download", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(Policy = "API")]
     public async Task<IActionResult> Play(int id)
     {
-        var user = await userManager.GetUserAsync(HttpContext.User);
-        ArgumentNullException.ThrowIfNull(user);
-
-        var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == "Video");
-        if (scopeClaim == null || scopeClaim.Value != id.ToString())
-        {
-            var serialized = JsonSerializer.Serialize(
-                HttpContext.User,
-                new JsonSerializerOptions() { ReferenceHandler = ReferenceHandler.IgnoreCycles }
-            );
-
-            logger.LogInformation(
-                "The video claim does not contain '{}' or was not found",
-                scopeClaim
-            );
-            return StatusCode(
-                (int)HttpStatusCode.Forbidden,
-                $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {serialized}"
-            );
-        }
-
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
-        var video = await context.Videos.SingleOrDefaultAsync(
-            v => v.Id == id && v.Subscription!.UserId == user.Id,
-            HttpContext.RequestAborted
-        );
+
+        var video = await context.Videos
+            .Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v => v.Id == id,
+                HttpContext.RequestAborted
+            );
 
         if (video == null)
-            return NotFound();
+            return new NotFoundObjectResult(null);
+
+        var hasScopedToken = HttpContext.User.IsInRole("Download")
+            && HttpContext.User.FindFirst("Video")?.Value == id.ToString();
+
+        if (!hasScopedToken)
+        {
+            var user = await userManager.GetUserAsync(HttpContext.User);
+            if (user is null || video.Subscription!.UserId != user.Id)
+            {
+                var serialized = JsonSerializer.Serialize(
+                    HttpContext.User,
+                    new JsonSerializerOptions() { ReferenceHandler = ReferenceHandler.IgnoreCycles }
+                );
+
+                logger.LogInformation(
+                    "The video claim does not contain '{VideoId}' or was not found. Full User: {User}",
+                    id,
+                    serialized
+                );
+                return Forbid();
+            }
+        }
 
         if (video.DownloadedPath == null)
             return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
@@ -69,6 +73,34 @@ public class VideoController(
             out var mimeType
         );
         return PhysicalFile(video.DownloadedPath, mimeType ?? "application/octet-stream", true);
+    }
+
+    [HttpGet("{id:int}/play/token")]
+    [Authorize(Policy = "API")]
+    public async Task<IActionResult> PlayToken(int id)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Forbid();
+
+        var video = await context.Videos
+            .Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v => v.Id == id,
+                HttpContext.RequestAborted
+            );
+
+        if (video == null)
+            return new NotFoundObjectResult(null);
+
+        if (video.Subscription!.UserId != user.Id)
+            return Forbid();
+
+        return Ok(new { token = tokenHelper.GeneratePlaybackJwt(user, id) });
     }
 
     [HttpGet("{id:int}/thumbnail")]

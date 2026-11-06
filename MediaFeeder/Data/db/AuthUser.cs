@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 
 namespace MediaFeeder.Data.db;
@@ -46,6 +47,7 @@ public class AuthUser : IdentityUser<int>
         set => Username = value;
     }
 
+    [JsonIgnore]
     public override string UserName
     {
         get => Username;
