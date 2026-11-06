@@ -16,7 +16,7 @@ import okhttp3.Request
  * Time is injected via [clock] for deterministic tests.
  */
 class TokenManager(
-    private val authClient: AuthClient?,
+    private val authClientFactory: () -> AuthClient?,
     private val store: AuthStore,
     private val httpClient: OkHttpClient,
     private val clock: () -> Long = { System.currentTimeMillis() },
@@ -32,7 +32,7 @@ class TokenManager(
     /** Renew the stored server token in place. Returns true when a valid token is stored afterwards. */
     suspend fun refresh(): Boolean {
         if (getValidToken() != null) return true
-        val client: AuthClient = authClient ?: return false
+        val client: AuthClient = authClientFactory() ?: return false
         var deviceAccessToken: String? = store.accessToken
         if (deviceAccessToken == null) return false
         if (exchangeServerToken(client, deviceAccessToken)) return true

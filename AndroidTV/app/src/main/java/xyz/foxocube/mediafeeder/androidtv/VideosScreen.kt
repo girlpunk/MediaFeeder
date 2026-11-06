@@ -70,7 +70,7 @@ fun VideosScreen(
                         items(state.videos, key = { it.id }) { video ->
                             VideoRow(
                                 name = video.name,
-                                publishedDate = video.publishedDate,
+                                publishDate = video.publishDate,
                                 thumbUrl = api.videoThumbnailUrl(video),
                                 bearer = api.currentBearer(),
                                 onClick = { onPlay(video) },

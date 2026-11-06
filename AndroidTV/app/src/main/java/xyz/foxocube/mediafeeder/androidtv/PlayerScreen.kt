@@ -189,9 +189,9 @@ private fun PlayerSurface(
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White,
             )
-            if (video.publishedDate != null) {
+            if (video.publishDate != null) {
                 Text(
-                    text = video.publishedDate,
+                    text = video.publishDate,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White,
                 )

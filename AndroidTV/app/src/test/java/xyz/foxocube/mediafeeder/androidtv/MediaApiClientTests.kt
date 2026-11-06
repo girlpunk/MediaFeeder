@@ -27,7 +27,7 @@ class MediaApiClientTests {
         MediaApiClient(
             store,
             TokenManager(
-                AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID),
+                { AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID) },
                 store,
                 OkHttpClient().newBuilder().addInterceptor(http).build(),
                 { atEpochMillis },
@@ -117,16 +117,16 @@ class MediaApiClientTests {
     fun `thumbnail urls derive the endpoint or null without thumb`() {
         store.baseUrl = BASE_URL
         val withThumb: Subscription = DtoParser.parseSubscription(
-            """{"id": 3, "name": "A", "playlistId": "p", "provider": 0, "watchOrder": 0, "thumb": "s/3.jpg"}""",
+            """{"id": 3, "name": "A", "playlistId": "p", "provider": "youtube", "watchOrder": 0, "thumb": "s/3.jpg"}""",
         )
         val withoutThumb: Subscription = DtoParser.parseSubscription(
-            """{"id": 4, "name": "B", "playlistId": "p", "provider": 0, "watchOrder": 0}""",
+            """{"id": 4, "name": "B", "playlistId": "p", "provider": "youtube", "watchOrder": 0}""",
         )
         val video: Video = DtoParser.parseVideo(
             """{"id": 9, "videoId": "v9", "name": "V", "isDownloaded": false}""",
         )
 
-        assertEquals("$BASE_URL/api/Subscription/3/thumbnail", client.subscriptionThumbnailUrl(withThumb))
+        assertEquals("$BASE_URL/api/Subscriptions/3/thumbnail", client.subscriptionThumbnailUrl(withThumb))
         assertNull(client.subscriptionThumbnailUrl(withoutThumb))
         assertNull(client.videoThumbnailUrl(video))
     }
@@ -173,8 +173,8 @@ class MediaApiClientTests {
         val SUBSCRIPTIONS_JSON: String =
             """
             [
-              {"id": 1, "name": "Channel A", "playlistId": "pl-1", "provider": 0, "watchOrder": 0, "thumb": "s/1.jpg"},
-              {"id": 2, "name": "Channel B", "playlistId": "pl-2", "provider": 1, "watchOrder": 1}
+               {"id": 1, "name": "Channel A", "playlistId": "pl-1", "provider": "youtube", "watchOrder": 0, "thumb": "s/1.jpg"},
+               {"id": 2, "name": "Channel B", "playlistId": "pl-2", "provider": "RSS", "watchOrder": 1}
             ]
             """.trimIndent()
 
@@ -184,8 +184,8 @@ class MediaApiClientTests {
               {
                 "id": 11,
                 "videoId": "abc",
-                "name": "First",
-                "publishedDate": "2026-09-01T00:00:00Z",
+                 "name": "First",
+                 "publishDate": "2026-09-01T00:00:00Z",
                 "duration": 100,
                 "isDownloaded": true,
                 "downloadedPath": "downloads/a.mp4",

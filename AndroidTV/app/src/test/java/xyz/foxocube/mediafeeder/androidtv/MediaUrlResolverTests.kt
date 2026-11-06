@@ -16,7 +16,7 @@ class MediaUrlResolverTests {
             id = 1337,
             videoId = "dQw4w9WgXcQ",
             name = "Never Gonna Give You Up",
-            publishedDate = "2026-09-01T12:34:56.789Z",
+            publishDate = "2026-09-01T12:34:56.789Z",
             duration = 212,
             playbackPosition = 100,
             thumb = "videos/1337.jpg",

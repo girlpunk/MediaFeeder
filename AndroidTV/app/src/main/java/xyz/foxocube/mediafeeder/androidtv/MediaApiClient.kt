@@ -45,7 +45,7 @@ class MediaApiClient(
     fun subscriptionThumbnailUrl(subscription: Subscription): String? {
         val base: String? = baseUrl() ?: return null
         if (subscription.thumb == null) return null
-        return "$base/api/Subscription/${subscription.id}/thumbnail"
+        return "$base/api/Subscriptions/${subscription.id}/thumbnail"
     }
 
     /** Thumb endpoint URL for a video, or null when the video has no thumb. */

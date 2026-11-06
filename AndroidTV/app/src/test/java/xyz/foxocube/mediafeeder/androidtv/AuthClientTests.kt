@@ -32,14 +32,15 @@ class AuthClientTests {
     private val client: AuthClient = AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID)
 
     @Test
-    fun `initial device code request posts the device code grant with the device client id`() {
+    fun `initial device code request posts only client id and scope per rfc 8628`() {
         val request: Request = client.initialDeviceCodeRequest()
 
         assertEquals("POST", request.method)
         assertEquals("$OIDC_URL/oauth/as/device", request.url.toString())
         assertTrue(request.body is FormBody, "expected a form-encoded body, got ${request.body}")
-        assertEquals(DEVICE_CODE_GRANT, request.formValue("grant_type"))
+        assertNull(request.formValue("grant_type"), "device authorization takes no grant_type")
         assertEquals(DEVICE_CLIENT_ID, request.formValue("client_id"))
+        assertEquals("openid offline_access", request.formValue("scope"))
         assertEquals("application/x-www-form-urlencoded", (request.body as FormBody).contentType().toString())
     }
 

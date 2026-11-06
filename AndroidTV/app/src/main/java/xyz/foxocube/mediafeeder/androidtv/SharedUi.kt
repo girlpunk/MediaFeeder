@@ -203,7 +203,7 @@ fun SubscriptionCard(
 @Composable
 fun VideoRow(
     name: String,
-    publishedDate: String?,
+    publishDate: String?,
     thumbUrl: String?,
     bearer: String?,
     onClick: () -> Unit,
@@ -230,9 +230,9 @@ fun VideoRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (publishedDate != null) {
+                if (publishDate != null) {
                     Text(
-                        text = publishedDate,
+                        text = publishDate,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                     )

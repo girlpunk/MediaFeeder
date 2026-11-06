@@ -50,22 +50,22 @@ class TokenManagerTests {
     }
 
     private fun manager(http: ScriptedHttp): TokenManager =
-        TokenManager(authClient, store, OkHttpClient().newBuilder().addInterceptor(http).build(), clock)
+        TokenManager({ authClient }, store, OkHttpClient().newBuilder().addInterceptor(http).build(), clock)
 
     @Test
     fun `getValidToken returns the stored server token while it is unexpired`() {
         store.serverToken = "srv-1"
         store.expiresAtEpochMillis = now + 10_000L
 
-        assertEquals("srv-1", TokenManager(null, store, OkHttpClient(), clock).getValidToken())
+        assertEquals("srv-1", TokenManager({ null }, store, OkHttpClient(), clock).getValidToken())
     }
 
     @Test
     fun `getValidToken is null when the token or the expiry is missing`() {
-        assertNull(TokenManager(null, store, OkHttpClient(), clock).getValidToken(), "no token at all")
+        assertNull(TokenManager({ null }, store, OkHttpClient(), clock).getValidToken(), "no token at all")
 
         store.serverToken = "srv-1"
-        assertNull(TokenManager(null, store, OkHttpClient(), clock).getValidToken(), "no expiry")
+        assertNull(TokenManager({ null }, store, OkHttpClient(), clock).getValidToken(), "no expiry")
     }
 
     @Test
@@ -74,7 +74,7 @@ class TokenManagerTests {
         store.expiresAtEpochMillis = atEpochMillis + 10_000L
         now = atEpochMillis + 11_000L
 
-        assertNull(TokenManager(null, store, OkHttpClient(), clock).getValidToken())
+        assertNull(TokenManager({ null }, store, OkHttpClient(), clock).getValidToken())
     }
 
     @Test

@@ -16,7 +16,8 @@ val LocalAppDeps: ProvidableCompositionLocal<AppDeps> =
 class AppDeps(context: Context) {
     val store: AuthStore = AuthStore(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE))
     val httpClient: OkHttpClient = OkHttpClient()
-    val tokenManager: TokenManager = TokenManager(authClient(), store, httpClient)
+    // Factory (not a fixed instance) so a sign-in during the same session is visible to refresh().
+    val tokenManager: TokenManager = TokenManager({ authClient() }, store, httpClient)
     val mediaApiClient: MediaApiClient = MediaApiClient(store, tokenManager, httpClient)
 
     /** [AuthClient] from the stored OIDC settings, or null when the settings are incomplete. */

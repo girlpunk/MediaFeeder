@@ -24,10 +24,9 @@ class AuthClient(
     private val deviceEndpoint: String = "$base/oauth/as/device"
     private val tokenEndpoint: String = "$base/oauth/as/token"
 
-    /** First step of the device-code flow (device authorization endpoint). */
+    /** First step of the device-code flow (device authorization endpoint, RFC 8628: client_id + scope only). */
     fun initialDeviceCodeRequest(): Request = formRequest(
         deviceEndpoint,
-        "grant_type" to DEVICE_CODE_GRANT,
         "client_id" to deviceClientId,
         "scope" to "openid offline_access",
     )
