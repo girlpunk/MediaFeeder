@@ -69,7 +69,10 @@ public class SubscriptionsController(
             HttpContext.RequestAborted
         );
 
-        var subscription = await context.Subscriptions.SingleOrDefaultAsync(
+        // AsNoTracking: keeps Video.Subscription unpopulated during the video query
+        // (a tracked subscription would trigger EF navigation fix-ups, producing a
+        // Video <-> Subscription cycle that JSON serialization cannot represent).
+        var subscription = await context.Subscriptions.AsNoTracking().SingleOrDefaultAsync(
             v => v.Id == id,
             HttpContext.RequestAborted
         );
