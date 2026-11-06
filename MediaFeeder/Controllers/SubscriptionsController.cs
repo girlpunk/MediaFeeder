@@ -61,6 +61,38 @@ public class SubscriptionsController(
         };
     }
 
+    [HttpGet("{id}/videos")]
+    [Authorize(Policy = "API")]
+    public async Task<IActionResult> GetSubscriptionVideos(int id)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
+
+        var subscription = await context.Subscriptions.SingleOrDefaultAsync(
+            v => v.Id == id,
+            HttpContext.RequestAborted
+        );
+
+        if (subscription == null)
+            return new NotFoundObjectResult(null);
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Forbid();
+
+        if (subscription.UserId != user.Id)
+            return new UnauthorizedObjectResult(null);
+
+        var videoQuery = context.Videos.Where(v => v.SubscriptionId == id);
+        var ordered =
+            subscription.WatchOrder == MediaFeeder.Data.Enums.WatchOrder.NewestFirst
+                ? videoQuery.OrderByDescending(static v => v.PublishDate)
+                : videoQuery.OrderBy(static v => v.PublishDate);
+
+        return Ok(await ordered.ToListAsync(HttpContext.RequestAborted));
+    }
+
     // PUT: api/Subscriptions/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
