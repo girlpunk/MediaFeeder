@@ -30,10 +30,12 @@ public class VideoController(
             HttpContext.RequestAborted
         );
 
-        var video = await context.Videos.SingleOrDefaultAsync(
-            v => v.Id == id,
-            HttpContext.RequestAborted
-        );
+        var video = await context.Videos
+            .Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v => v.Id == id,
+                HttpContext.RequestAborted
+            );
 
         if (video == null)
             return new NotFoundObjectResult(null);
@@ -85,10 +87,12 @@ public class VideoController(
         if (user == null)
             return Forbid();
 
-        var video = await context.Videos.SingleOrDefaultAsync(
-            v => v.Id == id,
-            HttpContext.RequestAborted
-        );
+        var video = await context.Videos
+            .Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v => v.Id == id,
+                HttpContext.RequestAborted
+            );
 
         if (video == null)
             return new NotFoundObjectResult(null);
