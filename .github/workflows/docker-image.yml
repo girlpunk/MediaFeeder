@@ -202,15 +202,16 @@ jobs:
           persist-credentials: false
       - name: Install Nix
         uses: cachix/install-nix-action@v31
-      - name: Run unit tests and build debug APK
+      - name: Build app (unit tests + debug APK)
         env:
           NIXPKGS_ALLOW_UNFREE: "1"
           NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE: "1"
         run: |
-          nix develop --impure .#android \
-            -c sh -c 'cd AndroidTV && ./gradlew :app:testDebugUnitTest :app:assembleDebug --console=plain'
+          out=$(nix build --impure --no-sandbox .#android-app --print-out-path)
+          mkdir -p android-tv-apk
+          cp "$out/app-debug.apk" android-tv-apk/
       - name: Upload APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: mediafeeder-android-tv-apk
-          path: AndroidTV/app/build/outputs/apk/debug/app-debug.apk
+          path: android-tv-apk

@@ -10,21 +10,28 @@ the server.
 
 ## Building
 
-Requires [Nix](https://nix.dev/). The `android` dev shell (defined in `AndroidTV/default.nix`)
-provides JDK 21, Android SDK platform 36 and build-tools 36.0.0:
+Requires [Nix](https://nix.dev). The build is a native Nix package (derivation in
+`flake.nix`, dev shell in `AndroidTV/default.nix`; JDK 21 + Android SDK 36), and runs
+the unit tests together with `:app:assembleDebug`:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 \
+  nix build --impure --no-sandbox .#android-app
+```
+
+(From the repository root. `--impure` lets the flake import `AndroidTV/default.nix`;
+`--no-sandbox` because Gradle downloads its distribution and the maven dependencies
+at build time — drop it if your nix does not enforce the sandbox.)
+The debug-signed APK ends up at
+`$(nix build --impure --no-sandbox .#android-app --print-out-path)/app-debug.apk`.
+
+For interactive development (single Gradle tasks, `adb`, …) use the `android` dev shell:
 
 ```sh
 NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 \
   nix develop --impure .#android \
   -c sh -c 'cd AndroidTV && ./gradlew :app:assembleDebug'
 ```
-
-(From the repository root. `--impure` lets the flake import `AndroidTV/default.nix`.)
-
-Outputs:
-
-- APK: `AndroidTV/app/build/outputs/apk/debug/app-debug.apk` (debug-signed, sideloadable)
-- Unit tests: `./gradlew :app:testDebugUnitTest`
 
 ## Sideload onto the TV
 

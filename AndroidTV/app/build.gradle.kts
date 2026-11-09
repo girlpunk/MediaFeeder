@@ -31,6 +31,8 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            // Jupiter (JUnit 5) tests; without this AGP discovers with the JUnit 4 framework.
+            all { it.useJUnitPlatform() }
         }
     }
 }
@@ -63,4 +65,6 @@ dependencies {
     implementation("androidx.media3:media3-ui:$media3")
     implementation("androidx.media3:media3-ui-compose-material3:$media3")
     testImplementation("org.junit.jupiter:junit-jupiter:5.14.4")
+    // Gradle 9 no longer injects the launcher automatically.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.14.4")
 }
