@@ -8,6 +8,8 @@
 
 @layout ListLayout
 
+<PageTitle>@(VideoObject != null ? VideoObject.Name + " - " : "")MediaFeeder</PageTitle>
+
 <SectionContent SectionName="TitleTemplate">
     <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
         @if (VideoObject != null)
