@@ -1,6 +1,9 @@
 _: {
   perSystem = {pkgs, ...}: let
-    androidPackages = pkgs.androidenv.composeAndroidPackages {
+    # Same non-free Android SDK license acceptance as packages.mediafeeder-android-tv
+    # in flake.nix (see the comment there).
+    androidEnv = pkgs.androidenv.override {licenseAccepted = true;};
+    androidPackages = androidEnv.composeAndroidPackages {
       buildToolsVersions = ["36.0.0"];
       platformVersions = ["36"];
       platformToolsVersion = "37.0.0";

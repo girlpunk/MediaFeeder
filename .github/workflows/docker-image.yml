@@ -203,11 +203,11 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
       - name: Build app (unit tests + debug APK)
-        env:
-          NIXPKGS_ALLOW_UNFREE: "1"
-          NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE: "1"
         run: |
-          out=$(nix build --impure --no-sandbox .#android-app --print-out-path)
+          # Builds sandboxed: the non-free Android SDK is accepted in flake.nix
+          # and all maven dependencies are locked in deps.json (replayed from
+          # the mitm cache instead of being downloaded).
+          out=$(nix build .#mediafeeder-android-tv --print-out-paths)
           mkdir -p android-tv-apk
           cp "$out/app-debug.apk" android-tv-apk/
       - name: Upload APK

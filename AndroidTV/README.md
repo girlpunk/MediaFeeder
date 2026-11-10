@@ -11,25 +11,41 @@ the server.
 ## Building
 
 Requires [Nix](https://nix.dev). The build is a native Nix package (derivation in
-`flake.nix`, dev shell in `AndroidTV/default.nix`; JDK 21 + Android SDK 36), and runs
-the unit tests together with `:app:assembleDebug`:
+`flake.nix`, dev shell in `AndroidTV/default.nix`; JDK 21 + Android SDK 36 + Gradle
+9.6.0), and runs the unit tests together with `:app:assembleDebug`:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 \
-  nix build --impure --no-sandbox .#android-app
+nix build .#mediafeeder-android-tv
 ```
 
-(From the repository root. `--impure` lets the flake import `AndroidTV/default.nix`;
-`--no-sandbox` because Gradle downloads its distribution and the maven dependencies
-at build time — drop it if your nix does not enforce the sandbox.)
+(From the repository root. The non-free Android SDK is accepted inside
+`flake.nix`, so no `NIXPKGS_*` environment variables are needed, and the build
+runs in the Nix sandbox: all maven dependencies are locked in `deps.json` and
+replayed from a mitm cache instead of being downloaded at build time.)
 The debug-signed APK ends up at
-`$(nix build --impure --no-sandbox .#android-app --print-out-path)/app-debug.apk`.
+`$(nix build .#mediafeeder-android-tv --print-out-paths)/app-debug.apk`
+(also available as `result/app-debug.apk` after the build).
+
+### Refreshing the dependency lockfile
+
+`deps.json` locks the maven dependencies the build needs. When you change
+dependencies or bump versions in `build.gradle.kts`, re-record it from the
+repository root:
+
+```sh
+USE_BWRAP=0 bash \
+  "$(nix build .#mediafeeder-android-tv.mitmCache.updateScript --print-out-paths)"
+```
+
+This resolves and records the dependencies (needs network, ~3 minutes) and
+rewrites `deps.json`. `USE_BWRAP=0` skips the script's bubblewrap sandbox,
+which cannot write the lockfile when the repository lives on a path it mounts
+read-only (e.g. `/mnt/d` on WSL).
 
 For interactive development (single Gradle tasks, `adb`, …) use the `android` dev shell:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 \
-  nix develop --impure .#android \
+nix develop .#android \
   -c sh -c 'cd AndroidTV && ./gradlew :app:assembleDebug'
 ```
 
@@ -40,7 +56,7 @@ NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 \
 
    ```sh
    adb connect <tv-ip>:5555
-   adb install -r AndroidTV/app/build/outputs/apk/debug/app-debug.apk
+   adb install -r result/app-debug.apk
    ```
 
 3. **Over USB / network share**: copy `app-debug.apk` to the TV (or a share the TV can
@@ -78,7 +94,6 @@ Unit tests (pure JVM, no emulator) cover the auth flow, token management, API cl
 DTO parsing and playback URL resolution:
 
 ```sh
-NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 \
-  nix develop --impure .#android \
+nix develop .#android \
   -c sh -c 'cd AndroidTV && ./gradlew :app:testDebugUnitTest'
 ```

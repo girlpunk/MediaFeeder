@@ -60,7 +60,7 @@ _: {
       src = ./.;
       propagatedBuildInputs = [python];
 
-      nativeBuildInputs = [ pkgs.makeWrapper ];
+      nativeBuildInputs = [pkgs.makeWrapper];
 
       installPhase = ''
         runHook preInstall
