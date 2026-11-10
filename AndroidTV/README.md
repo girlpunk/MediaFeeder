@@ -10,18 +10,18 @@ the server.
 
 ## Building
 
-Requires [Nix](https://nix.dev). The build is a native Nix package (derivation in
-`flake.nix`, dev shell in `AndroidTV/default.nix`; JDK 21 + Android SDK 36 + Gradle
-9.6.0), and runs the unit tests together with `:app:assembleDebug`:
+Requires [Nix](https://nix.dev). The build is a native Nix package (derivation and
+dev shell in `AndroidTV/default.nix`; JDK 21 + Android SDK 36 + Gradle 9.6.0), and
+runs the unit tests together with `:app:assembleDebug`:
 
 ```sh
 nix build .#mediafeeder-android-tv
 ```
 
 (From the repository root. The non-free Android SDK is accepted inside
-`flake.nix`, so no `NIXPKGS_*` environment variables are needed, and the build
-runs in the Nix sandbox: all maven dependencies are locked in `deps.json` and
-replayed from a mitm cache instead of being downloaded at build time.)
+`AndroidTV/default.nix`, so no `NIXPKGS_*` environment variables are needed, and
+the build runs in the Nix sandbox: all maven dependencies are locked in `deps.json`
+and replayed from a mitm cache instead of being downloaded at build time.)
 The debug-signed APK ends up at
 `$(nix build .#mediafeeder-android-tv --print-out-paths)/app-debug.apk`
 (also available as `result/app-debug.apk` after the build).
