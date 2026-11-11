@@ -2,7 +2,6 @@ package xyz.foxocube.mediafeeder.androidtv
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -108,17 +107,15 @@ class SettingsViewModel(
             is DeviceAuthOutcome.Success -> {
                 val info: DeviceCodeInfo = challenge.value
                 _state.update { it.copy(login = LoginState.AwaitingUser(info.userCode, info.verificationUri)) }
-                when (val poll = pollUntilSettled(flow, info)) {
-                    is PollResult.Pending -> Unit
-
-                    is PollResult.Error -> {
-                        _state.update { it.copy(login = LoginState.Failed("Sign-in failed: ${poll.code}")) }
+                when (val poll = flow.pollUntilSettled(info)) {
+                    is DeviceAuthOutcome.Failure -> {
+                        _state.update { it.copy(login = LoginState.Failed(poll.message)) }
                         return
                     }
 
-                    is PollResult.Success -> {
+                    is DeviceAuthOutcome.Success -> {
                         _state.update { it.copy(login = LoginState.Exchanging) }
-                        when (val exchange = flow.completeLogin(poll.token)) {
+                        when (val exchange = flow.completeLogin(poll.value)) {
                             is DeviceAuthOutcome.Success ->
                                 _state.update { it.copy(login = LoginState.SignedIn) }
                             is DeviceAuthOutcome.Failure ->
@@ -127,14 +124,6 @@ class SettingsViewModel(
                     }
                 }
             }
-        }
-    }
-
-    private suspend fun pollUntilSettled(flow: DeviceAuthFlow, info: DeviceCodeInfo): PollResult {
-        while (true) {
-            val result: PollResult = flow.pollOnce(info.deviceCode)
-            if (result !is PollResult.Pending) return result
-            delay(info.intervalSeconds.coerceAtLeast(1L) * 1000L)
         }
     }
 }

@@ -69,7 +69,7 @@ class AuthClient(
         return TokenResponse(accessToken, refreshToken, atEpochMillis + expiresIn * 1000L)
     }
 
-    /** Parse a device-code poll response body (success token / authorization_pending / terminal error). */
+    /** Parse a device-code poll response body (success token / authorization_pending / slow_down / terminal error). */
     fun parsePollResponse(json: String, atEpochMillis: Long): PollResult {
         val dto: TokenDto = jsonFormat.decodeFromString(TokenDto.serializer(), json)
         val error: String? = dto.error
@@ -78,6 +78,9 @@ class AuthClient(
         }
         if (error == ERROR_AUTHORIZATION_PENDING) {
             return PollResult.Pending
+        }
+        if (error == ERROR_SLOW_DOWN) {
+            return PollResult.SlowDown
         }
         return PollResult.Error(error, dto.errorDescription)
     }
@@ -91,6 +94,7 @@ class AuthClient(
         const val DEVICE_CODE_GRANT: String = "urn:ietf:params:oauth:grant-type:device_code"
         const val CLIENT_ASSERTION_TYPE: String = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
         const val ERROR_AUTHORIZATION_PENDING: String = "authorization_pending"
+        const val ERROR_SLOW_DOWN: String = "slow_down"
     }
 }
 
@@ -109,6 +113,9 @@ sealed interface PollResult {
 
     /** authorization_pending: keep polling. */
     data object Pending : PollResult
+
+    /** slow_down: the client is polling too fast (RFC 8628); wait longer. */
+    data object SlowDown : PollResult
 
     /** A terminal authorization_server error (e.g. expired_token, access_denied). */
     data class Error(val code: String, val description: String?) : PollResult

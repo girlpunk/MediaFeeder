@@ -1,6 +1,7 @@
 package xyz.foxocube.mediafeeder.androidtv
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -14,6 +15,7 @@ data class DeviceCodeInfo(
     val userCode: String,
     val verificationUri: String,
     val intervalSeconds: Long,
+    val expiresInSeconds: Long? = null,
 )
 
 /** Outcome of one device-code flow step. */
@@ -27,7 +29,7 @@ sealed interface DeviceAuthOutcome<out T> {
  * OIDC device-code login flow (mirrors scripts/auth.py), built on the request builders of
  * [AuthClient] and a real [OkHttpClient].
  *
- * Steps: [requestUserCode] -> poll [pollOnce] until the user approves -> [completeLogin]
+ * Steps: [requestUserCode] -> [pollUntilSettled] until the user approves -> [completeLogin]
  * exchanges the device access token for the server token and persists both token pairs.
  */
 class DeviceAuthFlow(
@@ -35,6 +37,7 @@ class DeviceAuthFlow(
     private val httpClient: OkHttpClient,
     private val store: AuthStore,
     private val clock: () -> Long = { System.currentTimeMillis() },
+    private val delayMillis: suspend (Long) -> Unit = ::delay,
 ) {
     private val json: Json = Json { ignoreUnknownKeys = true }
 
@@ -50,14 +53,42 @@ class DeviceAuthFlow(
         }
     }
 
-    /** One poll of the token endpoint; [PollResult.Pending] means "poll again after the interval". */
+    /** One poll of the token endpoint; [PollResult.Pending] and [PollResult.SlowDown] mean "poll again after the interval". */
     suspend fun pollOnce(deviceCode: String): PollResult {
-        val jsonBody: String? = postForm(authClient.deviceCodePollRequest(deviceCode))
-        if (jsonBody == null) return PollResult.Error(POLL_ERROR_NO_RESPONSE, "No response from the token endpoint")
+        val body: String = pollResponseBody(authClient.deviceCodePollRequest(deviceCode))
+        if (body.isEmpty()) return PollResult.Error(POLL_ERROR_NO_RESPONSE, "No response from the token endpoint")
         return try {
-            authClient.parsePollResponse(jsonBody, clock())
+            authClient.parsePollResponse(body, clock())
         } catch (e: Exception) {
             PollResult.Error(POLL_ERROR_PARSE, e.message)
+        }
+    }
+
+    /**
+     * Poll until the user approves, the device code expires, or a terminal error arrives:
+     * at least [MIN_POLL_INTERVAL_SECONDS] between checks, longer when the server's interval
+     * is larger, and further spaced out on slow_down, per RFC 8628.
+     */
+    suspend fun pollUntilSettled(info: DeviceCodeInfo): DeviceAuthOutcome<TokenResponse> {
+        var intervalSeconds: Long = maxOf(MIN_POLL_INTERVAL_SECONDS, info.intervalSeconds)
+        val expirySeconds: Long = info.expiresInSeconds ?: DEFAULT_DEVICE_CODE_EXPIRY_SECONDS
+        val deadlineEpochMillis: Long = clock() + expirySeconds * 1000L
+        while (true) {
+            if (clock() >= deadlineEpochMillis) return DeviceAuthOutcome.Failure(DEVICE_CODE_EXPIRED)
+            delayMillis(intervalSeconds * 1000L)
+            when (val result: PollResult = pollOnce(info.deviceCode)) {
+                is PollResult.Success -> return DeviceAuthOutcome.Success(result.token)
+
+                is PollResult.Pending -> Unit
+
+                is PollResult.SlowDown -> intervalSeconds += SLOW_DOWN_STEP_SECONDS
+
+                is PollResult.Error ->
+                    return DeviceAuthOutcome.Failure(
+                        if (result.description == null) "Sign-in failed: ${result.code}"
+                        else "Sign-in failed: ${result.code} (${result.description})",
+                    )
+            }
         }
     }
 
@@ -98,13 +129,32 @@ class DeviceAuthFlow(
             }
         }
 
+    /**
+     * The token endpoint answers 400 while the user has not approved yet (RFC 8628), so the
+     * body is parsed regardless of the status code; empty string means no response at all.
+     */
+    private suspend fun pollResponseBody(request: Request): String =
+        withContext(Dispatchers.IO) {
+            try {
+                httpClient.newCall(request).execute().use { response -> response.body.string() }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
     private fun DeviceCodeDto.toInfo(): DeviceCodeInfo =
-        DeviceCodeInfo(deviceCode, userCode, verificationUri, interval)
+        DeviceCodeInfo(deviceCode, userCode, verificationUri, interval ?: DEFAULT_INTERVAL_SECONDS, expiresIn)
 
     private companion object {
         const val NO_SERVER_RESPONSE: String = "No response from the server"
         const val POLL_ERROR_NO_RESPONSE: String = "no_server_response"
         const val POLL_ERROR_PARSE: String = "parse_error"
+        const val DEVICE_CODE_EXPIRED: String = "The device code has expired. Please sign in again."
+        // RFC 8628: minimum interval 10s (app floor), default interval 5s, default expiry 600s, slow_down step 5s.
+        const val MIN_POLL_INTERVAL_SECONDS: Long = 10L
+        const val SLOW_DOWN_STEP_SECONDS: Long = 5L
+        const val DEFAULT_INTERVAL_SECONDS: Long = 5L
+        const val DEFAULT_DEVICE_CODE_EXPIRY_SECONDS: Long = 600L
     }
 }
 
@@ -114,5 +164,6 @@ private data class DeviceCodeDto(
     @SerialName("device_code") val deviceCode: String,
     @SerialName("user_code") val userCode: String,
     @SerialName("verification_uri") val verificationUri: String,
-    @SerialName("interval") val interval: Long,
+    @SerialName("interval") val interval: Long? = null,
+    @SerialName("expires_in") val expiresIn: Long? = null,
 )

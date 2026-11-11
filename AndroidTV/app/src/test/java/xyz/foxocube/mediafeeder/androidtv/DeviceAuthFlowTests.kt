@@ -28,6 +28,12 @@ class DeviceAuthFlowTests {
     private val http: ScriptedHttp = ScriptedHttp()
     private val flow: DeviceAuthFlow =
         DeviceAuthFlow(authClient, OkHttpClient().newBuilder().addInterceptor(http).build(), store, { now })
+    private val sleptMillis: MutableList<Long> = mutableListOf()
+    private val polledFlow: DeviceAuthFlow =
+        DeviceAuthFlow(authClient, OkHttpClient().newBuilder().addInterceptor(http).build(), store, { now }) { millis ->
+            now += millis
+            sleptMillis.add(millis)
+        }
 
     @Test
     fun `requestUserCode parses the device code challenge`() {
@@ -38,7 +44,8 @@ class DeviceAuthFlowTests {
               "device_code": "dc-1",
               "user_code": "ABCD-1234",
               "verification_uri": "https://auth.example.com/verify",
-              "interval": 5
+              "interval": 5,
+              "expires_in": 900
             }
             """.trimIndent(),
         )
@@ -50,8 +57,20 @@ class DeviceAuthFlowTests {
         assertEquals("ABCD-1234", success.value.userCode)
         assertEquals("https://auth.example.com/verify", success.value.verificationUri)
         assertEquals(5L, success.value.intervalSeconds)
+        assertEquals(900L, success.value.expiresInSeconds)
         assertEquals(1, http.requests.size)
         assertEquals(DEVICE_AUTH_ENDPOINT, http.requests.first().url.toString())
+    }
+
+    @Test
+    fun `requestUserCode applies the rfc default interval when the server omits it`() {
+        http.enqueue(200, """{"device_code": "dc-2", "user_code": "WXYZ-5678", "verification_uri": "https://auth.example.com/verify"}""")
+
+        val outcome: DeviceAuthOutcome<DeviceCodeInfo> = runBlocking { flow.requestUserCode() }
+
+        val success: DeviceAuthOutcome.Success<DeviceCodeInfo> = outcome as DeviceAuthOutcome.Success
+        assertEquals(5L, success.value.intervalSeconds)
+        assertNull(success.value.expiresInSeconds)
     }
 
     @Test
@@ -65,11 +84,92 @@ class DeviceAuthFlowTests {
 
     @Test
     fun `pollOnce reports authorization pending`() {
-        http.enqueue(200, """{"error": "authorization_pending"}""")
+        http.enqueue(200, PENDING_JSON)
 
         val result: PollResult = runBlocking { flow.pollOnce("dc-1") }
 
         assertTrue(result is PollResult.Pending, "expected Pending, got $result")
+    }
+
+    @Test
+    fun `pollOnce keeps polling on a 400 authorization pending response`() {
+        http.enqueue(400, PENDING_JSON)
+
+        val result: PollResult = runBlocking { flow.pollOnce("dc-1") }
+
+        assertTrue(result is PollResult.Pending, "expected Pending, got $result")
+    }
+
+    @Test
+    fun `pollOnce reports slow down`() {
+        http.enqueue(400, SLOW_DOWN_JSON)
+
+        val result: PollResult = runBlocking { flow.pollOnce("dc-1") }
+
+        assertTrue(result is PollResult.SlowDown, "expected SlowDown, got $result")
+    }
+
+    @Test
+    fun `pollUntilSettled checks every ten seconds when the server asks for less`() {
+        http.enqueue(400, PENDING_JSON)
+        http.enqueue(200, TOKEN_JSON)
+        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 5, 600)
+
+        val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
+
+        val success: DeviceAuthOutcome.Success<TokenResponse> = outcome as DeviceAuthOutcome.Success
+        assertEquals("access-1", success.value.accessToken)
+        assertEquals(listOf(10_000L, 10_000L), sleptMillis)
+    }
+
+    @Test
+    fun `pollUntilSettled respects a longer interval from the server`() {
+        http.enqueue(400, PENDING_JSON)
+        http.enqueue(200, TOKEN_JSON)
+        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 30, 600)
+
+        val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
+
+        assertTrue(outcome is DeviceAuthOutcome.Success, "expected Success, got $outcome")
+        assertEquals(listOf(30_000L, 30_000L), sleptMillis)
+    }
+
+    @Test
+    fun `pollUntilSettled waits longer after a slow down response`() {
+        http.enqueue(400, SLOW_DOWN_JSON)
+        http.enqueue(400, PENDING_JSON)
+        http.enqueue(200, TOKEN_JSON)
+        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 5, 600)
+
+        val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
+
+        assertTrue(outcome is DeviceAuthOutcome.Success, "expected Success, got $outcome")
+        assertEquals(listOf(10_000L, 15_000L, 15_000L), sleptMillis)
+    }
+
+    @Test
+    fun `pollUntilSettled fails when the device code expires before approval`() {
+        http.enqueue(400, PENDING_JSON)
+        http.enqueue(400, PENDING_JSON)
+        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 10, 20)
+
+        val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
+
+        val failure: DeviceAuthOutcome.Failure = outcome as DeviceAuthOutcome.Failure
+        assertEquals("The device code has expired. Please sign in again.", failure.message)
+        assertEquals(listOf(10_000L, 10_000L), sleptMillis)
+        assertEquals(2, http.requests.size, "no further polls once the deadline is reached")
+    }
+
+    @Test
+    fun `pollUntilSettled fails on a terminal error`() {
+        http.enqueue(400, """{"error": "expired_token", "error_description": "The device code has expired"}""")
+        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 10, 600)
+
+        val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
+
+        val failure: DeviceAuthOutcome.Failure = outcome as DeviceAuthOutcome.Failure
+        assertEquals("Sign-in failed: expired_token (The device code has expired)", failure.message)
     }
 
     @Test
@@ -157,6 +257,9 @@ class DeviceAuthFlowTests {
 
         const val TOKEN_JSON: String =
             """{"access_token": "access-1", "refresh_token": "refresh-2", "expires_in": 3600}"""
+
+        const val PENDING_JSON: String = """{"error": "authorization_pending"}"""
+        const val SLOW_DOWN_JSON: String = """{"error": "slow_down"}"""
 
         const val SERVER_TOKEN_JSON: String =
             """{"access_token": "server-acc", "refresh_token": "server-refresh", "expires_in": 3600}"""

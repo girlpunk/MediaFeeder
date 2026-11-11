@@ -111,6 +111,13 @@ class AuthClientTests {
     }
 
     @Test
+    fun `device code poll treats slow down as a request to wait longer`() {
+        val result: PollResult = client.parsePollResponse("""{"error": "slow_down"}""", AT_EPOCH_MILLIS)
+
+        assertTrue(result is PollResult.SlowDown, "expected SlowDown, got $result")
+    }
+
+    @Test
     fun `device code poll parses a terminal error with description`() {
         val result: PollResult =
             client.parsePollResponse(
