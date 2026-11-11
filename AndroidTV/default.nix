@@ -124,6 +124,9 @@ _: {
         pkgs.jdk21
         androidSdk
         pkgs.unzip
+
+        (pkgs.android-studio.withSdk androidSdk)
+        androidPackages.platform-tools
       ];
 
       env = {
