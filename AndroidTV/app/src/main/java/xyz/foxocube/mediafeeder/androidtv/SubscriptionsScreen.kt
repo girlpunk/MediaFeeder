@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -42,42 +44,44 @@ fun SubscriptionsScreen(
         if (state is SubscriptionsViewModel.ListState.AuthRequired) onAuthRequired()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(TvTokens.backgroundColor)
-            .padding(TvTokens.screenPadding),
-    ) {
-        ScreenTitle(text = "Subscriptions")
-        Spacer(Modifier.height(TvTokens.itemSpacing))
-        when (state) {
-            SubscriptionsViewModel.ListState.Loading -> LoadingView()
+    CompositionLocalProvider(LocalContentColor provides TvTokens.onBackgroundColor) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(TvTokens.backgroundColor)
+                .padding(TvTokens.screenPadding),
+        ) {
+            ScreenTitle(text = "Subscriptions")
+            Spacer(Modifier.height(TvTokens.itemSpacing))
+            when (state) {
+                SubscriptionsViewModel.ListState.Loading -> LoadingView()
 
-            is SubscriptionsViewModel.ListState.Error ->
-                ErrorView(message = state.message, onRetry = vm::load)
+                is SubscriptionsViewModel.ListState.Error ->
+                    ErrorView(message = state.message, onRetry = vm::load)
 
-            is SubscriptionsViewModel.ListState.AuthRequired -> Unit
+                is SubscriptionsViewModel.ListState.AuthRequired -> Unit
 
-            is SubscriptionsViewModel.ListState.Ready ->
-                if (state.subscriptions.isEmpty()) {
-                    EmptyView(message = "No subscriptions")
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = TvTokens.gridCardMinWidth),
-                        contentPadding = PaddingValues(bottom = TvTokens.screenPadding),
-                        horizontalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing),
-                        verticalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing),
-                    ) {
-                        items(state.subscriptions, key = { it.id }) { subscription ->
-                            SubscriptionCard(
-                                name = subscription.name,
-                                thumbUrl = api.subscriptionThumbnailUrl(subscription),
-                                bearer = api.currentBearer(),
-                                onClick = { onOpenSubscription(subscription) },
-                            )
+                is SubscriptionsViewModel.ListState.Ready ->
+                    if (state.subscriptions.isEmpty()) {
+                        EmptyView(message = "No subscriptions")
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = TvTokens.gridCardMinWidth),
+                            contentPadding = PaddingValues(bottom = TvTokens.screenPadding),
+                            horizontalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing),
+                            verticalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing),
+                        ) {
+                            items(state.subscriptions, key = { it.id }) { subscription ->
+                                SubscriptionCard(
+                                    name = subscription.name,
+                                    thumbUrl = api.subscriptionThumbnailUrl(subscription),
+                                    bearer = api.currentBearer(),
+                                    onClick = { onOpenSubscription(subscription) },
+                                )
+                            }
                         }
                     }
-                }
+            }
         }
     }
 }

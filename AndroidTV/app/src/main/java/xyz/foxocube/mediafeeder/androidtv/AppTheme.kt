@@ -17,6 +17,9 @@ object TvTokens {
     val backgroundColor: Color
         @Composable get() = colorResource(id = R.color.background_dark)
 
+    val onBackgroundColor: Color
+        @Composable get() = colorResource(id = R.color.on_background)
+
     val accentColor: Color
         @Composable get() = colorResource(id = R.color.accent_blue)
 

@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,16 +46,18 @@ fun SettingsScreen(onSignedIn: () -> Unit) {
         if (state.login is SettingsViewModel.LoginState.SignedIn) onSignedIn()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(TvTokens.backgroundColor)
-            .padding(TvTokens.screenPadding),
-    ) {
-        if (isBusyLogin(state.login)) {
-            LoginProgressPanel(state.login)
-        } else {
-            SettingsForm(vm = vm, login = state.login, onSignIn = vm::signIn)
+    CompositionLocalProvider(LocalContentColor provides TvTokens.onBackgroundColor) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(TvTokens.backgroundColor)
+                .padding(TvTokens.screenPadding),
+        ) {
+            if (isBusyLogin(state.login)) {
+                LoginProgressPanel(state.login)
+            } else {
+                SettingsForm(vm = vm, login = state.login, onSignIn = vm::signIn)
+            }
         }
     }
 }
