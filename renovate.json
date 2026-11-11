@@ -6,4 +6,10 @@
   "lockFileMaintenance": {
     "enabled": true
   }
+  "automerge": true,
+  "automergeStrategy": "squash",
+  "assignAutomerge": true,
+  "reviewers": ["girlpunk"],
+  "assignees": ["girlpunk"],
+  "assigneesFromCodeOwners": true,
 }
