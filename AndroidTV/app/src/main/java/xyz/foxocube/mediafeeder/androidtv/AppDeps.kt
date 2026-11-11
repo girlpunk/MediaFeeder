@@ -39,7 +39,7 @@ class AppDeps(context: Context) {
             metadataCache[oidcUrl] ?: fetchOidcMetadata(httpClient, oidcUrl).also { fetched ->
                 metadataCache = metadataCache + (oidcUrl to fetched)
             }
-        return AuthClient(oidcUrl, deviceClientId, serverClientId, metadata)
+        return AuthClient(deviceClientId, serverClientId, metadata)
     }
 
     /**

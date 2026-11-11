@@ -18,10 +18,9 @@ import okhttp3.Request
  * will POST with OkHttp; the parsers turn raw token-endpoint JSON into [TokenResponse].
  */
 class AuthClient(
-    val oidcUrl: String,
     val deviceClientId: String,
     val serverClientId: String,
-    private val metadata: OidcMetadata,
+    metadata: OidcMetadata,
 ) {
     private val jsonFormat: Json = Json { ignoreUnknownKeys = true }
 
@@ -64,7 +63,7 @@ class AuthClient(
     fun parseTokenResponse(json: String, atEpochMillis: Long): TokenResponse {
         val dto: TokenDto = jsonFormat.decodeFromString(TokenDto.serializer(), json)
         val accessToken: String = checkNotNull(dto.accessToken) { "token response is missing access_token" }
-        val refreshToken: String = checkNotNull(dto.refreshToken) { "token response is missing refresh_token" }
+        val refreshToken: String? = dto.refreshToken
         val expiresIn: Long = checkNotNull(dto.expiresIn) { "token response is missing expires_in" }
         return TokenResponse(accessToken, refreshToken, atEpochMillis + expiresIn * 1000L)
     }
@@ -101,7 +100,7 @@ class AuthClient(
 /** Parsed OAuth2 token response from the OIDC token endpoint. */
 data class TokenResponse(
     val accessToken: String,
-    val refreshToken: String,
+    val refreshToken: String?,
     /** Epoch millis when the access token expires (issue time + expires_in seconds). */
     val expiresAtEpochMillis: Long,
 )
