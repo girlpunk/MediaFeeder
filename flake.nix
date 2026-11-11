@@ -1,9 +1,4 @@
 {
-  nixConfig = {
-    extra-substituters = "https://cachix.cachix.org";
-    extra-trusted-public-keys = "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=";
-  };
-
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
 
@@ -30,7 +25,11 @@
     flake-compat.url = "github:NixOS/flake-compat";
   };
 
-  outputs = inputs @ {flake-parts, ...}:
+  outputs = inputs @ {
+    flake-parts,
+    nixpkgs,
+    ...
+  }:
   # https://flake.parts/module-arguments.html
     flake-parts.lib.mkFlake {inherit inputs;} ({...}: {
       imports = [
@@ -38,6 +37,7 @@
         inputs.treefmt-nix.flakeModule
         inputs.git-hooks-nix.flakeModule
         ./scripts
+        ./AndroidTV
       ];
       #flake = {
       #  # Put your original flake attributes here.
@@ -47,23 +47,42 @@
         "x86_64-linux"
         # ...
       ];
-      perSystem = {pkgs, ...}: let
-        scripts = ./scripts;
-      in {
-        # Recommended: move all package definitions here.
-        # e.g. (assuming you have a nixpkgs input)
-        # packages.foo = pkgs.callPackage ./foo/package.nix { };
-        # packages.bar = pkgs.callPackage ./bar/package.nix {
-        #   foo = config.packages.foo;
-        # };
+      perSystem = {system, ...}: {
+        # Package definitions live in the per-feature modules (see
+        # scripts/default.nix and AndroidTV/default.nix).
+
+        # Allow non-free packages (the Android SDK is one) without needing
+        # NIXPKGS_ALLOW_UNFREE=1 in the environment. This module-arg
+        # override replaces pkgs for all modules of this flake (packages,
+        # dev shells, ...).
+        _module.args.pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
 
         treefmt = {
           # Used to find the project root
-          #projectRootFile = "flake.nix";
+          projectRootFile = "flake.nix";
 
-          # Enable the Nix formatter
-          programs.alejandra.enable = true;
-          programs.statix.enable = true;
+          programs = {
+            # Enable the Nix formatter
+            alejandra.enable = true;
+            statix.enable = true;
+            deadnix.enable = true;
+
+            # Workflows
+            actionlint.enable = true;
+
+            # Bash
+            beautysh.enable = true;
+
+            # Protobuf
+            buf.enable = true;
+
+            # Docker
+            dockerfmt.enable = true;
+            dockfmt.enable = true;
+          };
         };
 
         pre-commit = {
