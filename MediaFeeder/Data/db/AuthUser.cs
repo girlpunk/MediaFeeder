@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 
 namespace MediaFeeder.Data.db;
@@ -8,6 +9,7 @@ public class AuthUser : IdentityUser<int>
     public override int Id { get; set; }
 
     [MaxLength(128)]
+    [JsonIgnore]
     public string? Password { get; set; }
 
     public DateTime? LastLogin { get; set; }
@@ -40,12 +42,14 @@ public class AuthUser : IdentityUser<int>
         set => Email = value;
     }
 
+    [JsonIgnore]
     public override string NormalizedUserName
     {
         get => Username;
         set => Username = value;
     }
 
+    [JsonIgnore]
     public override string UserName
     {
         get => Username;
@@ -54,14 +58,16 @@ public class AuthUser : IdentityUser<int>
 
     public DateTimeOffset DateJoined { get; set; }
 
-    public virtual ICollection<AuthUserGroup>? AuthUserGroups { get; init; }
-    public virtual ICollection<AuthUserUserPermission>? AuthUserUserPermissions { get; init; }
-    public virtual ICollection<DjangoAdminLog>? DjangoAdminLogs { get; init; }
+    [JsonIgnore] public virtual ICollection<AuthUserGroup>? AuthUserGroups { get; init; }
 
-    public virtual ICollection<DynamicPreferencesUsersUserpreferencemodel>? DynamicPreferencesUsersUserpreferencemodels { get; init; }
+    [JsonIgnore] public virtual ICollection<AuthUserUserPermission>? AuthUserUserPermissions { get; init; }
+    [JsonIgnore] public virtual ICollection<DjangoAdminLog>? DjangoAdminLogs { get; init; }
 
-    public virtual ICollection<JobExecution>? JobExecutions { get; init; }
+    [JsonIgnore] public virtual ICollection<DynamicPreferencesUsersUserpreferencemodel>? DynamicPreferencesUsersUserpreferencemodels { get; init; }
+
+    [JsonIgnore] public virtual ICollection<JobExecution>? JobExecutions { get; init; }
+    [JsonIgnore] public virtual ICollection<AuthProvider>? AuthProviders { get; init; }
+
     public virtual ICollection<Folder>? Folders { get; init; }
     public virtual ICollection<Subscription>? Subscriptions { get; init; }
-    public virtual ICollection<AuthProvider>? AuthProviders { get; init; }
 }
