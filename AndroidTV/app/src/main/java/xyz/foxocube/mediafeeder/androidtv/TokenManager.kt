@@ -13,10 +13,13 @@ import okhttp3.Request
  * token; if the exchange is rejected and a device refresh token is stored, refresh the
  * device token once and retry the exchange.
  *
+ * [authClientFactory] may perform OIDC metadata discovery; a failure is treated as an auth
+ * failure (refresh returns false, re-sign-in stays possible).
+ *
  * Time is injected via [clock] for deterministic tests.
  */
 class TokenManager(
-    private val authClientFactory: () -> AuthClient?,
+    private val authClientFactory: suspend () -> AuthClient?,
     private val store: AuthStore,
     private val httpClient: OkHttpClient,
     private val clock: () -> Long = { System.currentTimeMillis() },
@@ -32,7 +35,12 @@ class TokenManager(
     /** Renew the stored server token in place. Returns true when a valid token is stored afterwards. */
     suspend fun refresh(): Boolean {
         if (getValidToken() != null) return true
-        val client: AuthClient = authClientFactory() ?: return false
+        val client: AuthClient? = try {
+            authClientFactory()
+        } catch (e: Exception) {
+            null
+        }
+        if (client == null) return false
         var deviceAccessToken: String? = store.accessToken
         if (deviceAccessToken == null) return false
         if (exchangeServerToken(client, deviceAccessToken)) return true

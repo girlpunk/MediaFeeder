@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  */
 class SettingsViewModel(
     private val store: AuthStore,
-    private val flowFactory: () -> DeviceAuthFlow?,
+    private val flowFactory: suspend () -> DeviceAuthOutcome<DeviceAuthFlow>,
 ) : ViewModel() {
 
     /** Sign-in phase shown below the settings form. */
@@ -90,7 +90,14 @@ class SettingsViewModel(
     }
 
     private suspend fun runLogin() {
-        val flow: DeviceAuthFlow = flowFactory() ?: return
+        val flow: DeviceAuthFlow = when (val outcome: DeviceAuthOutcome<DeviceAuthFlow> = flowFactory()) {
+            is DeviceAuthOutcome.Failure -> {
+                _state.update { it.copy(login = LoginState.Failed(outcome.message)) }
+                return
+            }
+
+            is DeviceAuthOutcome.Success -> outcome.value
+        }
         _state.update { it.copy(login = LoginState.RequestingUserCode) }
         when (val challenge = flow.requestUserCode()) {
             is DeviceAuthOutcome.Failure -> {

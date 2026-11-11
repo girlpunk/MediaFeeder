@@ -25,7 +25,7 @@ class TokenManagerTests {
     private val atEpochMillis: Long = 1_750_000_000_000L
     private var now: Long = atEpochMillis
     private val store: AuthStore = AuthStore(FakeSharedPreferences())
-    private val authClient: AuthClient = AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID)
+    private val authClient: AuthClient = AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID, METADATA)
 
     private val clock: () -> Long = { now }
 
@@ -154,8 +154,11 @@ class TokenManagerTests {
         const val OIDC_URL: String = "https://auth.example.com"
         const val DEVICE_CLIENT_ID: String = "device-client-1"
         const val SERVER_CLIENT_ID: String = "server-client-2"
+        const val TOKEN_ENDPOINT: String = "$OIDC_URL/application/o/mediafeeder/token/"
+        const val DEVICE_AUTH_ENDPOINT: String = "$OIDC_URL/application/o/mediafeeder/device/"
 
         private val JSON_MEDIA_TYPE: MediaType = "application/json".toMediaType()
+        private val METADATA: OidcMetadata = OidcMetadata(TOKEN_ENDPOINT, DEVICE_AUTH_ENDPOINT)
 
         const val SERVER_TOKEN_JSON: String =
             """{"access_token": "access-1", "refresh_token": "refresh-2", "expires_in": 3600}"""

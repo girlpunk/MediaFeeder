@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Test
 private const val OIDC_URL: String = "https://auth.example.com"
 private const val DEVICE_CLIENT_ID: String = "device-client-1"
 private const val SERVER_CLIENT_ID: String = "server-client-2"
+private const val TOKEN_ENDPOINT: String = "$OIDC_URL/application/o/mediafeeder/token/"
+private const val DEVICE_AUTH_ENDPOINT: String = "$OIDC_URL/application/o/mediafeeder/device/"
+private val METADATA: OidcMetadata = OidcMetadata(TOKEN_ENDPOINT, DEVICE_AUTH_ENDPOINT)
 private const val DEVICE_CODE_GRANT: String = "urn:ietf:params:oauth:grant-type:device_code"
 private const val TOKEN_JSON: String =
     """
@@ -29,14 +32,14 @@ private const val EXPECTED_EXPIRES_AT: Long = AT_EPOCH_MILLIS + 3_600_000L
  * (grant shapes from scripts/auth.py).
  */
 class AuthClientTests {
-    private val client: AuthClient = AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID)
+    private val client: AuthClient = AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID, METADATA)
 
     @Test
     fun `initial device code request posts only client id and scope per rfc 8628`() {
         val request: Request = client.initialDeviceCodeRequest()
 
         assertEquals("POST", request.method)
-        assertEquals("$OIDC_URL/oauth/as/device", request.url.toString())
+        assertEquals(DEVICE_AUTH_ENDPOINT, request.url.toString())
         assertTrue(request.body is FormBody, "expected a form-encoded body, got ${request.body}")
         assertNull(request.formValue("grant_type"), "device authorization takes no grant_type")
         assertEquals(DEVICE_CLIENT_ID, request.formValue("client_id"))
@@ -49,7 +52,7 @@ class AuthClientTests {
         val request: Request = client.deviceCodePollRequest("dc-742")
 
         assertEquals("POST", request.method)
-        assertEquals("$OIDC_URL/oauth/as/token", request.url.toString())
+        assertEquals(TOKEN_ENDPOINT, request.url.toString())
         assertEquals(DEVICE_CODE_GRANT, request.formValue("grant_type"))
         assertEquals("dc-742", request.formValue("device_code"))
         assertEquals(DEVICE_CLIENT_ID, request.formValue("client_id"))
@@ -60,7 +63,7 @@ class AuthClientTests {
         val request: Request = client.serverTokenRequest("device-access-token-abc")
 
         assertEquals("POST", request.method)
-        assertEquals("$OIDC_URL/oauth/as/token", request.url.toString())
+        assertEquals(TOKEN_ENDPOINT, request.url.toString())
         assertEquals("client_credentials", request.formValue("grant_type"))
         assertEquals(SERVER_CLIENT_ID, request.formValue("client_id"))
         assertEquals(
@@ -75,18 +78,10 @@ class AuthClientTests {
         val request: Request = client.refreshRequest("refresh-token-123")
 
         assertEquals("POST", request.method)
-        assertEquals("$OIDC_URL/oauth/as/token", request.url.toString())
+        assertEquals(TOKEN_ENDPOINT, request.url.toString())
         assertEquals("refresh_token", request.formValue("grant_type"))
         assertEquals("refresh-token-123", request.formValue("refresh_token"))
         assertEquals(DEVICE_CLIENT_ID, request.formValue("client_id"))
-    }
-
-    @Test
-    fun `oidc url with a trailing slash still produces clean endpoint urls`() {
-        val trailing: AuthClient = AuthClient("$OIDC_URL/", DEVICE_CLIENT_ID, SERVER_CLIENT_ID)
-
-        assertEquals("$OIDC_URL/oauth/as/device", trailing.initialDeviceCodeRequest().url.toString())
-        assertEquals("$OIDC_URL/oauth/as/token", trailing.deviceCodePollRequest("dc-1").url.toString())
     }
 
     @Test

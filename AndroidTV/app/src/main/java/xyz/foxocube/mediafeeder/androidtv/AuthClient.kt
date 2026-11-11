@@ -7,8 +7,12 @@ import okhttp3.FormBody
 import okhttp3.Request
 
 /**
- * OIDC device-code auth against the user's Authentik instance (mirrors scripts/auth.py):
- * device-code grant -> refresh grant -> client_credentials exchange for the "server token".
+ * OIDC device-code auth (mirrors scripts/auth.py): device-code grant -> refresh grant ->
+ * client_credentials exchange for the "server token".
+ *
+ * The OAuth2 endpoints are not hardcoded: they are resolved from the provider's OIDC metadata
+ * document ([OidcMetadata], fetched by [AppDeps] from
+ * `{oidcUrl}/.well-known/openid-configuration`).
  *
  * The request builders are pure: they construct the form-encoded OAuth2 [Request]s the app
  * will POST with OkHttp; the parsers turn raw token-endpoint JSON into [TokenResponse].
@@ -17,12 +21,12 @@ class AuthClient(
     val oidcUrl: String,
     val deviceClientId: String,
     val serverClientId: String,
+    private val metadata: OidcMetadata,
 ) {
     private val jsonFormat: Json = Json { ignoreUnknownKeys = true }
 
-    private val base: String = oidcUrl.trimEnd { it == '/' }
-    private val deviceEndpoint: String = "$base/oauth/as/device"
-    private val tokenEndpoint: String = "$base/oauth/as/token"
+    private val deviceEndpoint: String = metadata.deviceAuthorizationEndpoint
+    private val tokenEndpoint: String = metadata.tokenEndpoint
 
     /** First step of the device-code flow (device authorization endpoint, RFC 8628: client_id + scope only). */
     fun initialDeviceCodeRequest(): Request = formRequest(

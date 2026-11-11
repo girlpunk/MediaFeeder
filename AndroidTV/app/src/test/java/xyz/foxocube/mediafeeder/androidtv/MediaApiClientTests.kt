@@ -27,7 +27,7 @@ class MediaApiClientTests {
         MediaApiClient(
             store,
             TokenManager(
-                { AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID) },
+                { AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID, METADATA) },
                 store,
                 OkHttpClient().newBuilder().addInterceptor(http).build(),
                 { atEpochMillis },
@@ -159,6 +159,8 @@ class MediaApiClientTests {
         const val OIDC_URL: String = "https://auth.example.com"
         const val DEVICE_CLIENT_ID: String = "device-client-1"
         const val SERVER_CLIENT_ID: String = "server-client-2"
+        const val TOKEN_ENDPOINT: String = "$OIDC_URL/application/o/mediafeeder/token/"
+        const val DEVICE_AUTH_ENDPOINT: String = "$OIDC_URL/application/o/mediafeeder/device/"
         const val SERVER_TOKEN: String = "server-token-1"
         const val STALE_TOKEN: String = "stale-server-token"
         const val DEVICE_ACCESS_TOKEN: String = "device-access-1"
@@ -169,6 +171,8 @@ class MediaApiClientTests {
 
         const val EXCHANGE_JSON: String =
             """{"access_token": "server-token-1", "refresh_token": "server-refresh-1", "expires_in": 3600}"""
+
+        private val METADATA: OidcMetadata = OidcMetadata(TOKEN_ENDPOINT, DEVICE_AUTH_ENDPOINT)
 
         val SUBSCRIPTIONS_JSON: String =
             """
