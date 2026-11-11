@@ -62,11 +62,27 @@
 
         treefmt = {
           # Used to find the project root
-          #projectRootFile = "flake.nix";
+          projectRootFile = "flake.nix";
 
-          # Enable the Nix formatter
-          programs.alejandra.enable = true;
-          programs.statix.enable = true;
+          programs = {
+            # Enable the Nix formatter
+            alejandra.enable = true;
+            statix.enable = true;
+            deadnix.enable = true;
+
+            # Workflows
+            actionlint.enable = true;
+
+            # Bash
+            beautysh.enable = true;
+
+            # Protobuf
+            buf.enable = true;
+
+            # Docker
+            dockerfmt.enable = true;
+            dockfmt.enable = true;
+          };
         };
 
         pre-commit = {

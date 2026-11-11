@@ -7,23 +7,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.input.ImeAction
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -77,40 +70,34 @@ private fun SettingsForm(
     onSignIn: () -> Unit,
 ) {
     val state: SettingsViewModel.State = vm.state.value
-    val firstField: FocusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(login) {
-        if (login is SettingsViewModel.LoginState.Idle) firstField.requestFocus()
-    }
-
+    // The first field asks for platform focus when created; the TV framework then shows
+    // the on-screen keyboard for the focused editor (native focus-to-IME behavior).
     ScreenTitle(text = "Settings")
     Spacer(Modifier.height(TvTokens.itemSpacing))
-    SettingField(
+    TvTextField(
         label = "Server base URL",
         value = state.baseUrl,
         onValueChange = vm::onBaseUrlChange,
-        focusRequester = firstField,
+        requestFocusOnInit = true,
     )
     Spacer(Modifier.height(TvTokens.itemSpacing))
-    SettingField(
+    TvTextField(
         label = "OIDC URL",
         value = state.oidcUrl,
         onValueChange = vm::onOidcUrlChange,
-        focusRequester = null,
     )
     Spacer(Modifier.height(TvTokens.itemSpacing))
-    SettingField(
+    TvTextField(
         label = "Device client ID",
         value = state.deviceClientId,
         onValueChange = vm::onDeviceClientIdChange,
-        focusRequester = null,
     )
     Spacer(Modifier.height(TvTokens.itemSpacing))
-    SettingField(
+    TvTextField(
         label = "Server client ID",
         value = state.serverClientId,
         onValueChange = vm::onServerClientIdChange,
-        focusRequester = null,
     )
     Spacer(Modifier.height(TvTokens.itemSpacing))
     Row(horizontalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing)) {
@@ -124,27 +111,6 @@ private fun SettingsForm(
             text = login.message,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.error,
-        )
-    }
-}
-
-@Composable
-private fun SettingField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    focusRequester: FocusRequester?,
-) {
-    Column(Modifier.fillMaxWidth()) {
-        Text(text = label, style = MaterialTheme.typography.titleSmall)
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            modifier = Modifier
-                .fillMaxWidth()
-                .let { m -> if (focusRequester != null) m.focusRequester(focusRequester) else m },
         )
     }
 }

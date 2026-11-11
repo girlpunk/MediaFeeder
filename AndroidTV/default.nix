@@ -131,5 +131,11 @@ _: {
         ANDROID_SDK_ROOT = "${androidSdk}/libexec/android-sdk";
       };
     };
+
+    treefmt.programs = {
+      ktfmt.enable = true;
+      ktlint.enable = true;
+      detekt.enable = true;
+    };
   };
 }

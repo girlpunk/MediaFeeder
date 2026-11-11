@@ -101,13 +101,14 @@ _: {
       program = bridges;
     };
 
-    treefmt = {
+    treefmt.programs = {
       # Enable the Python formatters
-      programs.ruff-format = {
+      isort.enable = true;
+      ruff-format = {
         enable = true;
         lineLength = 180;
       };
-      programs.ruff-check = {
+      ruff-check = {
         enable = true;
         excludes = [
           "NetworkPlaybackAgent/*"
