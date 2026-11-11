@@ -123,6 +123,7 @@ _: {
       packages = [
         pkgs.jdk21
         androidSdk
+        gradle
         pkgs.unzip
 
         (pkgs.android-studio.withSdk androidSdk)
