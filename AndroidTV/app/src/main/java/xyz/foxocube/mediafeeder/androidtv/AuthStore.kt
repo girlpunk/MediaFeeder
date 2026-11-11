@@ -11,7 +11,10 @@ import android.content.SharedPreferences
 class AuthStore(private val prefs: SharedPreferences) {
     /** MediaFeeder server base URL, e.g. "http://192.168.1.10:8080". */
     var baseUrl: String?
-        get() = prefs.getString(KEY_BASE_URL, null)
+        get() {
+            val s = prefs.getString(KEY_BASE_URL, null);
+            return s?.trimEnd('/');
+        }
         set(value) { prefs.edit().putString(KEY_BASE_URL, value).apply() }
 
     /** OIDC (Authentik) base URL, e.g. "https://auth.example.com". */
