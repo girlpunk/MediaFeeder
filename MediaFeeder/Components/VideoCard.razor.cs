@@ -137,6 +137,10 @@ public sealed partial class VideoCard : ComponentBase
                 return;
             }
 
+            Logger.LogDebug($"TimeTicker is: {TimeTicker}");
+            Logger.LogDebug($"Video ID is: {Video.Id}");
+            Logger.LogDebug($"Provider Id: {providerType}");
+
             await TimeTicker.AddDownloadVideo(Video.Id, providerType, Logger, HttpContext.RequestAborted);
 
             await MessageService.InfoAsync("Sent for download");
