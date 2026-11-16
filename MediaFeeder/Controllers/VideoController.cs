@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Data;
 using Data.Identity;
+using Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,10 +62,8 @@ public partial class VideoController(
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
-        var video = await context.Videos.SingleOrDefaultAsync(
-            v => v.Id == id && v.Subscription!.UserId == user.Id,
-            HttpContext.RequestAborted
-        );
+        var video = await context.Videos.AsNoTracking()
+            .SingleOrDefaultAsync(v => v.Id == id && v.Subscription!.UserId == user.Id, HttpContext.RequestAborted);
 
         if (video == null)
             return NotFound();
@@ -148,5 +147,32 @@ public partial class VideoController(
                 $"Not Downloaded - {e.Message}"
             );
         }
+    }
+
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<string>(StatusCodes.Status200OK)]
+    [HttpGet("play/token")]
+    [Authorize(Policy = "API")]
+    public async Task<IActionResult> PlayToken(int id, [FromServices] TokenHelper tokenHelper)
+    {
+        ArgumentNullException.ThrowIfNull(tokenHelper);
+        await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
+
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Forbid();
+
+        var video = await context.Videos
+            .Include(static v => v.Subscription)
+            .SingleOrDefaultAsync(
+                v => v.Id == id && v.Subscription!.User == user,
+                HttpContext.RequestAborted
+            );
+
+        if (video == null)
+            return NotFound();
+
+        return Ok(new { token = tokenHelper.GeneratePlaybackJwt(user, id) });
     }
 }

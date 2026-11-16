@@ -36,7 +36,9 @@ public class SubscriptionsController(
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
-        return await context.Subscriptions.Where(s => s.User == user).ToListAsync(HttpContext.RequestAborted);
+        return await context.Subscriptions.AsNoTracking()
+            .Where(s => s.User == user)
+            .ToListAsync(HttpContext.RequestAborted);
     }
 
     /// <summary>
@@ -59,8 +61,8 @@ public class SubscriptionsController(
             HttpContext.RequestAborted
         );
 
-        var subscription = await context
-            .Subscriptions.Include(static v => v.Videos)
+        var subscription = await context.Subscriptions.AsNoTracking()
+            .Include(static v => v.Videos)
             .SingleOrDefaultAsync(v => v.Id == id && v.User == user, HttpContext.RequestAborted);
 
         if (subscription == null)
@@ -214,10 +216,8 @@ public class SubscriptionsController(
             HttpContext.RequestAborted
         );
 
-        var subscription = await context.Subscriptions.SingleOrDefaultAsync(
-            s => s.Id == id && s.UserId == user.Id,
-            HttpContext.RequestAborted
-        );
+        var subscription = await context.Subscriptions
+            .SingleOrDefaultAsync(s => s.Id == id && s.UserId == user.Id, HttpContext.RequestAborted);
 
         if (subscription == null)
             return NotFound();
@@ -249,5 +249,50 @@ public class SubscriptionsController(
 
             return StatusCode((int) HttpStatusCode.PreconditionFailed, "Not Downloaded");
         }
+    }
+
+    /// <summary>
+    /// List videos in the subscription
+    /// </summary>
+    /// <param name="id">ID of the subscription</param>
+    /// <param name="watched">Show only watched or unwatched videos</param>
+    /// <returns>List of videos</returns>
+    [HttpGet("{id:int}/videos")]
+    [Authorize(Policy = "API")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<List<Video>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<Video>>> GetSubscriptionVideos([FromRoute] int id, [FromQuery] bool? watched)
+    {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Unauthorized();
+
+        await using var context = await contextFactory.CreateDbContextAsync(
+            HttpContext.RequestAborted
+        );
+
+        // AsNoTracking: keeps Video.Subscription unpopulated during the video query
+        // (a tracked subscription would trigger EF navigation fix-ups, producing a
+        // Video <-> Subscription cycle that JSON serialization cannot represent).
+        var subscription = await context.Subscriptions
+            .AsNoTracking()
+            .SingleOrDefaultAsync(v => v.Id == id && v.User == user, HttpContext.RequestAborted);
+
+        if (subscription == null)
+            return new NotFoundObjectResult(null);
+
+        var videoQuery = context.Videos.Where(v => v.SubscriptionId == id);
+
+        if (watched != null)
+            videoQuery = videoQuery.Where(v => v.Watched == watched);
+
+        // Id as tie-break: equal PublishDate order is otherwise non-deterministic in Postgres.
+        var ordered =
+            subscription.WatchOrder == Data.Enums.WatchOrder.NewestFirst
+                ? videoQuery.OrderByDescending(static v => v.PublishDate).ThenBy(static v => v.Id)
+                : videoQuery.OrderBy(static v => v.PublishDate).ThenBy(static v => v.Id);
+
+        return Ok(await ordered.ToListAsync(HttpContext.RequestAborted));
     }
 }

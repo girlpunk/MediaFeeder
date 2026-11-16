@@ -32,8 +32,8 @@ public class FoldersController(
 
         await using var context = await contextFactory.CreateDbContextAsync(HttpContext.RequestAborted);
 
-        return await context
-            .Folders.Where(folder => folder.UserId == user.Id && folder.ParentId == null)
+        return await context.Folders.AsNoTracking()
+            .Where(folder => folder.UserId == user.Id && folder.ParentId == null)
             .Select(static folder => folder.Id)
             .ToListAsync(HttpContext.RequestAborted);
     }
@@ -56,8 +56,8 @@ public class FoldersController(
             HttpContext.RequestAborted
         );
 
-        var folder = await context
-            .Folders.Include(static folder => folder.Subfolders)
+        var folder = await context.Folders.AsNoTracking()
+            .Include(static folder => folder.Subfolders)
             .Include(static folder => folder.Subscriptions)
             .SingleOrDefaultAsync(
                 f => f.Id == id && f.UserId == user.Id,
@@ -198,6 +198,6 @@ public class FoldersController(
             HttpContext.RequestAborted
         );
 
-        return context.Folders.Any(e => e.Id == id);
+        return context.Folders.AsNoTracking().Any(e => e.Id == id);
     }
 }

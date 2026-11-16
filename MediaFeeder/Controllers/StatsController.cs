@@ -35,13 +35,13 @@ public class StatsController(IDbContextFactory<MediaFeederDataContext> contextFa
             video.Watched && video.WatchedDate >= lastHour
         );
 
-        var subscriptions = await context.Subscriptions.CountAsync();
-        var trackedVideos = await context.Videos.CountAsync();
-        var watchedVideos = await context.Videos.CountAsync(static video => video.Watched);
-        var newUnwatched = await context.Videos.CountAsync(static video => !video.Watched);
+        var subscriptions = await context.Subscriptions.AsNoTracking().CountAsync();
+        var trackedVideos = await context.Videos.AsNoTracking().CountAsync();
+        var watchedVideos = await context.Videos.AsNoTracking().CountAsync(static video => video.Watched);
+        var newUnwatched = await context.Videos.AsNoTracking().CountAsync(static video => !video.Watched);
 
-        var folders = await context
-            .Videos.GroupBy(static video => video.Subscription!.ParentFolderId)
+        var folders = await context.Videos.AsNoTracking()
+            .GroupBy(static video => video.Subscription!.ParentFolderId)
             .Select(static group => new StatsFolder(
                     group.Key,
                     group.First().Subscription!.ParentFolder!.Name,
