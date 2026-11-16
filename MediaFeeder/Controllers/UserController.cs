@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 [Authorize(Policy = "API")]
 public class UserController : ControllerBase
 {

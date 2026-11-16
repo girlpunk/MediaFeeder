@@ -5,7 +5,7 @@
   "ignorePaths": ["Might be useful/**"],
   "lockFileMaintenance": {
     "enabled": true
-  }
+  },
   "automerge": true,
   "automergeStrategy": "squash",
   "assignAutomerge": true,

@@ -98,7 +98,7 @@ public partial class VideoController(
     [ProducesResponseType(StatusCodes.Status412PreconditionFailed)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType<FileStreamResult>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<FileStreamResult>> Thumbnail(int id)
+    public async Task<ActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
         if (user == null)
