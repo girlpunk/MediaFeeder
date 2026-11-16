@@ -39,7 +39,7 @@ internal static class TimerQHelper
         int videoId,
         IProvider provider,
         ILogger logger,
-        CancellationToken cancellationToken)
+        CancellationToken? cancellationToken = null)
     {
         ArgumentNullException.ThrowIfNull(provider);
 

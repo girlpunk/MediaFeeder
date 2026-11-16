@@ -125,7 +125,7 @@ public sealed partial class VideoCard : ComponentBase
         {
             var providers = ServiceProvider
                 .GetServices<IProvider>()
-                .ToLookup(static p => p.ProviderIdentifier);
+                .ToLookup(static p => p.ProviderIdentifier, StringComparer.Ordinal);
 
             var providerType = providers[Video.Subscription.Provider].SingleOrDefault();
 
@@ -137,13 +137,7 @@ public sealed partial class VideoCard : ComponentBase
                 return;
             }
 
-            Logger.LogDebug($"TimeTicker is: {TimeTicker}");
-            Logger.LogDebug($"Video ID is: {Video.Id}");
-            Logger.LogDebug($"Provider is: {providerType}");
-            Logger.LogDebug($"Logger is: {Logger}");
-            Logger.LogDebug($"Cancellation token is: {HttpContext.RequestAborted}");
-
-            await TimeTicker.AddDownloadVideo(Video.Id, providerType, Logger, HttpContext.RequestAborted);
+            await TimeTicker.AddDownloadVideo(Video.Id, providerType, Logger);
 
             await MessageService.InfoAsync("Sent for download");
         }
