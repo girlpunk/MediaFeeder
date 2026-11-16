@@ -1,8 +1,11 @@
+namespace MediaFeeder.Controllers;
+
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MediaFeeder.Data;
-using MediaFeeder.Data.Identity;
+using Data;
+using Data.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,38 +14,46 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders.Physical;
 
-namespace MediaFeeder.Controllers;
-
 [ApiController]
-[Route("api/[controller]")]
-public class VideoController(
+[Route("api/[controller]/{id:int}")]
+public partial class VideoController(
     IDbContextFactory<MediaFeederDataContext> contextFactory,
     UserManager userManager,
     IConfiguration configuration,
     ILogger<VideoController> logger
 ) : ControllerBase
 {
-    [HttpGet("{id:int}/play")]
+    /// <summary>
+    /// JSON serializer that ignores loops
+    /// </summary>
+    private static readonly JsonSerializerOptions IgnoreCycles = new() { ReferenceHandler = ReferenceHandler.IgnoreCycles };
+
+    [HttpGet("play")]
     [Authorize(Roles = "Download", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<IActionResult> Play(int id)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType<PhysicalFileResult>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<PhysicalFileResult>> Play(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
-        ArgumentNullException.ThrowIfNull(user);
+        if (user == null)
+            return Unauthorized();
 
         var scopeClaim = HttpContext.User.Claims.SingleOrDefault(static c => c.Type == "Video");
-        if (scopeClaim == null || scopeClaim.Value != id.ToString())
+        if (scopeClaim == null || scopeClaim.Value != id.ToString(System.Globalization.CultureInfo.InvariantCulture))
         {
             var serialized = JsonSerializer.Serialize(
                 HttpContext.User,
-                new JsonSerializerOptions() { ReferenceHandler = ReferenceHandler.IgnoreCycles }
+                IgnoreCycles
             );
 
-            logger.LogInformation(
-                "The video claim does not contain '{}' or was not found",
-                scopeClaim
-            );
+            LogMissingClaim(logger, scopeClaim);
+
             return StatusCode(
-                (int)HttpStatusCode.Forbidden,
+                (int) HttpStatusCode.Forbidden,
                 $"The video claim does not contain '{scopeClaim}' or was not found. Full User: {serialized}"
             );
         }
@@ -59,7 +70,7 @@ public class VideoController(
             return NotFound();
 
         if (video.DownloadedPath == null)
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+            return StatusCode((int) HttpStatusCode.PreconditionFailed, "Not Downloaded");
 
         if (video.DownloadedPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return Redirect(video.DownloadedPath);
@@ -71,14 +82,28 @@ public class VideoController(
         return PhysicalFile(video.DownloadedPath, mimeType ?? "application/octet-stream", true);
     }
 
-    [HttpGet("{id:int}/thumbnail")]
+    /// <summary>
+    /// Log that the required claim to play the video is missing
+    /// </summary>
+    /// <param name="logger">Destination</param>
+    /// <param name="claim">Missing claim</param>
+    [LoggerMessage(Level = LogLevel.Information, Message = "The video claim does not contain '{claim}' or was not found")]
+    private static partial void LogMissingClaim(ILogger logger, Claim? claim);
+
+    [HttpGet("thumbnail")]
     [OutputCache(Duration = 60 * 60 * 24 * 7)]
     [ResponseCache(Duration = 60 * 60 * 24 * 7)]
     [Authorize(Policy = "Thumbnails")]
-    public async Task<IActionResult> Thumbnail(int id)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType<FileStreamResult>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<FileStreamResult>> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
-        ArgumentNullException.ThrowIfNull(user);
+        if (user == null)
+            return Unauthorized();
 
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
@@ -92,10 +117,12 @@ public class VideoController(
             return NotFound();
 
         if (video.Thumb == null)
+        {
             return StatusCode(
-                (int)HttpStatusCode.PreconditionFailed,
+                (int) HttpStatusCode.PreconditionFailed,
                 "Not Downloaded - no path saved"
             );
+        }
 
         if (video.Thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return Redirect(video.Thumb);
@@ -104,7 +131,7 @@ public class VideoController(
         {
             var relativePath = video.Thumb;
             var absolutePath = Path.Join(configuration.GetValue<string>("MediaRoot"), relativePath);
-            var stream = (new PhysicalFileInfo(new FileInfo(absolutePath))).CreateReadStream();
+            var stream = new PhysicalFileInfo(new FileInfo(absolutePath)).CreateReadStream();
             new FileExtensionContentTypeProvider().TryGetContentType(video.Thumb, out var mimeType);
             return File(stream, mimeType ?? "application/octet-stream");
         }
@@ -117,7 +144,7 @@ public class VideoController(
             await context.SaveChangesAsync(HttpContext.RequestAborted);
 
             return StatusCode(
-                (int)HttpStatusCode.PreconditionFailed,
+                (int) HttpStatusCode.PreconditionFailed,
                 $"Not Downloaded - {e.Message}"
             );
         }

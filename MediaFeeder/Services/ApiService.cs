@@ -1,19 +1,18 @@
-using System.Reflection;
+namespace MediaFeeder.Services;
+
 using BlazorComponentUtilities;
+using Data;
+using Data.db;
+using Data.DTOs;
+using Filters;
 using Google.Protobuf;
 using Grpc.Core;
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using MediaFeeder.Filters;
-using MediaFeeder.Helpers;
-using MediaFeeder.PlaybackManager;
-using MediaFeeder.Tasks;
+using Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using PlaybackManager;
 using TickerQ.Utilities.Entities;
 using TickerQ.Utilities.Interfaces.Managers;
-
-namespace MediaFeeder.Services;
 
 public sealed class ApiService(
     ITimeTickerManager<TimeTickerEntity> timeTicker,

@@ -317,7 +317,12 @@ builder.Services.AddHealthChecks().AddDbContextCheck<MediaFeederDataContext>("DB
 builder.Services.AddGrpcHealthChecks().AddDbContextCheck<MediaFeederDataContext>("DB-GRPC");
 
 builder.Services.AddProblemDetails();
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApi(options =>
+    {
+        options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
+        options.AddDocumentTransformer(new BearerSecuritySchemeTransformer(builder.Configuration.GetSection("Auth").GetValue<Uri>("MetadataAddress")));
+    }
+);
 
 builder
     .Services.AddHttpClient("retry")
@@ -391,6 +396,7 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 app.MapControllers();
+app.MapOpenApi();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.UseOutputCache();
 
@@ -414,4 +420,4 @@ await using (
     await context.Database.MigrateAsync();
 }
 
-app.Run();
+await app.RunAsync();

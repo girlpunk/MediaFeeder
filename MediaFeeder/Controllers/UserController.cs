@@ -1,5 +1,6 @@
 namespace MediaFeeder.Controllers;
 
+using Data.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,15 +10,14 @@ using Microsoft.AspNetCore.Mvc;
 public class UserController : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<string> Get()
+    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    public ActionResult<UserResponse> Get()
     {
-        var b = new
-        {
+        var b = new UserResponse(
             User.Identity,
-            OtherIdentities = User.Identities,
-            User.Claims,
-        };
+            User.Identities,
+            User.Claims
+        );
 
         return Ok(b);
     }

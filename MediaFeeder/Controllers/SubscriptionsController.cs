@@ -1,15 +1,16 @@
+namespace MediaFeeder.Controllers;
+
 using System.Net;
-using MediaFeeder.Data;
-using MediaFeeder.Data.db;
-using MediaFeeder.Data.Identity;
+using Data;
+using Data.db;
+using Data.DTOs;
+using Data.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders.Physical;
-
-namespace MediaFeeder.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -19,60 +20,91 @@ public class SubscriptionsController(
     IConfiguration configuration
 ) : ControllerBase
 {
-    // GET: api/Subscriptions
+    /// <summary>
+    /// GET: api/Subscriptions
+    /// </summary>
+    /// <returns>List of Subscriptions</returns>
     [HttpGet]
     [Authorize(Policy = "API")]
+    [ProducesResponseType<IEnumerable<Subscription>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Subscription>>> GetSubscriptions()
     {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Unauthorized();
+
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
-        return await context.Subscriptions.ToListAsync(HttpContext.RequestAborted);
+        return await context.Subscriptions.Where(s => s.User == user).ToListAsync(HttpContext.RequestAborted);
     }
 
-    // GET: api/Subscriptions/5
-    [HttpGet("{id}")]
+    /// <summary>
+    /// GET: api/Subscriptions/5
+    /// </summary>
+    /// <param name="id">ID of the subscription</param>
+    /// <returns>Subscription Details</returns>
+    [HttpGet("{id:int}")]
     [Authorize(Policy = "API")]
-    public async Task<ActionResult<object>> GetSubscription(int id)
+    [ProducesResponseType<SubscriptionResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SubscriptionResponse>> GetSubscription(int id)
     {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Unauthorized();
+
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
 
         var subscription = await context
             .Subscriptions.Include(static v => v.Videos)
-            .SingleOrDefaultAsync(v => v.Id == id, HttpContext.RequestAborted);
+            .SingleOrDefaultAsync(v => v.Id == id && v.User == user, HttpContext.RequestAborted);
 
         if (subscription == null)
             return NotFound();
 
-        var user = await userManager.GetUserAsync(HttpContext.User);
-        if (user == null)
-            return Forbid();
-
-        if (subscription.UserId != user.Id)
-            return Unauthorized();
-
-        return new
-        {
+        return new SubscriptionResponse(
             subscription.Name,
             subscription.Id,
-            Unwatched = subscription.Videos.Count(static v => !v.Watched),
-        };
+            Unwatched: subscription.Videos.Count(static v => !v.Watched)
+        );
     }
 
-    // PUT: api/Subscriptions/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-    [HttpPut("{id}")]
+    /// <summary>
+    /// PUT: api/Subscriptions/5
+    /// </summary>
+    /// <param name="id">ID of the subscription</param>
+    /// <param name="subscription">Subscription Details</param>
+    [HttpPut("{id:int}")]
     [Authorize(Policy = "API")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> PutSubscription(int id, Subscription subscription)
     {
-        if (id != subscription.Id)
-            return BadRequest();
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Unauthorized();
 
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
+
+        var dbSubscription = await context
+            .Subscriptions.Include(static v => v.Videos)
+            .SingleOrDefaultAsync(v => v.Id == id && v.User == user, HttpContext.RequestAborted);
+
+        if (dbSubscription == null)
+            return NotFound();
+
+        ArgumentNullException.ThrowIfNull(subscription);
+
+        if (id != subscription.Id)
+            return BadRequest();
 
         context.Entry(subscription).State = EntityState.Modified;
 
@@ -91,12 +123,26 @@ public class SubscriptionsController(
         return NoContent();
     }
 
-    // POST: api/Subscriptions
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    /// <summary>
+    /// POST: api/Subscriptions
+    /// </summary>
+    /// <param name="subscription">Subscription Details</param>
     [HttpPost]
     [Authorize(Policy = "API")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<Subscription>(StatusCodes.Status201Created)]
     public async Task<ActionResult<Subscription>> PostSubscription(Subscription subscription)
     {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Unauthorized();
+
+        ArgumentNullException.ThrowIfNull(subscription);
+
+        if (subscription.UserId != user.Id)
+            return Forbid();
+
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
@@ -107,16 +153,27 @@ public class SubscriptionsController(
         return CreatedAtAction("GetSubscription", new { id = subscription.Id }, subscription);
     }
 
-    // DELETE: api/Subscriptions/5
-    [HttpDelete("{id}")]
+    /// <summary>
+    /// DELETE: api/Subscriptions/5
+    /// </summary>
+    /// <param name="id">ID of the subscription</param>
+    [HttpDelete("{id:int}")]
     [Authorize(Policy = "API")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteSubscription(int id)
     {
+        var user = await userManager.GetUserAsync(HttpContext.User);
+        if (user == null)
+            return Unauthorized();
+
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
         );
 
-        var subscription = await context.Subscriptions.FindAsync([id], HttpContext.RequestAborted);
+        var subscription = await context.Subscriptions.Where(s => s.Id == id && s.User == user)
+            .SingleOrDefaultAsync(HttpContext.RequestAborted);
         if (subscription == null)
             return NotFound();
 
@@ -126,6 +183,10 @@ public class SubscriptionsController(
         return NoContent();
     }
 
+    /// <summary>
+    /// Check if a subscription exists
+    /// </summary>
+    /// <param name="id">ID of the subscription</param>
     private async Task<bool> SubscriptionExists(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync(
@@ -138,10 +199,16 @@ public class SubscriptionsController(
     [OutputCache(Duration = 60 * 60 * 24)]
     [ResponseCache(Duration = 60 * 60 * 24)]
     [Authorize(Policy = "Thumbnails")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status412PreconditionFailed)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType<FileStreamResult>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Thumbnail(int id)
     {
         var user = await userManager.GetUserAsync(HttpContext.User);
-        ArgumentNullException.ThrowIfNull(user);
+        if (user == null)
+            return Unauthorized();
 
         await using var context = await contextFactory.CreateDbContextAsync(
             HttpContext.RequestAborted
@@ -156,7 +223,7 @@ public class SubscriptionsController(
             return NotFound();
 
         if (subscription.Thumb == null)
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+            return StatusCode((int) HttpStatusCode.PreconditionFailed, "Not Downloaded");
 
         if (subscription.Thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return Redirect(subscription.Thumb);
@@ -180,7 +247,7 @@ public class SubscriptionsController(
             subscription.Thumb = null;
             await context.SaveChangesAsync(HttpContext.RequestAborted);
 
-            return StatusCode((int)HttpStatusCode.PreconditionFailed, "Not Downloaded");
+            return StatusCode((int) HttpStatusCode.PreconditionFailed, "Not Downloaded");
         }
     }
 }
