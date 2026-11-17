@@ -20,7 +20,10 @@ YDL_DOWNLOAD_OPTS = {
     "fragment_retries": 10,
     "ignoreerrors": "only_download",
     "outtmpl": {"default": "test"},
-    'js_runtimes': {'deno': {'path': '/usr/bin/deno'}},
+    "js_runtimes": {"deno": {"path": "/usr/bin/deno"}},
+    "extract_flat": "discard_in_playlist",
+    "verbose": True,
+    "warn_when_outdated": True,
     "postprocessors": [
         {
             "key": "SponsorBlock",
@@ -60,6 +63,10 @@ YDL_DOWNLOAD_OPTS = {
 }
 
 YDL_OPTS = {
+    "js_runtimes": {"deno": {"path": "/usr/bin/deno"}},
+    "extract_flat": "discard_in_playlist",
+    "verbose": True,
+    "warn_when_outdated": True,
     "fragment_retries": 10,
     "ignoreerrors": "only_download",
     "outtmpl": {"default": "test", "pl_thumbnail": ""},
