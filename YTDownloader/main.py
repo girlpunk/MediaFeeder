@@ -14,7 +14,7 @@ from grpc_reflection.v1alpha import reflection
 
 YDL_DOWNLOAD_OPTS = {
     # 'progress_hooks': [my_hook],
-    "format": "(bv[height<=?1080][vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) / (bv[height<=?1080][vcodec~='^(vp9)']+ba[acodec=opus])"
+    "format": "(bv[vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) /"
     "(bv[vcodec~='^(vp9)']+ba[acodec=opus])",
     "format_sort": ["res:1080"],
     "fragment_retries": 10,
