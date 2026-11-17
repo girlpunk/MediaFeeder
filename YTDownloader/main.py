@@ -20,6 +20,7 @@ YDL_DOWNLOAD_OPTS = {
     "fragment_retries": 10,
     "ignoreerrors": "only_download",
     "outtmpl": {"default": "test"},
+    'js_runtimes': {'deno': {'path': '/usr/bin/deno'}},
     "postprocessors": [
         {
             "key": "SponsorBlock",
