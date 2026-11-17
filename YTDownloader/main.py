@@ -24,7 +24,6 @@ YDL_DOWNLOAD_OPTS = {
     "extract_flat": "discard_in_playlist",
     "verbose": True,
     "warn_when_outdated": True,
-    "listformats": True,
     "remote_components": ["ejs:github"],
     "postprocessors": [
         {
@@ -74,7 +73,6 @@ YDL_OPTS = {
     "ignoreerrors": "only_download",
     "outtmpl": {"default": "test", "pl_thumbnail": ""},
     "retries": 10,
-    "listformats": True,
     "remote_components": ["ejs:github"],
     "cookiefile": "/media/cookies.txt",
 }
