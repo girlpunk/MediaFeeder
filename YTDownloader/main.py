@@ -60,6 +60,7 @@ YDL_DOWNLOAD_OPTS = {
     ],
     "retries": 10,
     "writeautomaticsub": True,
+    "cookies": "/media/cookies.txt",
 }
 
 YDL_OPTS = {
@@ -71,6 +72,7 @@ YDL_OPTS = {
     "ignoreerrors": "only_download",
     "outtmpl": {"default": "test", "pl_thumbnail": ""},
     "retries": 10,
+    "cookies": "/media/cookies.txt",
 }
 
 
