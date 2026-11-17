@@ -16,13 +16,14 @@ RUN set -x \
  && apk upgrade -a \
  && apk add --no-cache \
         ca-certificates \
+        deno \
         ffmpeg \
-        python3 \
-        py3-mutagen \
         g++ \
-        python3-dev \
+        linux-headers \
         py3-grpcio-pyc \
-        linux-headers
+        py3-mutagen \
+        python3 \
+        python3-dev
 
 ENV UV_LINK_MODE=copy
 
