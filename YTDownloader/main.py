@@ -14,7 +14,7 @@ from grpc_reflection.v1alpha import reflection
 
 YDL_DOWNLOAD_OPTS = {
     # 'progress_hooks': [my_hook],
-    "format": "(bv[vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) / "
+    "format": "(bv[height<=?1080][vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) / (bv[height<=?1080][vcodec~='^(vp9)']+ba[acodec=opus])"
     "(bv[vcodec~='^(vp9)']+ba[acodec=opus])",
     "format_sort": ["res:1080"],
     "fragment_retries": 10,
@@ -24,6 +24,8 @@ YDL_DOWNLOAD_OPTS = {
     "extract_flat": "discard_in_playlist",
     "verbose": True,
     "warn_when_outdated": True,
+    "listformats": True,
+    "remote_components": ["ejs:github"],
     "postprocessors": [
         {
             "key": "SponsorBlock",
@@ -72,6 +74,8 @@ YDL_OPTS = {
     "ignoreerrors": "only_download",
     "outtmpl": {"default": "test", "pl_thumbnail": ""},
     "retries": 10,
+    "listformats": True,
+    "remote_components": ["ejs:github"],
     "cookiefile": "/media/cookies.txt",
 }
 
