@@ -14,22 +14,26 @@ from grpc_reflection.v1alpha import reflection
 
 YDL_DOWNLOAD_OPTS = {
     # 'progress_hooks': [my_hook],
-    "format": "(bv[vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) /"
-    "(bv[vcodec~='^(vp9)']+ba[acodec=opus])",
-    "format_sort": ["res:1080"],
+    "cookiefile": "/media/cookies.txt",
+    "extract_flat": "discard_in_playlist",
+    "format": "(bv[vcodec~='^(avc|h264)']+ba[acodec~='^(aac|mp?4a)']) / (bv[vcodec~='^(vp9)']+ba[acodec=opus])",
+    "format_sort": [
+        "res:1080"
+    ],
     "fragment_retries": 10,
     "ignoreerrors": "only_download",
-    "outtmpl": {"default": "test"},
-    "js_runtimes": {"deno": {"path": "/usr/bin/deno"}},
-    "extract_flat": "discard_in_playlist",
-    "verbose": True,
-    "warn_when_outdated": True,
-    "remote_components": ["ejs:github"],
+    "js_runtimes": {
+        "deno": {
+            "path": "/usr/bin/deno"
+        }
+    },
+    "outtmpl": {
+        "default": "test"
+    },
     "postprocessors": [
         {
-            "key": "SponsorBlock",
             "api": "https://sponsor.ajay.app",
-            "categories": {
+            "categories": [
                 "chapter",
                 "filler",
                 "interaction",
@@ -39,42 +43,66 @@ YDL_DOWNLOAD_OPTS = {
                 "poi_highlight",
                 "preview",
                 "selfpromo",
-                "sponsor",
-            },
-            "when": "after_filter",
+                "sponsor"
+            ],
+            "key": "SponsorBlock",
+            "when": "after_filter"
         },
-        {"key": "FFmpegEmbedSubtitle", "already_have_subtitle": False},
         {
-            "key": "ModifyChapters",
+            "already_have_subtitle": False,
+            "key": "FFmpegEmbedSubtitle"
+        },
+        {
             "force_keyframes": False,
+            "key": "ModifyChapters",
             "remove_chapters_patterns": [],
             "remove_ranges": [],
-            "remove_sponsor_segments": {"interaction", "selfpromo", "sponsor"},
-            "sponsorblock_chapter_title": "[SponsorBlock]: %(category_names)l",
+            "remove_sponsor_segments": [
+                "interaction",
+                "selfpromo",
+                "sponsor"
+            ],
+            "sponsorblock_chapter_title": "[SponsorBlock]: %(category_names)l"
         },
         {
-            "key": "FFmpegMetadata",
             "add_chapters": True,
             "add_metadata": True,
+            "key": "FFmpegMetadata"
         },
-        {"key": "EmbedThumbnail", "already_have_thumbnail": False},
+        {
+            "already_have_thumbnail": False,
+            "key": "EmbedThumbnail"
+        }
+    ],
+    "remote_components": [
+        "ejs:github"
     ],
     "retries": 10,
-    "writeautomaticsub": True,
-    "cookiefile": "/media/cookies.txt",
+    "verbose": True,
+    "warn_when_outdated": True,
+    "writeautomaticsub": True
 }
 
 YDL_OPTS = {
-    "js_runtimes": {"deno": {"path": "/usr/bin/deno"}},
+    "cookiefile": "/media/cookies.txt",
     "extract_flat": "discard_in_playlist",
-    "verbose": True,
-    "warn_when_outdated": True,
     "fragment_retries": 10,
     "ignoreerrors": "only_download",
-    "outtmpl": {"default": "test", "pl_thumbnail": ""},
+    "js_runtimes": {
+        "deno": {
+            "path": "/usr/bin/deno"
+        }
+    },
+    "outtmpl": {
+        "default": "test",
+        "pl_thumbnail": ""
+    },
+    "remote_components": [
+        "ejs:github"
+    ],
     "retries": 10,
-    "remote_components": ["ejs:github"],
-    "cookiefile": "/media/cookies.txt",
+    "verbose": True,
+    "warn_when_outdated": True,
 }
 
 
