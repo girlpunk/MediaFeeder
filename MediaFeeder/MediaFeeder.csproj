@@ -125,6 +125,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="MediaFeeder.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Protobuf Include="Services\Api.proto" GrpcServices="Server" />
     <Protobuf Include="Services\mediatoad.proto" GrpcServices="Server" />
     <Protobuf

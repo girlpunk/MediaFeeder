@@ -1,0 +1,110 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+      <NoWarn>
+      CS1591, <!-- Missing XML comment for publicly visible type or member -->
+      IDE0011, <!-- Add braces to 'if' statement. -->
+      RCS0001, <!-- Add blank line after embedded statement -->
+      RCS0036, <!-- Remove blank line between single-line declarations of same kind -->
+      RCS1046, <!-- Asynchronous method name should end with 'Async' -->
+      IDE0065, <!-- Using directive placement: the root editorconfig (inside_namespace) conflicts with RCS1094 (top level); this codebase uses top-level usings -->
+      CA1707,  <!-- Test methods follow the Method_State_ExpectedResult naming convention -->
+      CA1812,  <!-- Test helper types are instantiated via AutoFixture (reflection) -->
+      CA1305,  <!-- int.ToString() in test claim helpers never crosses a locale boundary -->
+      CA2000,  <!-- InMemory test contexts and fakes are short-lived per test method -->
+      IDISP001, <!-- Same: per-test contexts and fakes are not worth explicit Dispose plumbing -->
+      IDISP004, <!-- Same -->
+      IDE0005, <!-- Kept usings document the identity stack the tests exercise -->
+      IDE0017, <!-- Explicit initialization mirrors the base-ctor argument list -->
+      IDE0047, <!-- Parentheses keep the base-ctor call readable -->
+      IDE0090, <!-- `new` is kept for visual symmetry with the surrounding ctor args -->
+      MA0011, <!-- Test claim helpers use invariant-safe int.ToString in practice -->
+      MA0061, <!-- FakeUserManager.GetUserAsync is intentionally non-nullable in tests -->
+      RCS0032, <!-- Arrow body of the one-line factory members stays on one line -->
+      </NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AsyncFixer" Version="2.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AutoFixture" Version="4.18.1" />
+    <PackageReference Include="AutoFixture.AutoNSubstitute" Version="4.18.1" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="IDisposableAnalyzers" Version="4.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
+    <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="3.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Meziantou.Analyzer" Version="3.0.124">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Meziantou.Analyzer.Annotations" Version="1.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.10" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.CodeFixes" Version="4.15.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.15.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>
+        runtime; build; native; contentfiles; analyzers; buildtransitive
+      </IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Shouldly" Version="4.3.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- NSubstitute (Castle DynamicProxy) needs to proxy internal test types -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediaFeeder\MediaFeeder.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

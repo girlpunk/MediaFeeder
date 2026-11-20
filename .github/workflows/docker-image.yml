@@ -86,6 +86,22 @@ jobs:
           commit_user_name: megalinter-bot
           commit_user_email: nicolas.vuillamy@ox.security
 
+  Tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: "10.0.x"
+      - name: Run tests
+        run: dotnet test --solution MediaFeeder.sln
+
   Docker-main:
     name: "Docker Main"
     runs-on: ubuntu-latest
