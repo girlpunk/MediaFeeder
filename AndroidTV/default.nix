@@ -1,19 +1,25 @@
-_: {
-  perSystem = {pkgs, ...}: let
+{inputs, ...}: {
+  perSystem = {system, ...}: let
+    pkgs = import inputs.unstable {
+      inherit system;
+      config.allowUnfree = true;
+    };
+
     # The Android SDK is licensed under a non-free agreement; accepting the
     # license here removes the need for
     # NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 in the environment.
     androidEnv = pkgs.androidenv.override {licenseAccepted = true;};
-    buildToolsVersion = "36.0.0";
+    buildToolsVersion = "37.0.0";
     androidPackages = androidEnv.composeAndroidPackages {
       buildToolsVersions = [buildToolsVersion];
-      platformVersions = ["36"];
-      platformToolsVersion = "37.0.0";
-      cmdLineToolsVersion = "20.0";
+      platformVersions = ["37.2"];
+      platformToolsVersion = "37.0.1";
+      cmdLineToolsVersion = "23.0";
       includeEmulator = false;
       includeNDK = false;
       includeSystemImages = false;
       includeCmake = false;
+      useGoogleTVAddOns = true;
     };
     androidSdk = androidPackages.androidsdk;
     # AGP 9.4.0 requires Gradle >= 9.6.0, but nixos-26.05 only ships up to
