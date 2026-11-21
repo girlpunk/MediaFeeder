@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
 
 /** Loads the video list of one subscription; [AuthRequired] routes back to settings. */
 class VideosViewModel(

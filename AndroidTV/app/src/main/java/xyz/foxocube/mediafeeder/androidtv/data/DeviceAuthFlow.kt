@@ -1,4 +1,4 @@
-package xyz.foxocube.mediafeeder.androidtv
+package xyz.foxocube.mediafeeder.androidtv.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -8,6 +8,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import xyz.foxocube.mediafeeder.androidtv.AuthClient
+import xyz.foxocube.mediafeeder.androidtv.AuthStore
+import xyz.foxocube.mediafeeder.androidtv.PollResult
+import xyz.foxocube.mediafeeder.androidtv.TokenResponse
 
 /** The device-code challenge to relay to the user on their phone. */
 data class DeviceCodeInfo(
@@ -27,7 +31,7 @@ sealed interface DeviceAuthOutcome<out T> {
 
 /**
  * OIDC device-code login flow (mirrors scripts/auth.py), built on the request builders of
- * [AuthClient] and a real [OkHttpClient].
+ * [xyz.foxocube.mediafeeder.androidtv.AuthClient] and a real [OkHttpClient].
  *
  * Steps: [requestUserCode] -> [pollUntilSettled] until the user approves -> [completeLogin]
  * exchanges the device access token for the server token and persists both token pairs.
@@ -53,7 +57,7 @@ class DeviceAuthFlow(
         }
     }
 
-    /** One poll of the token endpoint; [PollResult.Pending] and [PollResult.SlowDown] mean "poll again after the interval". */
+    /** One poll of the token endpoint; [xyz.foxocube.mediafeeder.androidtv.PollResult.Pending] and [xyz.foxocube.mediafeeder.androidtv.PollResult.SlowDown] mean "poll again after the interval". */
     suspend fun pollOnce(deviceCode: String): PollResult {
         val body: String = pollResponseBody(authClient.deviceCodePollRequest(deviceCode))
         if (body.isEmpty()) return PollResult.Error(POLL_ERROR_NO_RESPONSE, "No response from the token endpoint")

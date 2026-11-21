@@ -1,9 +1,11 @@
 package xyz.foxocube.mediafeeder.androidtv
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
 
 /**
  * Player screen state: resolves the [Video] into a [PlayerState] via [MediaUrlResolver].
@@ -18,7 +20,7 @@ class PlayerViewModel(
 ) : ViewModel() {
 
     sealed interface PlayerState {
-        data object NotDownloaded : PlayerState
+        data class NotDownloaded(val provider: String, val providerId: String) : PlayerState
 
         /** [Playable] media; [authHeader] is null for direct remote playback. */
         data class Playable(val url: String, val authHeader: String?) : PlayerState
@@ -34,13 +36,17 @@ class PlayerViewModel(
 
     /** The server answered 412 while playing: switch to the "Not downloaded" state. */
     fun onNotDownloaded() {
-        _state.value = PlayerState.NotDownloaded
+        _state.value = PlayerState.NotDownloaded("", "")
     }
 
     private fun resolve(): PlayerState {
         val base: String = store.baseUrl.orEmpty()
-        return when (val url = MediaUrlResolver.resolve(base, video)) {
-            is PlaybackUrl.NotDownloaded -> PlayerState.NotDownloaded
+        val url = MediaUrlResolver.resolve(base, video);
+
+        Log.v("MfPlayerVM", "Resolved media type: $url")
+
+        return when (url) {
+            is PlaybackUrl.NotDownloaded -> PlayerState.NotDownloaded(url.provider, url.providerId)
             is PlaybackUrl.Remote -> PlayerState.Playable(url.url, authHeader = null)
             is PlaybackUrl.Streamed -> PlayerState.Playable(url.url, authHeader = bearerHeader())
         }

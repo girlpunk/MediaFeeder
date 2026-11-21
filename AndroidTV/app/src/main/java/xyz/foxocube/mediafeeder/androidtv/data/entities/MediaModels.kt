@@ -1,4 +1,4 @@
-package xyz.foxocube.mediafeeder.androidtv
+package xyz.foxocube.mediafeeder.androidtv.data.entities
 
 import kotlinx.serialization.Serializable
 

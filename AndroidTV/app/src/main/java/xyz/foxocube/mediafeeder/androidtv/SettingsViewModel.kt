@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthFlow
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthOutcome
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceCodeInfo
 
 /**
  * Settings + sign-in screen state: the four OIDC/server fields plus the device-code login

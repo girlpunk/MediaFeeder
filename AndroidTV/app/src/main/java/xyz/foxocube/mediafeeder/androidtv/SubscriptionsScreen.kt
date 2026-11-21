@@ -1,25 +1,40 @@
 package xyz.foxocube.mediafeeder.androidtv
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.tv.material3.Border
+import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.LocalContentColor
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.ShapeDefaults
+import androidx.tv.material3.Text
+import androidx.tv.material3.WideClassicCard
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Subscription
+import xyz.foxocube.mediafeeder.androidtv.presentation.common.Error
+import xyz.foxocube.mediafeeder.androidtv.presentation.common.Loading
 
 /**
  * Subscriptions screen (route: [NavRoutes.SUBSCRIPTIONS]): a D-pad grid of subscription
@@ -54,10 +69,10 @@ fun SubscriptionsScreen(
             ScreenTitle(text = "Subscriptions")
             Spacer(Modifier.height(TvTokens.itemSpacing))
             when (state) {
-                SubscriptionsViewModel.ListState.Loading -> LoadingView()
+                SubscriptionsViewModel.ListState.Loading -> Loading()
 
                 is SubscriptionsViewModel.ListState.Error ->
-                    ErrorView(message = state.message, onRetry = vm::load)
+                    Error(message = state.message, onRetry = vm::load)
 
                 is SubscriptionsViewModel.ListState.AuthRequired -> Unit
 
@@ -70,6 +85,7 @@ fun SubscriptionsScreen(
                             contentPadding = PaddingValues(bottom = TvTokens.screenPadding),
                             horizontalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing),
                             verticalArrangement = Arrangement.spacedBy(TvTokens.itemSpacing),
+                            cacheWindow = LazyLayoutCacheWindow(0.5f, 0.2f)
                         ) {
                             items(state.subscriptions, key = { it.id }) { subscription ->
                                 SubscriptionCard(
@@ -84,4 +100,42 @@ fun SubscriptionsScreen(
             }
         }
     }
+}
+
+/** One grid card: 16:9 thumbnail over the subscription name. */
+@Composable
+fun SubscriptionCard(
+    name: String,
+    thumbUrl: String?,
+    bearer: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    WideClassicCard(
+        modifier = modifier.height(50.dp),
+        shape = CardDefaults.shape(shape = ShapeDefaults.ExtraSmall),
+        scale = CardDefaults.scale(focusedScale = 1f),
+        border = CardDefaults.border(
+            focusedBorder = Border(
+                border = BorderStroke(
+                    width = 3.dp,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                shape = ShapeDefaults.ExtraSmall
+            )
+        ),
+        title = { Text(
+            text = name,
+            maxLines = 1,
+            style = MaterialTheme.typography.titleSmall,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(8.dp, 8.dp)
+        ) },
+        onClick = onClick,
+        image = { ThumbImage(
+            url = thumbUrl,
+            bearer = bearer,
+            modifier = Modifier.aspectRatio(1f).fillMaxHeight()
+        )},
+    )
 }

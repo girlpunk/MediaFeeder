@@ -81,7 +81,7 @@ class TokenManager(
         withContext(Dispatchers.IO) {
             try {
                 httpClient.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) response.body?.string() else null
+                    if (response.isSuccessful) response.body.string() else null
                 }
             } catch (e: Exception) {
                 null

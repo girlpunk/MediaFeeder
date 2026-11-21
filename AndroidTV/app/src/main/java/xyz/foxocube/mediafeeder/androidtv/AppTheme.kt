@@ -34,12 +34,12 @@ object TvTokens {
 
     val cardShape: RoundedCornerShape = RoundedCornerShape(cornerRadius)
 
-    val screenPadding: Dp = 32.dp
+    val screenPadding: Dp = 16.dp
 
     val itemSpacing: Dp = 16.dp
 
     /** Minimum width of one grid card; the grid derives the column count from it. */
-    val gridCardMinWidth: Dp = 280.dp
+    val gridCardMinWidth: Dp = 144.dp
 
     /** 16:9 aspect ratio for all subscription/video thumbnails. */
     val thumbAspectRatio: Float = 16f / 9f

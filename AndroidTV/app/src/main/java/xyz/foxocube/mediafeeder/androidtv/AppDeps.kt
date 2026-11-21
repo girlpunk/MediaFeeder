@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import okhttp3.OkHttpClient
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthFlow
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthOutcome
 
 /** Provided by [MainActivity] so every screen can reach the app services. */
 val LocalAppDeps: ProvidableCompositionLocal<AppDeps> =
@@ -43,8 +45,8 @@ class AppDeps(context: Context) {
     }
 
     /**
-     * Fresh [DeviceAuthFlow] over the currently stored settings: [DeviceAuthOutcome.Success] when
-     * ready to log in; [DeviceAuthOutcome.Failure] when the settings are incomplete or the OIDC
+     * Fresh [xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthFlow] over the currently stored settings: [xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthOutcome.Success] when
+     * ready to log in; [xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthOutcome.Failure] when the settings are incomplete or the OIDC
      * metadata cannot be fetched.
      */
     suspend fun createDeviceAuthFlow(): DeviceAuthOutcome<DeviceAuthFlow> {

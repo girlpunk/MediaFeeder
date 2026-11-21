@@ -13,6 +13,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import xyz.foxocube.mediafeeder.androidtv.data.repositories.DtoParser
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Subscription
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
 
 /**
  * Contract for [MediaApiClient]: bearer authentication (with one refresh attempt),

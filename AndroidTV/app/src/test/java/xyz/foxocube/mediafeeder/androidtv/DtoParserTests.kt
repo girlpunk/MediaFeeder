@@ -3,6 +3,9 @@ package xyz.foxocube.mediafeeder.androidtv
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import xyz.foxocube.mediafeeder.androidtv.data.repositories.DtoParser
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Subscription
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
 
 private const val SUBSCRIPTION_JSON: String =
     """

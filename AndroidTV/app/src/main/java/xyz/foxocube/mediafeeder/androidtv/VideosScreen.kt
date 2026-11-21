@@ -17,6 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
+import xyz.foxocube.mediafeeder.androidtv.presentation.common.Error
+import xyz.foxocube.mediafeeder.androidtv.presentation.common.Loading
 
 /**
  * Videos screen (route: [NavRoutes.VIDEOS]): D-pad list of the focused subscription's
@@ -52,10 +55,10 @@ fun VideosScreen(
         ScreenTitle(text = title)
         Spacer(Modifier.height(TvTokens.itemSpacing))
         when (state) {
-            VideosViewModel.ListState.Loading -> LoadingView()
+            VideosViewModel.ListState.Loading -> Loading()
 
             is VideosViewModel.ListState.Error ->
-                ErrorView(message = state.message, onRetry = vm::load)
+                Error(message = state.message, onRetry = vm::load)
 
             VideosViewModel.ListState.AuthRequired -> Unit
 

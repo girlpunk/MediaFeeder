@@ -1,6 +1,9 @@
 package xyz.foxocube.mediafeeder.androidtv
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.KeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -10,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,14 +36,17 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.util.ExperimentalApi
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.ui.compose.material3.Player as Media3Player
+import androidx.media3.exoplayer.util.EventLogger
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import androidx.tv.material3.WideButton
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
+import androidx.media3.ui.compose.material3.Player as Media3Player
 
 /**
  * Player screen (route: [NavRoutes.PLAYER]): plays the [NavigationSelection.video].
@@ -71,9 +76,19 @@ fun PlayerScreen(onBack: () -> Unit) {
             .background(TvTokens.backgroundColor),
     ) {
         when (state) {
-            PlayerViewModel.PlayerState.NotDownloaded -> NotDownloadedCard(onRetry = vm::retry)
+            is PlayerViewModel.PlayerState.NotDownloaded -> {
+                val dState: PlayerViewModel.PlayerState.NotDownloaded = state
+
+                //TODO: Check this is actually YouTube
+                val intent = Intent()
+                intent.action = "android.intent.action.VIEW"
+                intent.data = Uri.parse("https://www.youtube.com/watch?v=" + dState.providerId)
+                intent.component = ComponentName("org.smarttube.stable", "com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity")
+
+                LocalContext.current.startActivity(intent)
+            }
             is PlayerViewModel.PlayerState.Playable ->
-                PlayerSurface(video = video, playable = state, onNotDownloaded = vm::onNotDownloaded)
+                PlayerSurface(video = video, playable = state, onNotDownloaded = { vm::onNotDownloaded})
         }
     }
 }
@@ -100,7 +115,7 @@ private fun NotDownloadedCard(onRetry: () -> Unit) {
 }
 
 /** ExoPlayer surface: auto-plays [playable], D-pad center toggles play/pause. */
-@OptIn(ExperimentalApi::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun PlayerSurface(
     video: Video,
@@ -146,7 +161,10 @@ private fun PlayerSurface(
     }
 
     LaunchedEffect(playable) {
+        player.addAnalyticsListener(EventLogger())
         player.setMediaItem(MediaItem.fromUri(playable.url))
+        if(Player.COMMAND_PREPARE in player.availableCommands)
+            player.prepare()
         player.play()
     }
 

@@ -1,7 +1,10 @@
-package xyz.foxocube.mediafeeder.androidtv
+package xyz.foxocube.mediafeeder.androidtv.data.repositories
 
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Subscription
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
 
 /**
  * Parses MediaFeeder REST JSON payloads into [Subscription] / [Video] models.

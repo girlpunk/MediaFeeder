@@ -14,9 +14,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthFlow
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthOutcome
+import xyz.foxocube.mediafeeder.androidtv.data.DeviceCodeInfo
 
 /**
- * Contract for [DeviceAuthFlow]: device-code request, polling outcomes, and the
+ * Contract for [xyz.foxocube.mediafeeder.androidtv.data.DeviceAuthFlow]: device-code request, polling outcomes, and the
  * server-token exchange persisting both token pairs. Pure JVM with a scripted OkHttp
  * interceptor and an injected clock.
  */
@@ -27,10 +30,18 @@ class DeviceAuthFlowTests {
     private val authClient: AuthClient = AuthClient(OIDC_URL, DEVICE_CLIENT_ID, SERVER_CLIENT_ID, METADATA)
     private val http: ScriptedHttp = ScriptedHttp()
     private val flow: DeviceAuthFlow =
-        DeviceAuthFlow(authClient, OkHttpClient().newBuilder().addInterceptor(http).build(), store, { now })
+        DeviceAuthFlow(
+            authClient,
+            OkHttpClient().newBuilder().addInterceptor(http).build(),
+            store,
+            { now })
     private val sleptMillis: MutableList<Long> = mutableListOf()
     private val polledFlow: DeviceAuthFlow =
-        DeviceAuthFlow(authClient, OkHttpClient().newBuilder().addInterceptor(http).build(), store, { now }) { millis ->
+        DeviceAuthFlow(
+            authClient,
+            OkHttpClient().newBuilder().addInterceptor(http).build(),
+            store,
+            { now }) { millis ->
             now += millis
             sleptMillis.add(millis)
         }
@@ -113,7 +124,8 @@ class DeviceAuthFlowTests {
     fun `pollUntilSettled checks every ten seconds when the server asks for less`() {
         http.enqueue(400, PENDING_JSON)
         http.enqueue(200, TOKEN_JSON)
-        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 5, 600)
+        val info: DeviceCodeInfo =
+            DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 5, 600)
 
         val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
 
@@ -126,7 +138,8 @@ class DeviceAuthFlowTests {
     fun `pollUntilSettled respects a longer interval from the server`() {
         http.enqueue(400, PENDING_JSON)
         http.enqueue(200, TOKEN_JSON)
-        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 30, 600)
+        val info: DeviceCodeInfo =
+            DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 30, 600)
 
         val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
 
@@ -139,7 +152,8 @@ class DeviceAuthFlowTests {
         http.enqueue(400, SLOW_DOWN_JSON)
         http.enqueue(400, PENDING_JSON)
         http.enqueue(200, TOKEN_JSON)
-        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 5, 600)
+        val info: DeviceCodeInfo =
+            DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 5, 600)
 
         val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
 
@@ -151,7 +165,8 @@ class DeviceAuthFlowTests {
     fun `pollUntilSettled fails when the device code expires before approval`() {
         http.enqueue(400, PENDING_JSON)
         http.enqueue(400, PENDING_JSON)
-        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 10, 20)
+        val info: DeviceCodeInfo =
+            DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 10, 20)
 
         val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
 
@@ -164,7 +179,8 @@ class DeviceAuthFlowTests {
     @Test
     fun `pollUntilSettled fails on a terminal error`() {
         http.enqueue(400, """{"error": "expired_token", "error_description": "The device code has expired"}""")
-        val info: DeviceCodeInfo = DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 10, 600)
+        val info: DeviceCodeInfo =
+            DeviceCodeInfo("dc-1", "ABCD-1234", "https://auth.example.com/verify", 10, 600)
 
         val outcome: DeviceAuthOutcome<TokenResponse> = runBlocking { polledFlow.pollUntilSettled(info) }
 

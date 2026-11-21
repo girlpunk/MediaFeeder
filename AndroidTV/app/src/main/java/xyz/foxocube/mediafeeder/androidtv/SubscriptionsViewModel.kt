@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Subscription
 
 /** Loads the subscription list; [AuthRequired] tells the UI to route back to settings. */
 class SubscriptionsViewModel(

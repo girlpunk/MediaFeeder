@@ -5,6 +5,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import xyz.foxocube.mediafeeder.androidtv.data.repositories.DtoParser
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Subscription
+import xyz.foxocube.mediafeeder.androidtv.data.entities.Video
 
 /**
  * REST client for the MediaFeeder server API (builds on [DtoParser]).
@@ -81,7 +84,7 @@ class MediaApiClient(
     }
 
     private fun <T> readSuccess(response: Response, parse: (String) -> T): ApiOutcome<T> {
-        val body: String = response.body?.string() ?: ""
+        val body: String = response.body.string() ?: ""
         return try {
             ApiOutcome.Success(parse(body))
         } catch (e: Exception) {
