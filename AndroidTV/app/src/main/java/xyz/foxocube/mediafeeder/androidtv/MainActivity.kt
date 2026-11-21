@@ -21,14 +21,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dagger.hilt.internal.GeneratedComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import xyz.foxocube.mediafeeder.androidtv.presentation.screens.videoDetails.VideoDetailsScreen
 
 /**
  * Single-activity entry point: runs the one-shot startup auth check (valid stored server
  * token, or one refresh attempt) and then starts the NavHost on the matching route.
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), GeneratedComponent {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val deps: AppDeps = AppDeps(applicationContext)
@@ -110,7 +112,8 @@ private fun AppNavHost(startDestination: String) {
                 subscriptionId = subscriptionId,
                 onPlay = { video ->
                     NavigationSelection.video = video
-                    navController.navigate(NavRoutes.PLAYER)
+//                    navController.navigate(NavRoutes.PLAYER)
+                    navController.navigate(NavRoutes.videoDetail(video.id))
                 },
                 onAuthRequired = {
                     navController.navigate(NavRoutes.SETTINGS)
@@ -122,6 +125,19 @@ private fun AppNavHost(startDestination: String) {
                 onBack = {
                     navController.popBackStack()
                 },
+            )
+        }
+        composable(
+            NavRoutes.VIDEO_DETAIL,
+            arguments = listOf(navArgument(NavRoutes.VIDEO_ID) { type = NavType.IntType })
+        ) { entry ->
+            val videoId: Int = entry.arguments?.getInt(NavRoutes.VIDEO_ID) ?: 0
+            VideoDetailsScreen(
+                goToVideoPlayer = {
+//                    NavigationSelection.video = video
+                    navController.navigate(NavRoutes.PLAYER)
+                },
+                onBackPressed = {}
             )
         }
     }
